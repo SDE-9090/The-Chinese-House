@@ -1,0 +1,745 @@
+import { useState, useEffect } from "react";
+import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, type Table, type Order, type SessionBill } from "@/lib/apiClient";
+import OrderCard from "./OrderCard";
+import BillDocument, { downloadBillPrint, downloadKOTPrint } from "@/components/BillDocument";
+import { Loader2, CheckCircle, UtensilsCrossed, Clock, QrCode, Plus, X, Printer, Download, Trash2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { motion, AnimatePresence } from "framer-motion";
+import TableOpenModal from "./TableOpenModal";
+import TableOrderModal from "./TableOrderModal";
+import TableTransferModal from "./TableTransferModal";
+
+interface TableManagerProps {
+  orders: Order[];
+  user: { name: string; role: string };
+  onRefresh: () => Promise<void>;
+  onAdvanceStatus: (orderId: string, currentStatus: Order["status"]) => Promise<void>;
+  onCancelOrder: (orderId: string) => Promise<void>;
+  isUpdating: Record<string, boolean>;
+  editingOrderIds: Set<string>;
+}
+
+export default function TableManager({ orders, user, onRefresh, onAdvanceStatus, onCancelOrder, isUpdating, editingOrderIds }: TableManagerProps) {
+  const [tables, setTables] = useState<Table[]>([]);
+  const [loading, setLoading] = useState(true);
+
+
+  const [showAddTableModal, setShowAddTableModal] = useState(false);
+  const [newTableNumber, setNewTableNumber] = useState("");
+  const [addingTable, setAddingTable] = useState(false);
+  
+  const [showQrModal, setShowQrModal] = useState<Table | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState<string | null>(null);
+  const [splitMode, setSplitMode] = useState(false);
+  const [splitCash, setSplitCash] = useState<string>("");
+  const [splitUpi, setSplitUpi] = useState<string>("");
+  const [closingId, setClosingId] = useState<string | null>(null);
+  const [billsMap, setBillsMap] = useState<Record<string, SessionBill>>({}); // sessionId -> bill
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null); // For admin detail modal
+  const [business, setBusiness] = useState<any>(null);
+  const [deletingTableId, setDeletingTableId] = useState<string | null>(null);
+  
+  const [openTableState, setOpenTableState] = useState<{ id: string, number: string } | null>(null);
+  const [orderTableState, setOrderTableState] = useState<{ sessionId: string, number: string } | null>(null);
+  const [transferTableState, setTransferTableState] = useState<{ sessionId: string, number: string } | null>(null);
+
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const [repeatingIds, setRepeatingIds] = useState<Set<string | number>>(new Set());
+
+  const handleReorder = async (item: SessionBill["itemized"][0], sessionId: string, customerName?: string, customerPhone?: string) => {
+    if (!sessionId || !item.menuItemId) return;
+    setRepeatingIds((prev) => new Set(prev).add(item.menuItemId!));
+    try {
+      await apiPlaceOrder(
+        customerName || "Table Guest",
+        customerPhone || "",
+        [{ id: item.menuItemId, name: item.name, price: item.price, priceLabel: "₹"+item.price, quantity: 1, image: "" }],
+        "counter",
+        undefined,
+        "dine-in",
+        "",
+        "table",
+        sessionId
+      );
+      toast({ title: `1x ${item.name} sent to kitchen!` });
+      const newBill = await apiGetSessionBill(sessionId);
+      setBillsMap(prev => ({ ...prev, [sessionId]: newBill }));
+    } catch (err: any) {
+      toast({ title: "Failed to reorder", description: err.message, variant: "destructive" });
+    } finally {
+      setRepeatingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.menuItemId!);
+        return next;
+      });
+    }
+  };
+
+  const fetchTables = async () => {
+    try {
+      const data = await apiAdminGetTables();
+      setTables(data);
+      // Fetch bills for tables with active sessions (occupied / billing)
+      const billFetches = data
+        .filter(t => t.activeSession && (t.status === 'occupied' || t.activeSession.status === 'billing'))
+        .map(async t => {
+          try {
+            const b = await apiGetSessionBill(t.activeSession!.id);
+            return { sessionId: t.activeSession!.id, bill: b };
+          } catch { return null; }
+        });
+      const results = await Promise.all(billFetches);
+      const map: Record<string, SessionBill> = {};
+      results.forEach(r => { if (r) map[r.sessionId] = r.bill; });
+      setBillsMap(map);
+    } catch (err: any) {
+      toast({ title: "Failed to fetch tables", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTables();
+    const interval = setInterval(fetchTables, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    apiGetBusinessSettings().then(setBusiness).catch(() => {});
+  }, []);
+
+
+
+  const handleAddTable = async () => {
+    if (!newTableNumber.trim()) return;
+    setAddingTable(true);
+    try {
+      await apiAdminCreateTable(newTableNumber.trim());
+      await fetchTables();
+      setShowAddTableModal(false);
+      setNewTableNumber("");
+      toast({ title: "Table successfully created" });
+    } catch (err: any) {
+      toast({ title: "Failed to create table", description: err.message, variant: "destructive" });
+    } finally {
+      setAddingTable(false);
+    }
+  };
+
+  const handleDeleteTable = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this table?")) return;
+    setDeletingTableId(id);
+    try {
+      await apiDeleteTable(id);
+      toast({ title: "Table deleted successfully", className: "bg-emerald-500 text-white border-none" });
+      await fetchTables();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to delete table", variant: "destructive" });
+    } finally {
+      setDeletingTableId(null);
+    }
+  };
+
+  const handleCloseSession = async (sessionId: string, method: string) => {
+    setClosingId(sessionId);
+    try {
+      await apiSessionClose(sessionId, method, parseFloat(splitCash) || 0, parseFloat(splitUpi) || 0);
+      await fetchTables();
+      await onRefresh();
+      toast({ title: `Table cleared (${method.toUpperCase()})` });
+      setSelectedTable(null);
+    } catch (err: any) {
+      toast({ title: "Failed to free table", description: err.message, variant: "destructive" });
+    } finally {
+      setClosingId(null);
+      setShowPaymentModal(null);
+      setSplitMode(false);
+      setSplitCash("");
+      setSplitUpi("");
+    }
+  };
+
+  const handleModalSuccess = () => {
+    fetchTables();
+    onRefresh();
+  };
+
+  return (
+    <div className="container mx-auto px-4 pb-8 space-y-8">
+      {/* Table Grid */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <UtensilsCrossed className="text-primary" /> Live Table Status
+          </h2>
+          {(user.role === 'admin' || user.role === 'manager') && (
+            <button 
+              onClick={() => setShowAddTableModal(true)}
+              className="bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-primary/90 transition-all shadow-md"
+            >
+              <Plus size={16} /> Add Table
+            </button>
+          )}
+        </div>
+        {loading ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="animate-spin w-8 h-8 text-primary" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {tables.map(table => {
+              const session = table.activeSession;
+              const isTableEditing = session && orders.some(o => 
+                (o.tableSessionId === session.id || (o as any).table_session_id === session.id) && 
+                editingOrderIds.has(o.id)
+              );
+              
+              let elapsedString = "";
+              if (session?.startTime) {
+                 const elapsedMs = now - new Date(session.startTime).getTime();
+                 const elapsedMins = Math.max(0, Math.floor(elapsedMs / 60000));
+                 if (elapsedMins < 60) {
+                    elapsedString = `${elapsedMins}m`;
+                 } else {
+                    const h = Math.floor(elapsedMins / 60);
+                    const m = elapsedMins % 60;
+                    elapsedString = `${h}h ${m}m`;
+                 }
+              }
+
+              return (
+                <motion.div 
+                  layout
+                  key={table.id} 
+                  className={`relative p-5 rounded-2xl border flex flex-col justify-between transition-all ${
+                  isTableEditing ? 'border-amber-500 shadow-lg shadow-amber-500/20 bg-amber-500/5' :
+                  table.status === 'occupied' ? 'bg-primary/5 border-primary/30 shadow-md' :
+                  table.status === 'reserved' ? 'bg-amber-500/5 border-amber-500/30 shadow-md' :
+                  'bg-card border-border hover:shadow-lg'
+                }`}
+              >
+                {isTableEditing && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg animate-bounce flex items-center gap-1 z-10 whitespace-nowrap">
+                    <Loader2 size={10} className="animate-spin" />
+                    CUSTOMER EDITING
+                  </div>
+                )}
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="font-bold text-lg">Table {table.tableNumber}</h3>
+                    <div className="flex items-center gap-2">
+                      {table.status === 'available' && user.role === 'admin' && (
+                        <button
+                          onClick={() => handleDeleteTable(table.id)}
+                          disabled={deletingTableId === table.id}
+                          className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition disabled:opacity-50"
+                          title="Delete Table"
+                        >
+                          {deletingTableId === table.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                        </button>
+                      )}
+                      {elapsedString && (
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-background border border-border text-muted-foreground flex items-center gap-1 shadow-sm" title="Time Occupied">
+                          <Clock size={10} /> {elapsedString}
+                        </span>
+                      )}
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
+                        session?.status === 'billing' ? 'bg-purple-600 text-white shadow-sm' :
+                        table.status === 'occupied' ? 'bg-primary text-primary-foreground' :
+                        table.status === 'reserved' ? 'bg-amber-500 text-white' :
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                        {session?.status === 'billing' ? "BILLING" : table.status.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {!session && table.status === 'available' && (
+                    <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                        <UtensilsCrossed className="w-5 h-5 text-muted-foreground/50" />
+                      </div>
+                      <button
+                        onClick={() => setOpenTableState({ id: table.id, number: table.tableNumber })}
+                        className="w-full bg-primary/10 text-primary hover:bg-primary/20 py-2 rounded-xl text-sm font-bold border border-primary/20 transition-colors"
+                      >
+                        Open Table
+                      </button>
+                    </div>
+                  )}
+
+                  {session ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-sm">{session.customerName}</p>
+                          <p className="text-xs text-muted-foreground">{session.customerPhone}</p>
+                        </div>
+                        {billsMap[session.id] && (
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">Bill Total</p>
+                            <p className="text-base font-black text-primary">₹{billsMap[session.id].totalAmount.toFixed(0)}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {session.status === 'billing' ? (
+                        <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-3 text-center">
+                          <p className="text-sm font-bold text-purple-600 mb-2">Customer is Done</p>
+                          <p className="text-xs text-muted-foreground mb-3">Please collect payment to free this table.</p>
+                          {(user.role === 'admin' || user.role === 'manager') && (
+                            <div className="flex flex-col gap-2">
+                              <button
+                                onClick={() => setShowPaymentModal(session.id)}
+                                disabled={closingId === session.id}
+                                className="w-full bg-purple-600 text-white py-2 flex items-center justify-center gap-2 rounded-lg text-xs font-bold shadow-md hover:bg-purple-700 transition disabled:opacity-50"
+                              >
+                                {closingId === session.id ? <Loader2 className="animate-spin w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                                Clear Table
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex flex-col gap-3">
+                          <div className="text-xs flex items-center justify-center gap-1 text-emerald-600 font-semibold">
+                            <CheckCircle className="w-3 h-3" /> Verified & Active
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => setOrderTableState({ sessionId: session.id, number: table.tableNumber })}
+                              className="bg-secondary text-secondary-foreground hover:bg-secondary/90 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold transition shadow-sm"
+                            >
+                              <Plus size={14} /> Add Items
+                            </button>
+                            <button
+                              onClick={() => setSelectedTable(table)}
+                              className="bg-primary/10 text-primary hover:bg-primary/20 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold border border-primary/20 transition"
+                            >
+                              View Bill
+                            </button>
+                            <button
+                              onClick={() => setTransferTableState({ sessionId: session.id, number: table.tableNumber })}
+                              className="col-span-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold border border-amber-500/20 transition"
+                            >
+                              Transfer Table
+                            </button>
+                          </div>
+                          {(user.role === 'admin' || user.role === 'manager') && (
+                            <button
+                              onClick={() => setShowPaymentModal(session.id)}
+                              disabled={closingId === session.id}
+                              className="w-full bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 py-1.5 flex items-center justify-center gap-2 rounded-lg text-xs font-semibold border transition disabled:opacity-50"
+                            >
+                              Force Clear Table
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-4 text-muted-foreground">
+                      <QrCode className="w-10 h-10 mb-2 opacity-50" />
+                      <p className="text-sm font-medium mb-3">Ready for guests</p>
+                      
+                      <button
+                        onClick={() => setShowQrModal(table)}
+                        className="bg-muted hover:bg-muted/80 text-foreground px-4 py-2 w-full rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border border-border shadow-sm transition-all"
+                      >
+                        <Printer size={14} /> Get QR Code
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Table Detail Modal - shows orders + full bill */}
+      {selectedTable && (() => {
+        const detailSession = selectedTable.activeSession;
+        const detailBill = detailSession ? billsMap[detailSession.id] : null;
+        const sessionOrders = orders.filter(o => 
+          o.tableSessionId === detailSession?.id || 
+          (o as any).table_session_id === detailSession?.id
+        );
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setSelectedTable(null)}>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }} 
+              animate={{ opacity: 1, scale: 1 }} 
+              className="bg-card border border-border rounded-3xl w-full max-w-lg shadow-2xl relative max-h-[90vh] flex flex-col"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-border flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold">Table {selectedTable.tableNumber}</h3>
+                  {detailSession && <p className="text-sm text-muted-foreground">{detailSession.customerName} · {detailSession.customerPhone}</p>}
+                </div>
+                <button onClick={() => setSelectedTable(null)} className="text-muted-foreground hover:text-foreground p-2 rounded-full hover:bg-muted"><X size={20} /></button>
+              </div>
+
+              <div className="overflow-y-auto flex-1 p-6 space-y-4">
+                {detailBill ? (
+                  <>
+                    <h4 className="font-bold text-sm uppercase tracking-wide text-muted-foreground">All Items Ordered</h4>
+                    <div className="bg-muted/40 rounded-2xl p-4 space-y-2">
+                      {detailBill.itemized.map((item, i) => (
+                        <div key={i} className="flex justify-between items-center text-sm mb-2">
+                          <div>
+                            <span>{item.name} <span className="text-muted-foreground">×{item.quantity}</span></span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="font-semibold">₹{item.totalPrice.toFixed(2)}</span>
+                            {item.menuItemId && (
+                              <button
+                                onClick={() => handleReorder(item, detailSession.id, detailSession.customerName, detailSession.customerPhone)}
+                                disabled={repeatingIds.has(item.menuItemId)}
+                                className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-50 transition-colors p-1 rounded-md flex items-center gap-1 text-xs font-bold"
+                                title={`Order 1 more ${item.name}`}
+                              >
+                                {repeatingIds.has(item.menuItemId) ? (
+                                  <Loader2 size={12} className="animate-spin" />
+                                ) : (
+                                  <Plus size={12} />
+                                )}
+                                1
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      <div className="border-t border-border mt-2 pt-2 flex justify-between font-black text-base">
+                        <span>Grand Total</span>
+                        <span className="text-primary">₹{detailBill.totalAmount.toFixed(2)}</span>
+                      </div>
+                      {detailBill.totalPaid > 0 && (
+                        <div className="flex justify-between text-sm text-emerald-600">
+                          <span>Paid (Online)</span>
+                          <span>₹{detailBill.totalPaid.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm font-bold">
+                        <span>Amount Due</span>
+                        <span className={detailBill.totalDue > 0.01 ? 'text-destructive' : 'text-emerald-600'}>
+                          ₹{detailBill.totalDue.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <h4 className="font-bold text-sm uppercase tracking-wide text-muted-foreground">Order Rounds</h4>
+                    {detailBill.orders.map((o: any, i: number) => (
+                      <div key={o.id} className="bg-background rounded-xl border border-border p-3">
+                        <div className="flex justify-between items-center text-xs text-muted-foreground mb-2 pb-1 border-b border-border/30">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-foreground">Round {i + 1}</span>
+                            <span>· Token #{o.token}</span>
+                            <span className="capitalize font-semibold px-2 py-0.5 bg-muted rounded-full ml-1">{o.status}</span>
+                          </div>
+                          <button 
+                            onClick={() => downloadKOTPrint({
+                              token: o.token,
+                              tableNumber: String(selectedTable.tableNumber),
+                              orderType: "dine-in",
+                              items: o.items || []
+                            })}
+                            className="p-1.5 hover:bg-muted text-foreground rounded-md transition-colors flex items-center gap-1"
+                            title="Print KOT"
+                          >
+                            <Printer size={14} /> <span className="sr-only">Print KOT</span>
+                          </button>
+                        </div>
+                        <div className="space-y-0.5">
+                          {(o.items || []).map((item: any, j: number) => (
+                            <div key={j} className="flex flex-col text-sm py-1 border-b border-border/20 last:border-0">
+                              <div className="flex justify-between">
+                                <span className="flex items-center gap-1.5">
+                                  {item.status === 'ready' ? (
+                                    <span title="Ready"><CheckCircle className="w-3.5 h-3.5 text-emerald-500" /></span>
+                                  ) : (
+                                    <span title="Cooking"><Clock className="w-3.5 h-3.5 text-amber-500" /></span>
+                                  )}
+                                  <span className={item.status === 'ready' ? "text-emerald-700 dark:text-emerald-400" : ""}>{item.name}</span> <span className="text-muted-foreground ml-1">×{item.quantity}</span>
+                                </span>
+                                <span>₹{(item.price * item.quantity).toFixed(2)}</span>
+                              </div>
+                              {item.note && <span className="text-[10px] text-amber-600 font-semibold italic ml-5 mt-0.5">* Note: {item.note}</span>}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="border-t border-border mt-1 pt-1 flex justify-between text-sm font-bold">
+                          <span>Subtotal</span>
+                          <span>₹{parseFloat(o.total).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">No orders yet for this table.</div>
+                )}
+              </div>
+
+              {detailSession && (
+                <div className="p-4 border-t border-border space-y-2">
+                  {detailBill && (
+                    <button
+                      onClick={() => downloadBillPrint({
+                        ...detailBill,
+                        customerName: detailSession.customerName,
+                        customerPhone: detailSession.customerPhone,
+                      }, business)}
+                      className="w-full bg-muted hover:bg-muted/80 text-foreground border border-border py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition"
+                    >
+                      <Download size={15} /> Download Bill
+                    </button>
+                  )}
+                  {(user.role === 'admin' || user.role === 'manager') && (
+                    <button
+                      onClick={() => setShowPaymentModal(detailSession.id)}
+                      disabled={closingId === detailSession.id}
+                      className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {closingId === detailSession.id ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle size={16} />}
+                      Mark Paid & Clear Table
+                    </button>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </div>
+        );
+      })()}
+
+      {/* Add Table Modal */}
+      {showAddTableModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card border border-border rounded-3xl p-6 w-full max-w-sm shadow-2xl relative">
+            <button onClick={() => setShowAddTableModal(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+              <X size={20} />
+            </button>
+            <h3 className="text-xl font-bold mb-4">Add New Table</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold mb-1.5 block">Table Number / Label</label>
+                <input
+                  value={newTableNumber}
+                  onChange={(e) => setNewTableNumber(e.target.value)}
+                  placeholder="e.g. 5, Balcony 1"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
+                  autoFocus
+                />
+              </div>
+              <button
+                onClick={handleAddTable}
+                disabled={addingTable || !newTableNumber.trim()}
+                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {addingTable ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                Create Table
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* QR Code Printable Modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-md p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl relative text-center border-4 border-primary">
+            <button onClick={() => setShowQrModal(null)} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-700 bg-zinc-100 p-2 rounded-full transition-colors">
+              <X size={20} />
+            </button>
+            <h3 className="text-3xl font-black text-zinc-900 mb-1 leading-tight">Table {showQrModal.tableNumber}</h3>
+            <p className="text-zinc-500 font-bold mb-6 tracking-wide uppercase text-sm">Scan to Order</p>
+            
+            <div className="bg-zinc-100 p-4 rounded-3xl inline-block mb-6 shadow-inner">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=000000&data=${encodeURIComponent(window.location.origin + '/table/' + showQrModal.qrCode)}`}
+                alt="Table QR Code"
+                className="w-56 h-56 rounded-xl mix-blend-multiply"
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                  printWindow.document.write(`
+                    <html>
+                      <head><title>Print QR - Table ${showQrModal.tableNumber}</title></head>
+                      <body style="text-align: center; font-family: system-ui, sans-serif; padding-top: 50px;">
+                        <h1 style="font-size: 48px; margin-bottom: 5px;">Table ${showQrModal.tableNumber}</h1>
+                        <p style="font-size: 24px; color: #666; margin-top: 0; font-weight: bold;">Scan to view menu & order!</p>
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(window.location.origin + '/table/' + showQrModal.qrCode)}" style="width: 400px; height: 400px; margin-top: 30px;" />
+                        <script>
+                          window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); }
+                        </script>
+                      </body>
+                    </html>
+                  `);
+                  printWindow.document.close();
+                }
+              }}
+              className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold hover:bg-primary/90 shadow-lg shadow-primary/30 transition-all flex items-center justify-center gap-2 text-lg"
+            >
+              <Printer size={20} /> Print QR Code
+            </button>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Payment Confirmation Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-md p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-sm rounded-[2rem] p-6 shadow-2xl relative">
+            <button onClick={() => { setShowPaymentModal(null); setSplitMode(false); }} disabled={!!closingId} className="absolute top-5 right-5 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors disabled:opacity-50">
+              <X size={20} />
+            </button>
+            <h3 className="text-2xl font-black mb-1">Clear Table</h3>
+            <p className="text-sm font-semibold text-muted-foreground mb-6">How did the customer pay?</p>
+            
+            {billsMap[showPaymentModal] && (
+              <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl mb-6 text-center">
+                <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">Total Bill</p>
+                <p className="text-4xl font-black text-primary">₹{(billsMap[showPaymentModal].totalAmount).toFixed(0)}</p>
+              </div>
+            )}
+
+            {!splitMode ? (
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {[
+                  { id: 'cash', label: 'Cash', icon: '💵' },
+                  { id: 'upi', label: 'UPI', icon: '📱' },
+                  { id: 'card', label: 'Card', icon: '💳' },
+                ].map(method => (
+                  <button
+                    key={method.id}
+                    disabled={!!closingId}
+                    onClick={() => handleCloseSession(showPaymentModal, method.id)}
+                    className="bg-card hover:bg-primary/10 border-2 border-border hover:border-primary text-foreground p-4 rounded-2xl font-bold text-sm flex flex-col items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    <span className="text-2xl">{method.icon}</span>
+                    {method.label}
+                  </button>
+                ))}
+                <button
+                  disabled={!!closingId}
+                  onClick={() => {
+                    setSplitMode(true);
+                    setSplitCash("");
+                    setSplitUpi("");
+                  }}
+                  className="bg-card hover:bg-primary/10 border-2 border-border hover:border-primary text-foreground p-4 rounded-2xl font-bold text-sm flex flex-col items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  <span className="text-2xl">⚖️</span>
+                  Split
+                </button>
+              </div>
+            ) : (
+              <div className="mb-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">💵</span>
+                  <div className="flex-1">
+                    <label className="text-xs font-bold text-muted-foreground ml-1">Cash Received</label>
+                    <input 
+                      type="number"
+                      autoFocus
+                      placeholder="₹0"
+                      className="w-full bg-muted border-none rounded-xl p-3 font-bold text-lg focus:ring-2 focus:ring-primary outline-none"
+                      value={splitCash}
+                      onChange={(e) => {
+                        setSplitCash(e.target.value);
+                        const val = parseFloat(e.target.value) || 0;
+                        const total = billsMap[showPaymentModal]?.totalAmount || 0;
+                        setSplitUpi(Math.max(0, total - val).toString());
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📱</span>
+                  <div className="flex-1">
+                    <label className="text-xs font-bold text-muted-foreground ml-1">UPI Received</label>
+                    <input 
+                      type="number"
+                      placeholder="₹0"
+                      className="w-full bg-muted border-none rounded-xl p-3 font-bold text-lg focus:ring-2 focus:ring-primary outline-none"
+                      value={splitUpi}
+                      onChange={(e) => {
+                        setSplitUpi(e.target.value);
+                        const val = parseFloat(e.target.value) || 0;
+                        const total = billsMap[showPaymentModal]?.totalAmount || 0;
+                        setSplitCash(Math.max(0, total - val).toString());
+                      }}
+                    />
+                  </div>
+                </div>
+                <button
+                  disabled={!!closingId}
+                  onClick={() => handleCloseSession(showPaymentModal, 'split')}
+                  className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold mt-2 hover:bg-primary/90 disabled:opacity-50 transition-all"
+                >
+                  Confirm Split
+                </button>
+              </div>
+            )}
+            
+            <p className="text-[10px] text-muted-foreground text-center px-4 leading-tight">
+              Selecting a payment method will irreversibly close this session and commit it to today's sales report.
+            </p>
+          </motion.div>
+        </div>
+      )}
+      {/* Add Modals Here */}
+      {openTableState && (
+        <TableOpenModal
+          isOpen={!!openTableState}
+          onClose={() => setOpenTableState(null)}
+          onSuccess={handleModalSuccess}
+          tableId={openTableState.id}
+          tableNumber={openTableState.number}
+        />
+      )}
+
+      {orderTableState && (
+        <TableOrderModal
+          isOpen={!!orderTableState}
+          onClose={() => setOrderTableState(null)}
+          onSuccess={handleModalSuccess}
+          tableSessionId={orderTableState.sessionId}
+          tableNumber={orderTableState.number}
+        />
+      )}
+
+      {transferTableState && (
+        <TableTransferModal
+          isOpen={!!transferTableState}
+          onClose={() => setTransferTableState(null)}
+          sessionId={transferTableState.sessionId}
+          currentTableNumber={transferTableState.number}
+          availableTables={tables.filter(t => t.status === "available")}
+          onSuccess={handleModalSuccess}
+        />
+      )}
+    </div>
+  );
+}

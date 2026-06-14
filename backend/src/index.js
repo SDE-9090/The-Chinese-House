@@ -1,0 +1,94 @@
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const http = require("http");
+const cookieParser = require("cookie-parser");
+const { Server } = require("socket.io");
+
+const orderRoutes = require("./routes/orders");
+const dashboardRoutes = require("./routes/dashboard");
+const reviewRoutes = require("./routes/reviews");
+const couponRoutes = require("./routes/coupons");
+const adminRoutes = require("./routes/admin");
+const adminBusinessSettingsRoutes = require("./routes/adminBusinessSettings");
+const businessSettingsRoutes = require("./routes/businessSettings");
+const menuRoutes = require("./routes/menu");
+const categoryRoutes = require("./routes/categories");
+const heroRoutes = require("./routes/hero");
+const galleryRoutes = require("./routes/gallery");
+const locationRoutes = require("./routes/location");
+const promotionRoutes = require("./routes/promotions");
+const kitchenRoutes = require("./routes/kitchen");
+const tablesRoutes = require("./routes/tables");
+const staffRoutes = require("./routes/staff");
+const { tenantEnforcer } = require("./middleware/tenantEnforcer");
+
+const app = express();
+const PORT = process.env.PORT || 4000;
+
+// 🔥 VERY IMPORTANT FOR RENDER / PROXY
+app.set("trust proxy", 1);
+
+// ---- CORS ----
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "http://localhost:8080",
+  methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "x-dashboard-password", "Authorization"],
+  credentials: true
+}));
+
+app.use(cookieParser());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
+// ---- Single-Tenant Enforcer ----
+app.use(tenantEnforcer);
+
+// ---- Create HTTP Server ----
+const server = http.createServer(app);
+
+// ---- Attach Socket.IO ----
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || "http://localhost:8080",
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"]
+  }
+});
+
+// Make io accessible inside routes
+app.set("io", io);
+
+// Socket connection logging
+io.on("connection", (socket) => {
+  console.log("🔌 Socket connected:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("❌ Socket disconnected:", socket.id);
+  });
+});
+
+// Health check
+app.get("/api/health", (_, res) => res.json({ status: "ok" }));
+
+// Routes
+app.use("/api/orders", orderRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/coupons", couponRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/admin/business-settings", adminBusinessSettingsRoutes);
+app.use("/api/business-settings", businessSettingsRoutes);
+app.use("/api/menu", menuRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/hero", heroRoutes);
+app.use("/api/gallery", galleryRoutes);
+app.use("/api/location", locationRoutes);
+app.use("/api/promotions", promotionRoutes);
+app.use("/api/kitchen", kitchenRoutes);
+app.use("/api/tables", tablesRoutes);
+app.use("/api/staff", staffRoutes);
+
+// ---- Start Server ----
+server.listen(PORT, () => {
+  console.log(`🍜 The Chinese House backend running on port ${PORT}`);
+});

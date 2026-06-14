@@ -1,0 +1,76 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import PageTransition from "@/components/PageTransition";
+import { lazy, Suspense, useEffect } from "react";
+import { Loader2 } from "lucide-react";
+import ThemeInjector from "@/components/ThemeInjector";
+
+const Index = lazy(() => import("./pages/Index"));
+const OrderPage = lazy(() => import("./pages/OrderPage"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const TokenDisplay = lazy(() => import("./pages/TokenDisplay"));
+const ItemReviewsPage = lazy(() => import("./pages/ItemReviewsPage"));
+const GiftVoucher = lazy(() => import("./pages/GiftVoucher"));
+const KitchenDisplay = lazy(() => import("./pages/KitchenDisplay"));
+const TableOrderPage = lazy(() => import("./pages/TableOrderPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <Loader2 size={32} className="animate-spin text-primary" />
+  </div>
+);
+
+const queryClient = new QueryClient();
+
+function ThemeInit() {
+  useEffect(() => {
+    if (localStorage.getItem("theme") === "dark") {
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+  return null;
+}
+
+function AnimatedRoutes() {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Suspense fallback={<PageLoader />}>
+        <Routes location={location} key={location.pathname}>
+          {/* Direct Chinese House Routes */}
+          <Route path="/" element={<PageTransition><Index /></PageTransition>} />
+          <Route path="/order" element={<PageTransition><OrderPage /></PageTransition>} />
+          <Route path="/reviews" element={<PageTransition><ItemReviewsPage /></PageTransition>} />
+          <Route path="/token-display" element={<PageTransition><TokenDisplay /></PageTransition>} />
+          <Route path="/gift-voucher" element={<PageTransition><GiftVoucher /></PageTransition>} />
+          <Route path="/table/:qrCode" element={<PageTransition><TableOrderPage /></PageTransition>} />
+          <Route path="/kitchen" element={<PageTransition><KitchenDisplay /></PageTransition>} />
+          <Route path="/dashboard" element={<PageTransition><Dashboard /></PageTransition>} />
+          
+          <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+        </Routes>
+      </Suspense>
+    </AnimatePresence>
+  );
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <ThemeInit />
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <ThemeInjector />
+        <AnimatedRoutes />
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;
