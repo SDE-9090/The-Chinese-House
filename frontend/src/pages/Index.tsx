@@ -12,7 +12,6 @@ import Location from "@/components/Location";
 import ReceiptLookup from "@/components/ReceiptLookup";
 import Footer from "@/components/Footer";
 import MobileOrderButton from "@/components/MobileOrderButton";
-import WhatsAppButton from "@/components/WhatsAppButton";
 import NotFound from "./NotFound";
 import { apiGetBusinessSettings, type BusinessSettings } from "@/lib/apiClient";
 import { Ban } from "lucide-react";
@@ -63,7 +62,6 @@ const Index = () => {
       <ReceiptLookup />
       <Footer />
       {(!businessSettings || businessSettings.features?.qr_digital_ordering) && <MobileOrderButton />}
-      <WhatsAppButton />
     </main>
   );
 };

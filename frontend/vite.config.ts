@@ -25,6 +25,7 @@ export default defineConfig(({ mode }) => ({
         description: 'The Chinese House Restaurant Management System',
         theme_color: '#0f0f0f',
         background_color: '#0f0f0f',
+        start_url: '/dashboard',
         display: 'standalone',
         orientation: 'landscape',
         icons: [
