@@ -33,6 +33,16 @@ interface TableManagerProps {
 export default function TableManager({ orders, user, onRefresh, onAdvanceStatus, onCancelOrder, isUpdating, editingOrderIds }: TableManagerProps) {
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
 
   const [showAddTableModal, setShowAddTableModal] = useState(false);

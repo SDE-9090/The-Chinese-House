@@ -36,6 +36,7 @@ import {
   ClipboardList,
   ImageIcon,
   Megaphone,
+  QrCode,
 } from "lucide-react";
 
 import { Loader2 } from "lucide-react";
