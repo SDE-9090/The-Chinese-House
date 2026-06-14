@@ -1,6 +1,6 @@
-# Henny's Gourmet Waffles - Backend API
+# The Chinese House - Backend API
 
-Express.js + PostgreSQL backend for the ordering system.
+Express.js + PostgreSQL backend for the restaurant management system.
 
 ## Quick Start
 
@@ -8,43 +8,43 @@ Express.js + PostgreSQL backend for the ordering system.
 cd backend
 npm install
 
-# 1. Create a PostgreSQL database
-createdb hennys_db
+# 1. Ensure you have a PostgreSQL database running
+# Either locally or via a service like Neon DB
 
-# 2. Copy and edit environment variables
+# 2. Configure Environment Variables
+# Copy the template to your local environment file
 cp .env.example .env
-# Edit .env with your database URL and dashboard password
+# Edit .env with your DATABASE_URL, CLOUDINARY credentials, and JWT_SECRET
 
-# 3. Initialize the database
+# 3. Initialize the database schema
 npm run db:init
 
-# 4. Start the server
+# 4. Seed the initial admin user
+npm run db:seed-admin
+
+# 5. Start the server in development mode
 npm run dev
 ```
 
-## API Endpoints
+## Architecture Notes
 
-### Public
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | Health check |
-| POST | `/api/orders` | Place a new order |
-| GET | `/api/orders/tokens` | Get today's token statuses |
+- **Multi-Role Authentication:** Uses JWTs to authenticate endpoints for Admins, Kitchen Staff, and Counter Staff.
+- **Tenant Enforcement:** Features a robust single-tenant middleware (`tenantEnforcer.js`) that automatically binds queries to the primary restaurant entity, making database operations safe and streamlined.
+- **Image Handling:** Integrates `multer` and `cloudinary` for seamless menu item image uploads and gallery management.
 
-### Dashboard (requires `x-dashboard-password` header)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/dashboard/orders` | Today's orders |
-| GET | `/api/dashboard/orders/all` | All orders (last 500) |
-| PATCH | `/api/dashboard/orders/:id/status` | Update order status |
-| PATCH | `/api/dashboard/orders/:id/payment` | Update payment status |
-| GET | `/api/dashboard/stats` | Dashboard statistics |
+## Deployment
 
-## Frontend Integration
+For production, ensure the following environment variables are strictly defined in your hosting provider (e.g., Render or Heroku):
 
-Set `VITE_API_URL` in your frontend `.env`:
+- `NODE_ENV=production`
+- `DATABASE_URL`
+- `CORS_ORIGIN` (Your frontend URL)
+- `JWT_SECRET`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+
+Start the production server via:
+```bash
+npm start
 ```
-VITE_API_URL=http://localhost:4000/api
-```
-
-The frontend automatically uses the API when `VITE_API_URL` is set, otherwise falls back to localStorage.

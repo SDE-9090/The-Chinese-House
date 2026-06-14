@@ -1,182 +1,118 @@
-🧇 Henny’s Gourmet - Waffle Ordering & Management System
+🍜 The Chinese House - Restaurant Management & Ordering System
 ========================================================
 
-A complete **Waffle Shop Ordering System** built for **Henny’s Gourmet**, designed to simplify order handling, improve customer experience, and give the owner full control through a modern admin dashboard.
+A complete **Restaurant Ordering & Management System** built for **The Chinese House**, designed to simplify table management, streamline kitchen operations, and give the owner full control through a modern, responsive admin dashboard.
 
-This system allows customers to place orders, receive token numbers, track their order status, and also enables the admin to manage orders, update statuses, edit orders, track payments, and generate detailed sales reports.
+This system empowers customers to place orders directly from their tables via QR codes, provides counter staff with a seamless POS interface, and offers real-time order tracking through a Kitchen Display System (KDS) and a customer-facing Token Display.
 
 ✨ Project Highlights
 --------------------
 
-*   Modern UI with smooth animations
-    
-*   Token-based order management system
-    
-*   Admin dashboard for complete shop control
-    
-*   Sales reporting system (daily, weekly, monthly, yearly)
-    
-*   Order editing system with due payment handling
-    
-*   Customer reviews feature
-    
-*   Works smoothly for both counter orders and online orders
-    
+*   **PWA Ready:** Installable directly to Android tablets as a standalone native app
+*   **Table & QR Ordering:** Customers can scan QR codes to start a session and order directly to their table
+*   **Kitchen Display System (KDS):** Real-time tablet view for chefs to manage incoming tickets
+*   **Dynamic CMS:** Admin can update the landing page hero, gallery, menu items, and promotions on the fly
+*   **Multi-Role Authentication:** Secure login for Admins, Counter Staff, and Kitchen Staff
+*   **Gift Vouchers & Coupons:** Built-in discount engine and digital gift voucher validation
+*   **Comprehensive Analytics:** Real-time dashboard with customizable date-range sales reporting
 
 🎯 Purpose of the Project
 -------------------------
 
-This project was created to help **Henny’s Gourmet** manage orders efficiently in a real shop environment where:
+This project was developed to digitize and optimize **The Chinese House** restaurant operations where:
 
-*   Many customers place orders continuously
-    
-*   Token-based display is required for shop screens
-    
-*   Orders may need editing before preparation begins
-    
-*   Sales tracking is important for business growth
-    
+*   Wait times need to be reduced via direct-to-kitchen digital ordering
+*   Counter staff need a rapid POS system for walk-in customers
+*   The kitchen requires an organized, paperless ticket display
+*   Management needs strict control over menu pricing, availability, and daily revenue tracking
 
 👨‍🍳 Customer Features
 -----------------------
 
-Customers can:
+* ✅ Browse categorized menu items with beautiful imagery
+* ✅ Order directly from the table (QR Code) or at the counter
+* ✅ Receive an instant **token number** for counter pickups
+* ✅ Track order status on the Token Display screen
+* ✅ Apply promotional discount coupons
+* ✅ View total table bills directly on their mobile device
+* ✅ Submit star ratings and text reviews for specific dishes
 
-* ✅ Browse waffle menu items
-* ✅ Add items to cart
-* ✅ Place orders easily
-* ✅ Receive a **token number** instantly
-* ✅ Track order status through the token display screen
-* ✅ Place orders using:
-* ✅ Counter payment 
-* ✅ Online payment
-* ✅ Submit reviews and ratings for menu items
-    
-
-📺 Token Display Screen
+📺 Kitchen & Display Screens
 -----------------------
 
-A dedicated token display page that can be shown on a TV/screen in the shop.
+**Kitchen Display System (KDS)**
+* ✅ Auto-refreshing grid of incoming orders
+* ✅ One-tap status updates (New -> Preparing -> Ready)
+* ✅ Clearly labeled table numbers vs counter orders
 
-It provides:
-
-* ✅ Live token list for today’s orders
-* ✅ Status updates in real-time
-* ✅ Easy customer tracking using token number
-
-Order statuses shown:
-
-*   New
-    
-*   Preparing
-    
-*   Ready
-    
-*   Completed
-    
+**Token Display Screen**
+* ✅ Live token list for today’s counter orders
+* ✅ Visual and audio alerts when an order is "Ready"
 
 🔐 Admin Dashboard Features
 ---------------------------
 
-The admin/owner can:
+The admin/owner can completely manage the restaurant:
 
-* ✅ Login securely using a password
-* ✅ View today’s orders
-* ✅ View past order history
-* ✅ See customer details (name & phone number)
-* ✅ Update order statuses smoothly
-* ✅ Manage payment status
-* ✅ Get sound alerts for new orders
-* ✅ Access sales performance reports
+* ✅ **Menu Manager:** Add, edit, and toggle out-of-stock items; upload images via Cloudinary
+* ✅ **Landing Page CMS:** Update the hero text, testimonials, gallery images, and promotions
+* ✅ **Staff Management:** Create accounts for cashiers and chefs
+* ✅ **Table Management:** Generate QR codes, view active table sessions, and print bills
+* ✅ **Review Moderation:** View customer feedback and delete inappropriate reviews
+* ✅ **Coupons:** Generate promotional codes with flat or percentage discounts
 
-✏️ Order Editing System (Admin Only)
-------------------------------------
-
-The admin can edit orders only when the order is still in **New stage**.
-
-Admin can:
-
-* ✅ Increase quantity of items
-* ✅ Decrease quantity of items
-* ✅ Remove items
-* ✅ Add new items from menu
-
-This is useful when customers request modifications immediately after placing an order.
-
-💰 Due Payment Feature (After Order Edit)
------------------------------------------
-
-If an order total increases after editing, the system automatically calculates the difference amount.
-
-The admin can then mark the due payment as paid.
-
-📌 No refund flow is included (only due payments are handled).
-
-📊 Sales Report System
+📊 Sales & Analytics Reporting
 ----------------------
 
-The admin dashboard provides detailed sales reports including:
+The admin dashboard provides detailed, filterable sales reports including:
 
-* ✅ Daily Report
-* ✅ Weekly Report
-* ✅ Monthly Report
-* ✅ Yearly Report
-* ✅ Full Day-wise Sales Summary
+* ✅ Today's live revenue tracking
+* ✅ Custom Date Range Filtering (Daily, Weekly, Monthly)
+* ✅ Total orders, total revenue, paid vs due
+* ✅ Insights into dine-in vs takeaway vs delivery performance
 
-Reports include:
-
-*   Total orders
-    
-*   Total revenue
-    
-*   Paid revenue
-    
-*   Pending revenue
-    
-*   Average order value
-    
-
-⭐ Reviews System
-----------------
-
-Customers can leave:
-
-* ✅ Star ratings
-* ✅ Written feedback
-
-This helps build trust and improve menu quality over time.
-
-🛠️ Technology Used
+🛠️ Technology Stack
 -------------------
 
 ### Frontend
-
-*   React + TypeScript
-    
-*   Tailwind CSS
-    
-*   Framer Motion
-    
-*   Lucide Icons
-    
+*   **Framework:** React 18 + Vite + TypeScript
+*   **Styling:** Tailwind CSS + Framer Motion (for fluid animations)
+*   **Icons:** Lucide React
+*   **PWA:** `vite-plugin-pwa` for native tablet installation
 
 ### Backend
+*   **Framework:** Node.js + Express.js
+*   **Database:** PostgreSQL (Neon DB)
+*   **Storage:** Cloudinary (for menu and gallery images)
+*   **Authentication:** JWT (JSON Web Tokens) + bcrypt
 
-*   Node.js
-    
-*   Express.js
-    
-*   PostgreSQL
+🚀 Deployment Guide
+-------------------
+
+**1. Environment Variables**
+Configure the provided `.env.example` templates in both `frontend/` and `backend/` directories.
+
+**2. Backend (Render / Heroku / VPS)**
+- Set the root directory to `backend/`
+- Build Command: `npm install`
+- Start Command: `npm start`
+- Ensure Postgres `DATABASE_URL` is provided.
+
+**3. Frontend (Vercel / Netlify)**
+- Set the root directory to `frontend/`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Set `VITE_API_URL` to point to the live backend server.
 
 👨‍💻 Developed By
 ------------------
 
-**Harshvardhan** Software Developer 🚀
+**Harshvardhan**
+Software Developer 🚀
 
-Built for **Henny’s Gourmet Waffle Shop** 
+Built specifically for **The Chinese House**.
 
 🎉 Conclusion
 -------------
 
-This system is a complete solution for a waffle shop, built with real-world workflow in mind.It improves order processing speed, makes customer handling smooth, and provides powerful reporting tools for business tracking.
-
+This system completely modernizes the traditional restaurant workflow. From the moment a customer scans a QR code to the moment the chef marks the ticket as ready, every step is tracked, optimized, and beautifully presented.
