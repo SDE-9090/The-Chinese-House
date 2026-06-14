@@ -39,7 +39,6 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [newTableNumber, setNewTableNumber] = useState("");
   const [addingTable, setAddingTable] = useState(false);
   
-  const [showQrModal, setShowQrModal] = useState<Table | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState<string | null>(null);
   const [splitMode, setSplitMode] = useState(false);
   const [splitCash, setSplitCash] = useState<string>("");
@@ -128,35 +127,9 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
 
 
 
-  const handleAddTable = async () => {
-    if (!newTableNumber.trim()) return;
-    setAddingTable(true);
-    try {
-      await apiAdminCreateTable(newTableNumber.trim());
-      await fetchTables();
-      setShowAddTableModal(false);
-      setNewTableNumber("");
-      toast({ title: "Table successfully created" });
-    } catch (err: any) {
-      toast({ title: "Failed to create table", description: err.message, variant: "destructive" });
-    } finally {
-      setAddingTable(false);
-    }
-  };
 
-  const handleDeleteTable = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this table?")) return;
-    setDeletingTableId(id);
-    try {
-      await apiDeleteTable(id);
-      toast({ title: "Table deleted successfully", className: "bg-emerald-500 text-white border-none" });
-      await fetchTables();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to delete table", variant: "destructive" });
-    } finally {
-      setDeletingTableId(null);
-    }
-  };
+
+
 
   const handleCloseSession = async (sessionId: string, method: string) => {
     setClosingId(sessionId);
@@ -190,14 +163,9 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           <h2 className="text-xl font-bold flex items-center gap-2">
             <UtensilsCrossed className="text-primary" /> Live Table Status
           </h2>
-          {(user.role === 'admin' || user.role === 'manager') && (
-            <button 
-              onClick={() => setShowAddTableModal(true)}
-              className="bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-primary/90 transition-all shadow-md"
-            >
-              <Plus size={16} /> Add Table
-            </button>
-          )}
+          <button onClick={handleManualRefresh} disabled={isRefreshing} className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors">
+            <Loader2 className={`w-5 h-5 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
+          </button>
         </div>
         {loading ? (
           <div className="flex items-center justify-center p-12">
@@ -243,18 +211,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                   </div>
                 )}
                   <div className="flex justify-between items-start mb-4">
-                    <h3 className="font-bold text-lg">Table {table.tableNumber}</h3>
+                    <h3 className="font-bold text-lg leading-none">Table {table.tableNumber}</h3>
                     <div className="flex items-center gap-2">
-                      {table.status === 'available' && user.role === 'admin' && (
-                        <button
-                          onClick={() => handleDeleteTable(table.id)}
-                          disabled={deletingTableId === table.id}
-                          className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition disabled:opacity-50"
-                          title="Delete Table"
-                        >
-                          {deletingTableId === table.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                        </button>
-                      )}
                       {elapsedString && (
                         <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-background border border-border text-muted-foreground flex items-center gap-1 shadow-sm" title="Time Occupied">
                           <Clock size={10} /> {elapsedString}
@@ -358,13 +316,6 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                     <div className="flex flex-col items-center justify-center py-4 text-muted-foreground">
                       <QrCode className="w-10 h-10 mb-2 opacity-50" />
                       <p className="text-sm font-medium mb-3">Ready for guests</p>
-                      
-                      <button
-                        onClick={() => setShowQrModal(table)}
-                        className="bg-muted hover:bg-muted/80 text-foreground px-4 py-2 w-full rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border border-border shadow-sm transition-all"
-                      >
-                        <Printer size={14} /> Get QR Code
-                      </button>
                     </div>
                   )}
                 </motion.div>
@@ -529,83 +480,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
         );
       })()}
 
-      {/* Add Table Modal */}
-      {showAddTableModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card border border-border rounded-3xl p-6 w-full max-w-sm shadow-2xl relative">
-            <button onClick={() => setShowAddTableModal(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
-              <X size={20} />
-            </button>
-            <h3 className="text-xl font-bold mb-4">Add New Table</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-semibold mb-1.5 block">Table Number / Label</label>
-                <input
-                  value={newTableNumber}
-                  onChange={(e) => setNewTableNumber(e.target.value)}
-                  placeholder="e.g. 5, Balcony 1"
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
-                  autoFocus
-                />
-              </div>
-              <button
-                onClick={handleAddTable}
-                disabled={addingTable || !newTableNumber.trim()}
-                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {addingTable ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                Create Table
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
 
-      {/* QR Code Printable Modal */}
-      {showQrModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-md p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl relative text-center border-4 border-primary">
-            <button onClick={() => setShowQrModal(null)} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-700 bg-zinc-100 p-2 rounded-full transition-colors">
-              <X size={20} />
-            </button>
-            <h3 className="text-3xl font-black text-zinc-900 mb-1 leading-tight">Table {showQrModal.tableNumber}</h3>
-            <p className="text-zinc-500 font-bold mb-6 tracking-wide uppercase text-sm">Scan to Order</p>
-            
-            <div className="bg-zinc-100 p-4 rounded-3xl inline-block mb-6 shadow-inner">
-              <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=000000&data=${encodeURIComponent(window.location.origin + '/table/' + showQrModal.qrCode)}`}
-                alt="Table QR Code"
-                className="w-56 h-56 rounded-xl mix-blend-multiply"
-              />
-            </div>
-
-            <button
-              onClick={() => {
-                const printWindow = window.open('', '_blank');
-                if (printWindow) {
-                  printWindow.document.write(`
-                    <html>
-                      <head><title>Print QR - Table ${showQrModal.tableNumber}</title></head>
-                      <body style="text-align: center; font-family: system-ui, sans-serif; padding-top: 50px;">
-                        <h1 style="font-size: 48px; margin-bottom: 5px;">Table ${showQrModal.tableNumber}</h1>
-                        <p style="font-size: 24px; color: #666; margin-top: 0; font-weight: bold;">Scan to view menu & order!</p>
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(window.location.origin + '/table/' + showQrModal.qrCode)}" style="width: 400px; height: 400px; margin-top: 30px;" />
-                        <script>
-                          window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); }
-                        </script>
-                      </body>
-                    </html>
-                  `);
-                  printWindow.document.close();
-                }
-              }}
-              className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold hover:bg-primary/90 shadow-lg shadow-primary/30 transition-all flex items-center justify-center gap-2 text-lg"
-            >
-              <Printer size={20} /> Print QR Code
-            </button>
-          </motion.div>
-        </div>
-      )}
 
       {/* Payment Confirmation Modal */}
       {showPaymentModal && (

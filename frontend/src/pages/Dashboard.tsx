@@ -51,6 +51,7 @@ const SalesReportUI = lazy(() => import("@/components/dashboard/SalesReportUI"))
 const CouponManagement = lazy(() => import("@/components/dashboard/CouponManagement"));
 const OrderHistory = lazy(() => import("@/components/dashboard/OrderHistory"));
 const ReviewManagement = lazy(() => import("@/components/dashboard/ReviewManagement"));
+const TableQRCodes = lazy(() => import("@/components/dashboard/TableQRCodes"));
 const SecurityLogs = lazy(() => import("@/components/dashboard/SecurityLogs"));
 const MenuManager = lazy(() => import("@/components/dashboard/MenuManager"));
 const MenuAnalytics = lazy(() => import("@/components/dashboard/MenuAnalytics"));
@@ -529,7 +530,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
     "orders" | "tables" | "sales" | "analytics" | "content" | "management" | "system" | "staff"
   >("orders");
   const [contentSubTab, setContentSubTab] = useState<"menu" | "hero" | "gallery" | "page" | "address" | "promotions">("menu");
-  const [managementSubTab, setManagementSubTab] = useState<"coupons" | "reviews">("coupons");
+  const [managementSubTab, setManagementSubTab] = useState<"coupons" | "reviews" | "qr-codes">("coupons");
   const [analyticsSubTab, setAnalyticsSubTab] = useState<"menu" | "table">("menu");
   const [settingsSubTab, setSettingsSubTab] = useState<"security" | "account" | "business">("security");
   const [orderSubTab, setOrderSubTab] = useState<"active" | "history" | "counter-order">("active");
@@ -908,6 +909,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               {[
                 { key: "coupons" as const, label: "Coupons", icon: Ticket, check: () => user.features?.coupon_engine },
                 { key: "reviews" as const, label: "Reviews", icon: MessageSquare, check: () => user.features?.customer_reviews },
+                { key: "qr-codes" as const, label: "QR Codes", icon: QrCode, check: () => user.features?.qr_digital_ordering !== false },
               ].filter(st => !st.check || st.check()).map((st) => (
                 <button
                   key={st.key}
@@ -924,8 +926,10 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
 
             {managementSubTab === "coupons" ? (
               <CouponManagement />
-            ) : (
+            ) : managementSubTab === "reviews" ? (
               <ReviewManagement />
+            ) : (
+              <TableQRCodes />
             )}
           </div>
         ) : tab === "system" ? (
