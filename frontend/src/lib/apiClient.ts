@@ -518,7 +518,7 @@ export async function apiPlaceOrder(
 ): Promise<Order> {
   if (!isApiMode()) {
     return localPlaceOrder(
-      customerName, customerPhone, items, paymentMethod, 
+      customerName, customerPhone, items, paymentMethod === "split" ? "counter" : paymentMethod, 
       couponCode, orderType, specialInstructions, orderSource, tableSessionId
     );
   }
