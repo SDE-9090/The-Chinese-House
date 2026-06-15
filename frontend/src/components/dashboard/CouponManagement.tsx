@@ -340,11 +340,10 @@ const CouponManagement = () => {
                         key={t}
                         type="button"
                         onClick={() => setDiscountType(t)}
-                        className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
-                          discountType === t
+                        className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all ${discountType === t
                             ? "border-primary bg-primary/5 text-primary"
                             : "border-border text-muted-foreground hover:bg-muted"
-                        }`}
+                          }`}
                       >
                         {t === "flat" ? (
                           <DollarSign size={14} />
@@ -410,11 +409,10 @@ const CouponManagement = () => {
                   <button
                     type="button"
                     onClick={() => setActive(!active)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
-                      active
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${active
                         ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
                         : "border-border bg-muted text-muted-foreground"
-                    }`}
+                      }`}
                   >
                     {active ? (
                       <ToggleRight size={18} />
@@ -459,11 +457,10 @@ const CouponManagement = () => {
             <button
               key={type}
               onClick={() => setCreatorFilter(type)}
-              className={`px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
-                creatorFilter === type
+              className={`px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${creatorFilter === type
                   ? "border-primary bg-primary/5 text-primary"
                   : "border-border text-muted-foreground hover:bg-muted"
-              }`}
+                }`}
             >
               {type === "all" ? "All" : type === "admin" ? "Admin" : "Customer"}
             </button>
@@ -622,11 +619,10 @@ const CouponManagement = () => {
                         </td>
                         <td className="px-4 py-3">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[14px] font-semibold ${
-                              coupon.discount_type === "percent"
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[14px] font-semibold ${coupon.discount_type === "percent"
                                 ? "bg-accent/10 text-accent"
                                 : "bg-secondary/10 text-secondary-foreground"
-                            }`}
+                              }`}
                           >
                             {coupon.discount_type === "percent" ? (
                               <Percent size={10} />
@@ -644,13 +640,13 @@ const CouponManagement = () => {
                         <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">
                           {coupon.expiry_date
                             ? new Date(coupon.expiry_date).toLocaleDateString(
-                                "en-IN",
-                                {
-                                  day: "2-digit",
-                                  month: "short",
-                                  year: "numeric",
-                                },
-                              )
+                              "en-IN",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )
                             : "-"}
                         </td>
                         <td className="px-4 py-3">

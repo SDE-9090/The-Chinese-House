@@ -711,8 +711,8 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                   key={t.key}
                   onClick={() => setTab(t.key as any)}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${tab === t.key
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                      : "bg-card border border-border text-foreground/70 hover:bg-muted"
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                    : "bg-card border border-border text-foreground/70 hover:bg-muted"
                     }`}
                 >
                   <t.icon size={16} /> {t.label}
@@ -740,8 +740,8 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                     key={st.key}
                     onClick={() => setOrderSubTab(st.key)}
                     className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${orderSubTab === st.key
-                        ? "bg-primary/10 text-primary border border-primary/30"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      ? "bg-primary/10 text-primary border border-primary/30"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
                       }`}
                   >
                     <st.icon size={14} /> {st.label}
@@ -762,8 +762,8 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                         key={s}
                         onClick={() => setStatusFilter(s)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${statusFilter === s
-                            ? "bg-primary text-primary-foreground shadow-md"
-                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
                           }`}
                       >
                         {s === "all" ? "All" : statusConfig[s].label}
@@ -841,7 +841,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
         ) : tab === "sales" ? (
           <SalesReportUI />
         ) : tab === "content" ? (
-          <div className="container mx-auto px-4 pb-8">
+          <div className="container mx-auto px-4 pb-8 py-4">
             <div className="flex gap-2 mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
               {[
                 { key: "menu" as const, label: "Menu", icon: UtensilsCrossed },
@@ -855,8 +855,8 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                   key={st.key}
                   onClick={() => setContentSubTab(st.key)}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${contentSubTab === st.key
-                      ? "bg-primary/10 text-primary border border-primary/30"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    ? "bg-primary/10 text-primary border border-primary/30"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                 >
                   <st.icon size={14} /> {st.label}
@@ -879,7 +879,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
             )}
           </div>
         ) : tab === "analytics" ? (
-          <div className="container mx-auto px-4 pb-8">
+          <div className="container mx-auto px-4 pb-8 py-4">
             <div className="flex gap-2 mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
               {[
                 { key: "menu" as const, label: "Menu Analytics", icon: BarChartIcon },
@@ -889,8 +889,8 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                   key={st.key}
                   onClick={() => setAnalyticsSubTab(st.key)}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${analyticsSubTab === st.key
-                      ? "bg-primary/10 text-primary border border-primary/30"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    ? "bg-primary/10 text-primary border border-primary/30"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                 >
                   <st.icon size={14} /> {st.label}
@@ -905,7 +905,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
             )}
           </div>
         ) : tab === "management" ? (
-          <div className="container mx-auto px-4 pb-8">
+          <div className="container mx-auto px-4 pb-8 py-4">
             <div className="flex gap-2 mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
               {[
                 { key: "coupons" as const, label: "Coupons", icon: Ticket, check: () => user.features?.coupon_engine },
@@ -916,8 +916,8 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                   key={st.key}
                   onClick={() => setManagementSubTab(st.key)}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${managementSubTab === st.key
-                      ? "bg-primary/10 text-primary border border-primary/30"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    ? "bg-primary/10 text-primary border border-primary/30"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                 >
                   <st.icon size={14} /> {st.label}
@@ -934,7 +934,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
             )}
           </div>
         ) : tab === "system" ? (
-          <div className="container mx-auto px-4 pb-8">
+          <div className="container mx-auto px-4 pb-8 py-4">
             <div className="flex gap-2 mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
               {[
                 { key: "security" as const, label: "Login Logs", icon: Shield },
@@ -945,8 +945,8 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                   key={st.key}
                   onClick={() => setSettingsSubTab(st.key)}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${settingsSubTab === st.key
-                      ? "bg-primary/10 text-primary border border-primary/30"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    ? "bg-primary/10 text-primary border border-primary/30"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                 >
                   <st.icon size={14} /> {st.label}
