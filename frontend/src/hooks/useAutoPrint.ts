@@ -69,7 +69,7 @@ export function useAutoPrint(orders: Order[]) {
     for (const order of orders) {
       if (!printedNewRef.current.has(order.id)) {
         printedNewRef.current.add(order.id);
-        printQueue.enqueue(`new:${order.id}`, orderToReceiptData(order));
+        printQueue.enqueue(`new:${order.id}`, "kot", orderToReceiptData(order));
       }
     }
 
@@ -89,7 +89,7 @@ export function useAutoPrint(orders: Order[]) {
       const prev = prevMap.get(order.id);
       if (prev && prev.paymentStatus === "pending" && order.paymentStatus === "paid") {
         printedPaidRef.current.add(order.id);
-        printQueue.enqueue(`paid:${order.id}`, orderToReceiptData(order));
+        printQueue.enqueue(`paid:${order.id}`, "receipt", orderToReceiptData(order));
       }
     }
   }, [orders]);

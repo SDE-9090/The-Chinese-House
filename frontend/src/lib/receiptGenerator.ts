@@ -30,6 +30,18 @@ export interface ReceiptData {
   specialInstructions?: string;
 }
 
+export interface ZReportData {
+  label: string;
+  totalOrders: number;
+  totalRevenue: number;
+  paidRevenue?: number;
+  pendingRevenue?: number;
+  business?: {
+    restaurantName?: string;
+    address?: string;
+  };
+}
+
 const W = 420;
 const PAD = 24;
 const LINE_H = 22;
@@ -337,5 +349,212 @@ export function printReceipt(data: ReceiptData) {
     </html>
   `);
 
+  printWindow.document.close();
+}
+
+/** Build KOT (Kitchen Order Ticket) canvas */
+export function buildKotCanvas(data: ReceiptData): HTMLCanvasElement {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d")!;
+
+  canvas.width = W;
+  canvas.height = 800;
+  ctx.font = `bold 18px ${FONT}`;
+  const maxItemTextW = W - PAD * 2 - 40; // leave room for quantity
+
+  let itemTotalLines = 0;
+  const wrappedItems: { lines: string[]; qty: string }[] = [];
+  for (const item of data.items) {
+    const lines = wrapText(ctx, item.name, maxItemTextW);
+    wrappedItems.push({ lines, qty: `x${item.quantity}` });
+    itemTotalLines += lines.length;
+  }
+
+  const instrLines = data.specialInstructions ? wrapText(ctx, `NOTE: ${data.specialInstructions}`, W - PAD * 2) : [];
+  
+  let H = 200 + itemTotalLines * 30 + instrLines.length * 20 + 80;
+  canvas.height = Math.max(H, 300);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, W, canvas.height);
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(4, 4, W - 8, canvas.height - 8);
+
+  let y = PAD + 10;
+
+  // Header
+  ctx.fillStyle = "#000000";
+  ctx.font = `bold 24px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.fillText("KOT", W / 2, y);
+  y += 20;
+
+  ctx.font = `14px ${FONT}`;
+  const time = new Date(data.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  ctx.fillText(time, W / 2, y);
+  y += 24;
+
+  drawDashedLine(ctx, PAD, y, W - PAD);
+  y += 24;
+
+  // Token and Type
+  ctx.textAlign = "left";
+  ctx.font = `bold 22px ${FONT}`;
+  ctx.fillText(`TOKEN #${data.token}`, PAD, y);
+
+  if (data.orderType) {
+    ctx.textAlign = "right";
+    const typeLabel = data.orderType === "dine-in" ? "DINE-IN" : data.orderType === "takeaway" ? "TAKEAWAY" : "DELIVERY";
+    ctx.fillText(typeLabel, W - PAD, y);
+  }
+  y += 30;
+
+  drawDashedLine(ctx, PAD, y, W - PAD);
+  y += 24;
+
+  // Items
+  ctx.fillStyle = "#000000";
+  ctx.font = `bold 18px ${FONT}`;
+  for (const { lines, qty } of wrappedItems) {
+    for (let i = 0; i < lines.length; i++) {
+      ctx.textAlign = "left";
+      ctx.fillText(lines[i], PAD, y);
+      if (i === 0) {
+        ctx.textAlign = "right";
+        ctx.fillText(qty, W - PAD, y);
+      }
+      y += 30;
+    }
+  }
+
+  y += 10;
+
+  // Instructions
+  if (data.specialInstructions) {
+    drawDashedLine(ctx, PAD, y, W - PAD);
+    y += 24;
+    ctx.font = `bold 16px ${FONT}`;
+    ctx.textAlign = "left";
+    for (const line of instrLines) {
+      ctx.fillText(line, PAD, y);
+      y += 20;
+    }
+  }
+
+  return canvas;
+}
+
+/** Build Z-Report canvas */
+export function buildZReportCanvas(data: ZReportData): HTMLCanvasElement {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d")!;
+
+  canvas.width = W;
+  canvas.height = 450;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, W, 450);
+  ctx.strokeStyle = "#e5e7eb";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(4, 4, W - 8, 450 - 8);
+
+  let y = PAD + 10;
+
+  // Header
+  ctx.fillStyle = "#111827";
+  ctx.font = `bold 20px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.fillText(data.business?.restaurantName || "The Chinese House", W / 2, y);
+  y += 24;
+
+  ctx.font = `bold 16px ${FONT}`;
+  ctx.fillText("END OF DAY SUMMARY", W / 2, y);
+  y += 20;
+
+  ctx.font = `14px ${FONT}`;
+  ctx.fillStyle = "#6b7280";
+  ctx.fillText(data.label, W / 2, y);
+  y += 24;
+
+  drawDashedLine(ctx, PAD, y, W - PAD);
+  y += 24;
+
+  // Metrics
+  const drawRow = (label: string, value: string, bold = false) => {
+    ctx.textAlign = "left";
+    ctx.font = bold ? `bold 16px ${FONT}` : `14px ${FONT}`;
+    ctx.fillStyle = "#111827";
+    ctx.fillText(label, PAD, y);
+    ctx.textAlign = "right";
+    ctx.fillText(value, W - PAD, y);
+    y += 28;
+  };
+
+  drawRow("Total Orders:", String(data.totalOrders), true);
+  drawRow("Total Revenue:", fmt(data.totalRevenue), true);
+  
+  y += 10;
+  drawDashedLine(ctx, PAD, y, W - PAD);
+  y += 24;
+
+  if (data.paidRevenue !== undefined) {
+    drawRow("Paid Revenue:", fmt(data.paidRevenue));
+  }
+  if (data.pendingRevenue !== undefined) {
+    drawRow("Pending Dues:", fmt(data.pendingRevenue));
+  }
+
+  y += 20;
+  ctx.textAlign = "center";
+  ctx.font = `12px ${FONT}`;
+  ctx.fillStyle = "#9ca3af";
+  ctx.fillText("Generated from POS", W / 2, y);
+
+  return canvas;
+}
+
+/** Open Z-Report in a new window and trigger print dialog */
+export function printZReport(data: ZReportData) {
+  const canvas = buildZReportCanvas(data);
+  const dataUrl = canvas.toDataURL("image/png");
+
+  if (window.electronAPI) {
+    window.electronAPI.printReceipt(dataUrl);
+    return;
+  }
+
+  const printWindow = window.open("", "_blank", "width=500,height=700");
+  if (!printWindow) return;
+
+  printWindow.document.write(`
+    <html>
+    <body style="margin:0;display:flex;justify-content:center;">
+      <img src="${dataUrl}" style="width:80mm" onload="window.print();window.close();" />
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+/** Open KOT in a new window and trigger print dialog */
+export function printKot(data: ReceiptData) {
+  const canvas = buildKotCanvas(data);
+  const dataUrl = canvas.toDataURL("image/png");
+
+  if (window.electronAPI) {
+    window.electronAPI.printReceipt(dataUrl);
+    return;
+  }
+
+  const printWindow = window.open("", "_blank", "width=500,height=700");
+  if (!printWindow) return;
+
+  printWindow.document.write(`
+    <html>
+    <body style="margin:0;display:flex;justify-content:center;">
+      <img src="${dataUrl}" style="width:80mm" onload="window.print();window.close();" />
+    </body>
+    </html>
+  `);
   printWindow.document.close();
 }

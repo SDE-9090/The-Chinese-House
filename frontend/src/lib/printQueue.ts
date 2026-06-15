@@ -3,12 +3,13 @@
  * Handles retries, deduplication, and queue state tracking
  */
 
-import { buildReceiptCanvas, type ReceiptData } from "./receiptGenerator";
+import { buildReceiptCanvas, buildKotCanvas, buildZReportCanvas, type ReceiptData, type ZReportData } from "./receiptGenerator";
 
 /* ─── Types ─── */
 export interface PrintJob {
-  id: string;            // unique key (e.g. order-id or order-id:paid)
-  data: ReceiptData;
+  id: string;
+  type: "receipt" | "kot" | "zreport";
+  data: ReceiptData | ZReportData;
   retries: number;
 }
 
@@ -76,14 +77,14 @@ class PrintQueue {
   }
 
   /* ─── Add job to queue ─── */
-  enqueue(id: string, data: ReceiptData) {
+  enqueue(id: string, type: "receipt" | "kot" | "zreport", data: ReceiptData | ZReportData) {
     if (!isAutoPrintSupported()) return;
 
     // prevent duplicates
     if (this.knownIds.has(id)) return;
 
     this.knownIds.add(id);
-    this.queue.push({ id, data, retries: 0 });
+    this.queue.push({ id, type, data, retries: 0 });
 
     console.log("[PrintQueue] Enqueued:", id);
 
@@ -152,7 +153,16 @@ class PrintQueue {
 
   /* ─── Actual print execution (Electron or Android) ─── */
   private async executePrint(job: PrintJob): Promise<void> {
-    const canvas = buildReceiptCanvas(job.data);
+    let canvas: HTMLCanvasElement;
+    
+    if (job.type === "kot") {
+      canvas = buildKotCanvas(job.data as ReceiptData);
+    } else if (job.type === "zreport") {
+      canvas = buildZReportCanvas(job.data as ZReportData);
+    } else {
+      canvas = buildReceiptCanvas(job.data as ReceiptData);
+    }
+
     const dataUrl = canvas.toDataURL("image/png");
 
     if (isAndroid()) {

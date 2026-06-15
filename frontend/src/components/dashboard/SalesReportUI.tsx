@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, DollarSign, BarChart3, CalendarDays, Download, Share2 } from "lucide-react";
+import { printZReport, type ZReportData } from "@/lib/receiptGenerator";
+import { TrendingUp, DollarSign, BarChart3, CalendarDays, Download, Share2, Printer } from "lucide-react";
 import { apiGetSalesReport } from "@/lib/apiClient";
 import type { SalesReportData, SalesReportType } from "@/lib/apiClient";
 import { socket } from "@/lib/socket";
@@ -128,6 +129,19 @@ const SalesReportUI = () => {
     window.open(url, "_blank");
   };
 
+  const handlePrintSummary = () => {
+    if (!data) return;
+    const label = getReportLabel().replace(/_/g, " ");
+    const reportData: ZReportData = {
+      label,
+      totalOrders: data.totalOrders,
+      totalRevenue: data.totalRevenue,
+      paidRevenue: data.paidRevenue,
+      pendingRevenue: data.pendingRevenue
+    };
+    printZReport(reportData);
+  };
+
   const MONTHS = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
@@ -171,6 +185,12 @@ const SalesReportUI = () => {
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-card border border-border hover:bg-muted text-muted-foreground transition-all"
           >
             <Share2 size={16} /> Share
+          </button>
+          <button
+            onClick={handlePrintSummary}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+          >
+            <Printer size={16} /> Print Summary
           </button>
         </div>
       )}
