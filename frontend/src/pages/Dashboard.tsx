@@ -165,7 +165,7 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
     try {
       const data = await apiAdminRequestReset(username);
       setMaskedMobile(data.mobile);
-      setSuccess(`OTP sent to ${data.mobile}`);
+      setSuccess(`OTP sent to ${data.email || data.mobile}`);
       setMode("reset-password");
     } catch (err: any) {
       setError(err.message);

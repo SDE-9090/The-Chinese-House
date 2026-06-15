@@ -231,7 +231,7 @@ export async function apiAdminLogout(): Promise<void> {
   } catch { /* ignore */ }
 }
 
-export async function apiAdminRequestReset(username: string): Promise<{ message: string; mobile: string }> {
+export async function apiAdminRequestReset(username: string): Promise<{ message: string; mobile: string; email: string }> {
   const res = await fetch(`${API_URL}/admin/request-reset`, {
     method: "POST",
     headers: authHeaders(),
