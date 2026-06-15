@@ -159,4 +159,63 @@ router.put("/", adminAuth, async (req, res) => {
   }
 });
 
+// ======================================================
+// FACTORY RESET (Danger Zone)
+// ======================================================
+router.post("/factory-reset", adminAuth, async (req, res) => {
+  const { confirmText } = req.body;
+
+  if (confirmText !== "DELETE ALL DATA") {
+    return res.status(400).json({ error: "Invalid confirmation text" });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const businessId = req.business_id;
+
+    // Delete orders (this cascades to order_items)
+    await client.query("DELETE FROM orders WHERE business_id = $1", [businessId]);
+
+    // Delete sessions (this cascades to active tables)
+    await client.query("DELETE FROM table_sessions WHERE business_id = $1", [businessId]);
+    await client.query("DELETE FROM tables WHERE business_id = $1", [businessId]);
+
+    // Delete reviews (depends on menu_items)
+    await client.query("DELETE FROM reviews WHERE business_id = $1", [businessId]);
+
+    // Delete menu items (must happen before categories due to RESTRICT constraint)
+    await client.query("DELETE FROM menu_items WHERE business_id = $1", [businessId]);
+    await client.query("DELETE FROM menu_categories WHERE business_id = $1", [businessId]);
+
+    // Delete coupons & promotions
+    await client.query("DELETE FROM coupons WHERE business_id = $1", [businessId]);
+    await client.query("DELETE FROM promotions WHERE business_id = $1", [businessId]);
+
+    // Delete staff
+    await client.query("DELETE FROM staff WHERE business_id = $1", [businessId]);
+
+    // Reset token counter
+    await client.query("UPDATE token_counter SET last_token = 0 WHERE business_id = $1", [businessId]);
+
+    await client.query("COMMIT");
+
+    // Notify frontend via socket to force reload for any active sessions
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("business-settings-updated");
+    }
+
+    res.json({ message: "Database reset successfully." });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Factory reset error:", err);
+    res.status(500).json({ error: "Failed to reset database" });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;
