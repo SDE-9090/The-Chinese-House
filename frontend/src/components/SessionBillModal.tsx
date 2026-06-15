@@ -11,6 +11,7 @@ interface SessionBillModalProps {
 }
 
 export default function SessionBillModal({ sessionId, isOpen, onClose }: SessionBillModalProps) {
+  const isAuthorized = !!localStorage.getItem("admin_auth_token") || !!localStorage.getItem("staff_auth_token");
   const [bill, setBill] = useState<SessionBill | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -149,7 +150,7 @@ export default function SessionBillModal({ sessionId, isOpen, onClose }: Session
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="font-semibold">₹{item.totalPrice.toFixed(2)}</span>
-                          {item.menuItemId && (
+                          {isAuthorized && item.menuItemId && (
                             <button
                               onClick={() => handleReorder(item)}
                               disabled={repeatingIds.has(item.menuItemId)}
