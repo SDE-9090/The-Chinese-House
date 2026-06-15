@@ -1654,7 +1654,7 @@ function OrderPageContent({
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.9 }}
                           onClick={() => setSelectedItem(item)}
-                          className={`bg-card rounded-2xl overflow-hidden border border-border/50 group hover:shadow-xl hover:shadow-primary/5 transition-shadow cursor-pointer ${!item.available ? "opacity-70" : ""}`}
+                          className={`bg-card rounded-2xl overflow-hidden border border-border/50 group hover:shadow-xl hover:shadow-primary/5 transition-shadow cursor-pointer flex flex-col h-full ${!item.available ? "opacity-70" : ""}`}
                         >
                           <div className="relative overflow-hidden aspect-square">
                             <img
@@ -1668,14 +1668,14 @@ function OrderPageContent({
                               {item.priceLabel}
                             </div>
                           </div>
-                          <div className="p-3">
+                          <div className="p-3 flex flex-col flex-grow">
                             <h3 className="font-heading font-bold text-sm mb-0.5">
                               {item.name}
                             </h3>
                             <p className="text-muted-foreground text-xs mb-3 line-clamp-2">
                               {item.desc}
                             </p>
-                            <div onClick={(e) => e.stopPropagation()}>
+                            <div className="mt-auto" onClick={(e) => e.stopPropagation()}>
                               {!item.available ? (
                                 <div className="w-full bg-destructive/10 text-destructive py-2 rounded-xl font-semibold text-xs text-center flex items-center justify-center gap-1">
                                   <Ban size={12} /> Out of Stock
