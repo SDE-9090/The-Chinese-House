@@ -643,8 +643,8 @@ router.post("/change-mobile", adminAuth, resetLimiter, async (req, res) => {
 router.post("/change-email", adminAuth, resetLimiter, async (req, res) => {
   const { otp, newEmail } = req.body;
 
-  if (!otp || !newEmail) {
-    return res.status(400).json({ error: "OTP and new email are required" });
+  if (!newEmail) {
+    return res.status(400).json({ error: "New email is required" });
   }
 
   // Basic email validation
@@ -658,11 +658,12 @@ router.post("/change-email", adminAuth, resetLimiter, async (req, res) => {
     if (!result.rows.length) return res.status(404).json({ error: "Admin not found" });
     const admin = result.rows[0];
 
-    // If an email is already set, we verify OTP. If no email is set, we can allow setting it for the first time without OTP.
-    // But since the user wants OTP for settings, we will require OTP.
-    // Wait, if no email is set, how do they get the OTP to set the email?
-    // If no email is set, we bypass OTP requirement for the FIRST setup.
+    // If an email is already set, we verify OTP. If no email is set, we bypass OTP requirement for the FIRST setup.
     if (admin.email) {
+      if (!otp) {
+        return res.status(400).json({ error: "OTP is required to change an existing email" });
+      }
+      
       // Verify OTP
       const storedHash = await redisClient.get(`admin:settings_otp:${admin.id}`);
       if (!storedHash) {
