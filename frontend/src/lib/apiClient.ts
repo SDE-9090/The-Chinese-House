@@ -581,7 +581,7 @@ export async function apiGetItemReviews(
   }
 
   const res = await fetch(
-    `${API_URL}/reviews?itemName=${encodeURIComponent(itemName)}&limit=${limit}&offset=${offset}`,
+    `${API_URL}/reviews?item=${encodeURIComponent(itemName)}&limit=${limit}&offset=${offset}`,
     { headers: authHeaders() }
   );
   if (!res.ok) throw new Error("Failed to fetch reviews");
