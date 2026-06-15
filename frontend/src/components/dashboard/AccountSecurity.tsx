@@ -143,6 +143,28 @@ const AccountSecurity = () => {
     }
   };
 
+  const handleChangeEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!newEmail.trim() || !newEmail.includes("@")) { setError("Enter a valid new email address"); return; }
+    // OTP is only required if an email was already set
+    if (maskedEmail && otp.length !== 6) { setError("Enter the 6-digit OTP"); return; }
+
+    setSubmitting(true);
+    try {
+      const data = await apiAdminChangeEmail(otp, newEmail);
+      setMaskedEmail(data.email);
+      setSuccess(data.message);
+      toast({ title: "Success", description: data.message });
+      setTimeout(resetForm, 2000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Admin Info Card */}
