@@ -8,6 +8,18 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Loader2, AlertTriangle } from "lucide-react";
+import { apiAdminFactoryReset } from "@/lib/apiClient";
 
 const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
@@ -30,6 +42,10 @@ const BusinessSettingsManager = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState("");
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     apiAdminGetBusinessSettings()
@@ -76,6 +92,21 @@ const BusinessSettingsManager = () => {
       setError(err.message || "Failed to save settings");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleFactoryReset = async () => {
+    if (resetConfirmText !== "DELETE ALL DATA") return;
+    setResetting(true);
+    try {
+      await apiAdminFactoryReset(resetConfirmText);
+      toast({ title: "Success", description: "Database has been reset." });
+      setResetModalOpen(false);
+      setResetConfirmText("");
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err: any) {
+      toast({ title: "Reset Failed", description: err.message, variant: "destructive" });
+      setResetting(false);
     }
   };
 
@@ -332,6 +363,77 @@ const BusinessSettingsManager = () => {
           <Save size={16} /> {saving ? "Saving..." : "Save Business Settings"}
         </button>
       </div>
+
+      {/* Danger Zone */}
+      <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-6 space-y-4 mt-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+            <AlertTriangle className="text-destructive" size={18} />
+          </div>
+          <div>
+            <h2 className="font-heading text-lg font-bold text-destructive">Danger Zone</h2>
+            <p className="text-sm text-muted-foreground">
+              Destructive actions that cannot be undone.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-background border border-border rounded-xl">
+          <div>
+            <h3 className="font-semibold text-foreground">Factory Reset Database</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Wipe all orders, tables, menu items, reviews, and staff data. 
+              Landing page and business settings will remain untouched.
+            </p>
+          </div>
+          <Button 
+            variant="destructive" 
+            onClick={() => setResetModalOpen(true)}
+            className="shrink-0"
+          >
+            Reset Database
+          </Button>
+        </div>
+      </div>
+
+      {/* Reset Modal */}
+      <Dialog open={resetModalOpen} onOpenChange={setResetModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Are you absolutely sure?</DialogTitle>
+            <DialogDescription>
+              This action <b>cannot be undone</b>. This will permanently delete your menu items,
+              orders, tables, staff, and sales history. Your admin login and landing page data will be kept.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-4">
+            <Label className="text-foreground">
+              Please type <span className="font-mono font-bold text-destructive select-all">DELETE ALL DATA</span> to confirm.
+            </Label>
+            <Input 
+              value={resetConfirmText}
+              onChange={(e) => setResetConfirmText(e.target.value)}
+              placeholder="DELETE ALL DATA"
+              className="font-mono"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setResetModalOpen(false); setResetConfirmText(""); }} disabled={resetting}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleFactoryReset} 
+              disabled={resetConfirmText !== "DELETE ALL DATA" || resetting}
+            >
+              {resetting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+              Confirm Factory Reset
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -428,6 +428,22 @@ export async function apiAdminUpdateBusinessSettings(
   return data;
 }
 
+export async function apiAdminFactoryReset(confirmText: string): Promise<{ message: string }> {
+  if (!isApiMode()) {
+    throw new Error("Factory reset is not available in local mode.");
+  }
+
+  const res = await authFetch(`${API_URL}/admin/business-settings/factory-reset`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ confirmText }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to reset database");
+  return data;
+}
+
+
 export async function apiGetBusinessSettings(): Promise<BusinessSettings> {
   if (!isApiMode()) {
     return localGetBusinessSettings();
