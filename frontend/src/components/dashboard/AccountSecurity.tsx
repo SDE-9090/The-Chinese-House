@@ -226,6 +226,7 @@ const AccountSecurity = () => {
       <AnimatePresence mode="wait">
         {mode === "change-password" && (
           <motion.div
+            key="change-password"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -348,6 +349,7 @@ const AccountSecurity = () => {
         {/* Change Mobile Form */}
         {mode === "change-mobile" && (
           <motion.div
+            key="change-mobile"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -431,6 +433,7 @@ const AccountSecurity = () => {
         {/* Change Email Form */}
         {mode === "change-email" && (
           <motion.div
+            key="change-email"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
