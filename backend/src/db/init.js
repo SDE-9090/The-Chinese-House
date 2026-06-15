@@ -29,6 +29,9 @@ ALTER TABLE business_settings
   ADD COLUMN IF NOT EXISTS cgst_rate NUMERIC(5,2) NOT NULL DEFAULT 2.5,
   ADD COLUMN IF NOT EXISTS sgst_rate NUMERIC(5,2) NOT NULL DEFAULT 2.5;
 
+ALTER TABLE admin_account
+  ADD COLUMN IF NOT EXISTS email TEXT;
+
 INSERT INTO business_settings (id, restaurant_name, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate)
 SELECT 1,
        'The Chinese House',

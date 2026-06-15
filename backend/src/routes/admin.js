@@ -7,7 +7,7 @@ const pool = require("../db/pool");
 const redisClient = require("../../config/redis");
 const { adminAuth, JWT_SECRET } = require("../middleware/adminAuth");
 const { generateOTP, hashOTP, verifyOTP } = require("../utils/otpHelper");
-const { sendOTP } = require("../utils/smsSender");
+const { sendEmailOTP } = require("../utils/emailSender");
 
 const crypto = require("crypto");
 
@@ -372,6 +372,10 @@ router.post("/request-reset", resetLimiter, async (req, res) => {
       });
     }
 
+    if (!admin.email) {
+      return res.status(400).json({ error: "Recovery email not configured. Please contact support." });
+    }
+
     const otp = generateOTP();
     const otpHash = hashOTP(otp);
 
@@ -387,11 +391,12 @@ router.post("/request-reset", resetLimiter, async (req, res) => {
       "0"
     );
     console.log("Generated OTP for admin:", otp);
-    await sendOTP(admin.mobile_number, otp);
+    await sendEmailOTP(admin.email, otp, "Password Reset");
 
     res.json({
-      message: "OTP sent to registered mobile number.",
+      message: "OTP sent to registered email address.",
       mobile: admin.mobile_number.replace(/.(?=.{4})/g, "*"),
+      email: admin.email.replace(/(.{2})(.*)(?=@)/, "$1***"),
     });
 
   } catch (err) {
@@ -477,6 +482,10 @@ router.post("/request-settings-otp", adminAuth, resetLimiter, async (req, res) =
       });
     }
 
+    if (!admin.email) {
+      return res.status(400).json({ error: "Recovery email not configured. Please contact support." });
+    }
+
     const otp = generateOTP();
     const otpHash = hashOTP(otp);
 
@@ -493,11 +502,11 @@ router.post("/request-settings-otp", adminAuth, resetLimiter, async (req, res) =
     );
 
     console.log("Generated settings OTP for admin:", otp);
-    // Future: await sendOTP(admin.mobile_number, otp);
+    await sendEmailOTP(admin.email, otp, "Security Settings");
 
     res.json({
-      message: "OTP sent to registered mobile number.",
-      mobile: admin.mobile_number.replace(/.(?=.{4})/g, "*"),
+      message: "OTP sent to registered email address.",
+      email: admin.email.replace(/(.{2})(.*)(?=@)/, "$1***"),
     });
   } catch (err) {
     console.error("Request settings OTP error:", err);
@@ -629,17 +638,84 @@ router.post("/change-mobile", adminAuth, resetLimiter, async (req, res) => {
 
 
 // ======================================================
+// CHANGE EMAIL (authenticated + OTP)
+// ======================================================
+router.post("/change-email", adminAuth, resetLimiter, async (req, res) => {
+  const { otp, newEmail } = req.body;
+
+  if (!otp || !newEmail) {
+    return res.status(400).json({ error: "OTP and new email are required" });
+  }
+
+  // Basic email validation
+  const cleanEmail = newEmail.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    return res.status(400).json({ error: "Invalid email format" });
+  }
+
+  try {
+    const result = await pool.query("SELECT * FROM admin_account WHERE id = $1 AND business_id = $2", [req.admin.id, req.business_id]);
+    if (!result.rows.length) return res.status(404).json({ error: "Admin not found" });
+    const admin = result.rows[0];
+
+    // If an email is already set, we verify OTP. If no email is set, we can allow setting it for the first time without OTP.
+    // But since the user wants OTP for settings, we will require OTP.
+    // Wait, if no email is set, how do they get the OTP to set the email?
+    // If no email is set, we bypass OTP requirement for the FIRST setup.
+    if (admin.email) {
+      // Verify OTP
+      const storedHash = await redisClient.get(`admin:settings_otp:${admin.id}`);
+      if (!storedHash) {
+        return res.status(400).json({ error: "OTP expired or not requested" });
+      }
+
+      const attempts = await redisClient.incr(`admin:settings_otp_attempts:${admin.id}`);
+      if (attempts > OTP_MAX_ATTEMPTS) {
+        await redisClient.del(`admin:settings_otp:${admin.id}`);
+        return res.status(400).json({ error: "Too many OTP attempts" });
+      }
+
+      if (!verifyOTP(otp, storedHash)) {
+        return res.status(400).json({ error: "Invalid OTP" });
+      }
+    }
+
+    // Update email
+    await pool.query(
+      "UPDATE admin_account SET email=$1, updated_at=NOW() WHERE id=$2",
+      [cleanEmail, admin.id]
+    );
+
+    if (admin.email) {
+      await redisClient.del(`admin:settings_otp:${admin.id}`);
+      await redisClient.del(`admin:settings_otp_attempts:${admin.id}`);
+    }
+
+    res.json({
+      message: "Recovery email updated successfully.",
+      email: cleanEmail.replace(/(.{2})(.*)(?=@)/, "$1***"),
+    });
+  } catch (err) {
+    console.error("Change email error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+// ======================================================
 // GET CURRENT ADMIN INFO (masked mobile)
 // ======================================================
 router.get("/info", adminAuth, async (req, res) => {
   try {
-    const result = await pool.query("SELECT mobile_number FROM admin_account WHERE id = $1 AND business_id = $2", [req.admin.id, req.business_id]);
+    const result = await pool.query("SELECT mobile_number, email FROM admin_account WHERE id = $1 AND business_id = $2", [req.admin.id, req.business_id]);
     if (!result.rows.length) {
       return res.status(500).json({ error: "Admin account not configured" });
     }
     const mobile = result.rows[0].mobile_number;
+    const email = result.rows[0].email;
     res.json({
-      mobile: mobile.replace(/.(?=.{4})/g, "*"),
+      mobile: mobile ? mobile.replace(/.(?=.{4})/g, "*") : null,
+      email: email ? email.replace(/(.{2})(.*)(?=@)/, "$1***") : null,
     });
   } catch (err) {
     console.error("Admin info error:", err);

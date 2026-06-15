@@ -45,6 +45,7 @@ CREATE TABLE public.admin_account (
     id integer NOT NULL,
     password_hash text NOT NULL,
     mobile_number text NOT NULL,
+    email text,
     created_at timestamp without time zone DEFAULT now(),
     updated_at timestamp without time zone DEFAULT now(),
     business_id uuid NOT NULL
