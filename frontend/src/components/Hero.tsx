@@ -95,7 +95,7 @@ const Hero = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
-            className="inline-flex items-center gap-2 bg-secondary/20 text-secondary-foreground px-4 py-1.5 rounded-full text-sm font-semibold mb-6"
+            className="inline-flex items-center gap-2 bg-secondary/20 text-secondary-foreground dark:text-secondary px-4 py-1.5 rounded-full text-sm font-semibold mb-6"
           >
             <Sparkles size={14} className="text-secondary" />
             {locationTag}
