@@ -182,7 +182,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
             <Loader2 className="animate-spin w-8 h-8 text-primary" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
             {tables.map(table => {
               const session = table.activeSession;
               const isTableEditing = session && orders.some(o => 
@@ -253,7 +253,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                     </div>
                   )}
 
-                  {session ? (
+                  {session && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
@@ -321,11 +321,6 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                           )}
                         </div>
                       )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-4 text-muted-foreground">
-                      <QrCode className="w-10 h-10 mb-2 opacity-50" />
-                      <p className="text-sm font-medium mb-3">Ready for guests</p>
                     </div>
                   )}
                 </motion.div>
