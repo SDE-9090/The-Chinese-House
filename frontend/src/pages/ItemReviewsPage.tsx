@@ -351,8 +351,8 @@ const ItemReviewsPage = () => {
       {/* Main Content */}
       <div className="max-w-[1400px] mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-8">
-          {/* LEFT SIDE */}
-          <div>
+          {/* LEFT SIDE (Reviews List) - order 2 on mobile, order 1 on desktop */}
+          <div className="order-2 lg:order-1">
             {/* Search + Sort */}
             <div className="flex flex-col md:flex-row gap-3 mb-6">
               <div className="flex items-center gap-2 flex-1 bg-card border border-border/50 rounded-2xl px-4 py-3 shadow-sm">
@@ -499,8 +499,8 @@ const ItemReviewsPage = () => {
             </motion.div>
           </div>
 
-          {/* RIGHT SIDE */}
-          <div className="lg:sticky lg:top-[95px] h-fit space-y-6">
+          {/* RIGHT SIDE (Summary & Form) - order 1 on mobile, order 2 on desktop */}
+          <div className="order-1 lg:order-2 lg:sticky lg:top-[95px] h-fit space-y-6">
             {/* Rating Summary */}
             <motion.div
               key={selectedItem}
