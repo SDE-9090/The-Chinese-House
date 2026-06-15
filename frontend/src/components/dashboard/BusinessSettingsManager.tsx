@@ -66,7 +66,6 @@ const BusinessSettingsManager = () => {
         phone: data.phone?.trim() || "",
         email: data.email?.trim() || "",
         isGstEnabled: data.isGstEnabled,
-        isOnlinePaymentEnabled: data.isOnlinePaymentEnabled,
         cgstRate: data.cgstRate,
         sgstRate: data.sgstRate,
         features: data.features,
@@ -185,9 +184,12 @@ const BusinessSettingsManager = () => {
 
               <Switch
                 id="online-payment-toggle"
-                checked={data.isOnlinePaymentEnabled ?? true}
+                checked={data.features?.isOnlinePaymentEnabled ?? true}
                 onCheckedChange={(checked) =>
-                  setData((prev) => ({ ...prev, isOnlinePaymentEnabled: checked }))
+                  setData((prev) => ({
+                    ...prev,
+                    features: { ...prev.features, isOnlinePaymentEnabled: checked },
+                  }))
                 }
               />
             </div>

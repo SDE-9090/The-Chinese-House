@@ -271,115 +271,115 @@ export default function TableOrderPage() {
         >
           {/* ─── Bill + Payment Steps ─── */}
           <>
-              {/* Header */}
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-14 h-14 bg-primary/10 rounded-full mb-3">
-                  <CheckCircle className="w-7 h-7 text-primary" />
+            {/* Header */}
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 bg-primary/10 rounded-full mb-3">
+                <CheckCircle className="w-7 h-7 text-primary" />
+              </div>
+              <h2 className="text-2xl font-black mb-1">Your Bill</h2>
+              {bill?.tableNumber && (
+                <span className="inline-block bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold">
+                  🪑 Table {bill.tableNumber}
+                </span>
+              )}
+            </div>
+
+            {/* Bill Details Card */}
+            <div className="bg-card border border-border/60 rounded-2xl p-5 shadow-sm">
+              {loadingBill && !bill ? (
+                <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+                  <Loader2 className="animate-spin" size={18} /> Loading your bill...
                 </div>
-                <h2 className="text-2xl font-black mb-1">Your Bill</h2>
-                {bill?.tableNumber && (
-                  <span className="inline-block bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold">
-                    🪑 Table {bill.tableNumber}
-                  </span>
-                )}
-              </div>
+              ) : billData ? (
+                <BillDocument bill={billData} business={business} showDownloadButton={payStep === "bill"} />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Unable to load bill.{" "}
+                  <button className="text-primary underline" onClick={() => { billFetchedRef.current = false; fetchBill(session.id, session); }}>
+                    Retry
+                  </button>
+                </p>
+              )}
+            </div>
 
-              {/* Bill Details Card */}
-              <div className="bg-card border border-border/60 rounded-2xl p-5 shadow-sm">
-                {loadingBill && !bill ? (
-                  <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
-                    <Loader2 className="animate-spin" size={18} /> Loading your bill...
+            {/* ─── Step: choose payment method ─── */}
+            <AnimatePresence mode="wait">
+              {payStep === "bill" && billData && billData.totalDue > 0.01 && (
+                <motion.div key="bill-actions" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    onClick={() => setPayStep("choose")}
+                    className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-4 rounded-2xl font-bold text-base shadow-lg shadow-primary/25 flex items-center justify-center gap-2"
+                  >
+                    Proceed to Pay · ₹{billData.totalDue.toFixed(2)}
+                  </motion.button>
+                </motion.div>
+              )}
+
+              {payStep === "choose" && billData && (
+                <motion.div key="choose" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
+                  <p className="text-center text-sm font-semibold text-muted-foreground">How would you like to pay?</p>
+
+                  {/* Online Pay */}
+                  {business.features?.isOnlinePaymentEnabled !== false && (
+                    <>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        onClick={handlePayOnline}
+                        className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-4 rounded-2xl font-bold text-base shadow-lg shadow-primary/25 flex items-center justify-center gap-3"
+                      >
+                        <CreditCard size={20} />
+                        Pay Online · ₹{billData.totalDue.toFixed(2)}
+                      </motion.button>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-px bg-border" />
+                        <span className="text-xs text-muted-foreground font-semibold">OR</span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Cash */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    onClick={() => setPayStep("cash-pending")}
+                    className="w-full bg-muted border border-border text-foreground py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 hover:bg-muted/60 transition-all"
+                  >
+                    <Banknote size={20} /> Pay at Counter
+                  </motion.button>
+
+                  <button onClick={() => setPayStep("bill")} className="w-full text-xs text-muted-foreground flex items-center justify-center gap-1 py-1">
+                    <ArrowLeft size={12} /> Back to Bill
+                  </button>
+                </motion.div>
+              )}
+
+              {payStep === "cash-pending" && (
+                <motion.div key="cash" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 text-center space-y-3"
+                >
+                  <div className="inline-flex items-center justify-center w-14 h-14 bg-amber-500/15 rounded-full">
+                    <Banknote className="w-7 h-7 text-amber-600" />
                   </div>
-                ) : billData ? (
-                  <BillDocument bill={billData} business={business} showDownloadButton={payStep === "bill"} />
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Unable to load bill.{" "}
-                    <button className="text-primary underline" onClick={() => { billFetchedRef.current = false; fetchBill(session.id, session); }}>
-                      Retry
-                    </button>
-                  </p>
-                )}
-              </div>
+                  <h3 className="text-lg font-bold text-amber-700 dark:text-amber-400">Please Pay at Counter</h3>
+                  <p className="text-sm text-muted-foreground">Pay ₹{billData?.totalDue.toFixed(2)} via Cash or UPI/QR scanner at the counter. Staff will clear your table once done.</p>
+                  <button onClick={() => setPayStep("choose")} className="text-xs text-muted-foreground flex items-center justify-center gap-1 mx-auto">
+                    <ArrowLeft size={12} /> Change payment method
+                  </button>
+                </motion.div>
+              )}
 
-              {/* ─── Step: choose payment method ─── */}
-              <AnimatePresence mode="wait">
-                {payStep === "bill" && billData && billData.totalDue > 0.01 && (
-                  <motion.div key="bill-actions" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                      onClick={() => setPayStep("choose")}
-                      className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-4 rounded-2xl font-bold text-base shadow-lg shadow-primary/25 flex items-center justify-center gap-2"
-                    >
-                      Proceed to Pay · ₹{billData.totalDue.toFixed(2)}
-                    </motion.button>
-                  </motion.div>
-                )}
-
-                {payStep === "choose" && billData && (
-                  <motion.div key="choose" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
-                    <p className="text-center text-sm font-semibold text-muted-foreground">How would you like to pay?</p>
-
-                    {/* Online Pay */}
-                    {business.isOnlinePaymentEnabled !== false && (
-                      <>
-                        <motion.button
-                          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                          onClick={handlePayOnline}
-                          className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-4 rounded-2xl font-bold text-base shadow-lg shadow-primary/25 flex items-center justify-center gap-3"
-                        >
-                          <CreditCard size={20} />
-                          Pay Online · ₹{billData.totalDue.toFixed(2)}
-                        </motion.button>
-
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1 h-px bg-border" />
-                          <span className="text-xs text-muted-foreground font-semibold">OR</span>
-                          <div className="flex-1 h-px bg-border" />
-                        </div>
-                      </>
-                    )}
-
-                    {/* Cash */}
-                    <motion.button
-                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                      onClick={() => setPayStep("cash-pending")}
-                      className="w-full bg-muted border border-border text-foreground py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-3 hover:bg-muted/60 transition-all"
-                    >
-                      <Banknote size={20} /> Pay Cash at Counter
-                    </motion.button>
-
-                    <button onClick={() => setPayStep("bill")} className="w-full text-xs text-muted-foreground flex items-center justify-center gap-1 py-1">
-                      <ArrowLeft size={12} /> Back to Bill
-                    </button>
-                  </motion.div>
-                )}
-
-                {payStep === "cash-pending" && (
-                  <motion.div key="cash" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 text-center space-y-3"
-                  >
-                    <div className="inline-flex items-center justify-center w-14 h-14 bg-amber-500/15 rounded-full">
-                      <Banknote className="w-7 h-7 text-amber-600" />
-                    </div>
-                    <h3 className="text-lg font-bold text-amber-700 dark:text-amber-400">Please Pay at Counter</h3>
-                    <p className="text-sm text-muted-foreground">Pay ₹{billData?.totalDue.toFixed(2)} via Cash or UPI/QR scanner at the counter. Staff will clear your table once done.</p>
-                    <button onClick={() => setPayStep("choose")} className="text-xs text-muted-foreground flex items-center justify-center gap-1 mx-auto">
-                      <ArrowLeft size={12} /> Change payment method
-                    </button>
-                  </motion.div>
-                )}
-
-                {payStep === "online-processing" && (
-                  <motion.div key="processing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="bg-card border border-border rounded-2xl p-6 text-center space-y-3"
-                  >
-                    <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
-                    <p className="font-semibold">Processing payment...</p>
-                    <p className="text-xs text-muted-foreground">Please do not close this page.</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {payStep === "online-processing" && (
+                <motion.div key="processing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  className="bg-card border border-border rounded-2xl p-6 text-center space-y-3"
+                >
+                  <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto" />
+                  <p className="font-semibold">Processing payment...</p>
+                  <p className="text-xs text-muted-foreground">Please do not close this page.</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         </motion.div>
       </div>
