@@ -135,14 +135,14 @@ const StaffManager = () => {
 
   return (
     <div className="container mx-auto px-4 pb-12 py-4">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold font-heading">Staff Management</h1>
           <p className="text-muted-foreground text-sm">Manage employee roles and access PINs</p>
         </div>
         <button
           onClick={() => { resetForm(); setEditingStaff(null); setShowAddModal(true); }}
-          className="bg-primary text-primary-foreground px-4 py-2 rounded-xl flex items-center gap-2 font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all"
+          className="w-full sm:w-auto bg-primary text-primary-foreground px-4 py-2 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all whitespace-nowrap"
         >
           <UserPlus size={18} />
           Add Staff
