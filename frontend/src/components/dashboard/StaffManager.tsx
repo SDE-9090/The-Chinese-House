@@ -1,20 +1,20 @@
 import { useState, useEffect } from "react";
-import { 
-  Plus, 
-  Trash2, 
-  UserPlus, 
-  Shield, 
-  Users, 
-  ToggleLeft, 
+import {
+  Plus,
+  Trash2,
+  UserPlus,
+  Shield,
+  Users,
+  ToggleLeft,
   ToggleRight,
   Pencil,
   X,
   Phone
 } from "lucide-react";
-import { 
-  apiAdminListStaff, 
-  apiAdminCreateStaff, 
-  apiAdminUpdateStaff, 
+import {
+  apiAdminListStaff,
+  apiAdminCreateStaff,
+  apiAdminUpdateStaff,
   apiAdminDeleteStaff,
   type StaffMember
 } from "@/lib/apiClient";
@@ -62,8 +62,8 @@ const StaffManager = () => {
     }
 
     if (pin && (pin.length !== 4 || !/^\d+$/.test(pin))) {
-        toast({ title: "Validation Error", description: "PIN must be 4 digits", variant: "destructive" });
-        return;
+      toast({ title: "Validation Error", description: "PIN must be 4 digits", variant: "destructive" });
+      return;
     }
 
     setSubmitting(true);
@@ -134,7 +134,7 @@ const StaffManager = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 pb-12">
+    <div className="container mx-auto px-4 pb-12 py-4">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold font-heading">Staff Management</h1>
@@ -175,19 +175,19 @@ const StaffManager = () => {
                     <Shield className="text-primary" size={24} />
                   </div>
                   <div className="flex gap-2">
-                    <button 
+                    <button
                       onClick={() => openEdit(member)}
                       className="p-2 hover:bg-muted rounded-xl transition-colors text-muted-foreground"
                     >
                       <Pencil size={18} />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleToggleStatus(member)}
                       className={`p-2 rounded-xl transition-colors ${member.is_active ? 'text-primary' : 'text-muted-foreground'}`}
                     >
-                      {member.is_active ? <ToggleRight size={24}/> : <ToggleLeft size={24} />}
+                      {member.is_active ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDelete(member.id)}
                       className="p-2 hover:bg-destructive/10 rounded-xl transition-colors text-destructive"
                     >
@@ -207,7 +207,7 @@ const StaffManager = () => {
                     </span>
                   )}
                 </div>
-                
+
                 <p className="text-xs text-muted-foreground mt-4 flex items-center gap-1">
                   Joined: {new Date(member.created_at).toLocaleDateString()}
                 </p>
@@ -239,7 +239,7 @@ const StaffManager = () => {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative w-full max-w-md bg-card border border-border p-8 rounded-[2rem] shadow-2xl"
             >
-              <button 
+              <button
                 onClick={() => setShowAddModal(false)}
                 className="absolute top-6 right-6 p-2 hover:bg-muted rounded-full transition-colors"
               >

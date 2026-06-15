@@ -48,7 +48,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [newTableNumber, setNewTableNumber] = useState("");
   const [addingTable, setAddingTable] = useState(false);
-  
+
   const [showPaymentModal, setShowPaymentModal] = useState<string | null>(null);
   const [splitMode, setSplitMode] = useState(false);
   const [splitCash, setSplitCash] = useState<string>("");
@@ -58,7 +58,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [selectedTable, setSelectedTable] = useState<Table | null>(null); // For admin detail modal
   const [business, setBusiness] = useState<any>(null);
   const [deletingTableId, setDeletingTableId] = useState<string | null>(null);
-  
+
   const [openTableState, setOpenTableState] = useState<{ id: string, number: string } | null>(null);
   const [orderTableState, setOrderTableState] = useState<{ sessionId: string, number: string } | null>(null);
   const [transferTableState, setTransferTableState] = useState<{ sessionId: string, number: string } | null>(null);
@@ -79,7 +79,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
       await apiPlaceOrder(
         customerName || "Table Guest",
         customerPhone || "",
-        [{ id: item.menuItemId, name: item.name, price: item.price, priceLabel: "₹"+item.price, quantity: 1, image: "" }],
+        [{ id: item.menuItemId, name: item.name, price: item.price, priceLabel: "₹" + item.price, quantity: 1, image: "" }],
         "counter",
         undefined,
         "dine-in",
@@ -132,7 +132,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   }, []);
 
   useEffect(() => {
-    apiGetBusinessSettings().then(setBusiness).catch(() => {});
+    apiGetBusinessSettings().then(setBusiness).catch(() => { });
   }, []);
 
 
@@ -166,7 +166,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   };
 
   return (
-    <div className="container mx-auto px-4 pb-8 space-y-8">
+    <div className="container mx-auto px-4 pb-8 py-2">
       {/* Table Grid */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -185,41 +185,40 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
             {tables.map(table => {
               const session = table.activeSession;
-              const isTableEditing = session && orders.some(o => 
-                (o.tableSessionId === session.id || (o as any).table_session_id === session.id) && 
+              const isTableEditing = session && orders.some(o =>
+                (o.tableSessionId === session.id || (o as any).table_session_id === session.id) &&
                 editingOrderIds.has(o.id)
               );
-              
+
               let elapsedString = "";
               if (session?.startTime) {
-                 const elapsedMs = now - new Date(session.startTime).getTime();
-                 const elapsedMins = Math.max(0, Math.floor(elapsedMs / 60000));
-                 if (elapsedMins < 60) {
-                    elapsedString = `${elapsedMins}m`;
-                 } else {
-                    const h = Math.floor(elapsedMins / 60);
-                    const m = elapsedMins % 60;
-                    elapsedString = `${h}h ${m}m`;
-                 }
+                const elapsedMs = now - new Date(session.startTime).getTime();
+                const elapsedMins = Math.max(0, Math.floor(elapsedMs / 60000));
+                if (elapsedMins < 60) {
+                  elapsedString = `${elapsedMins}m`;
+                } else {
+                  const h = Math.floor(elapsedMins / 60);
+                  const m = elapsedMins % 60;
+                  elapsedString = `${h}h ${m}m`;
+                }
               }
 
               return (
-                <motion.div 
+                <motion.div
                   layout
-                  key={table.id} 
-                  className={`relative p-5 rounded-2xl border flex flex-col justify-between transition-all ${
-                  isTableEditing ? 'border-amber-500 shadow-lg shadow-amber-500/20 bg-amber-500/5' :
-                  table.status === 'occupied' ? 'bg-primary/5 border-primary/30 shadow-md' :
-                  table.status === 'reserved' ? 'bg-amber-500/5 border-amber-500/30 shadow-md' :
-                  'bg-card border-border hover:shadow-lg'
-                }`}
-              >
-                {isTableEditing && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg animate-bounce flex items-center gap-1 z-10 whitespace-nowrap">
-                    <Loader2 size={10} className="animate-spin" />
-                    CUSTOMER EDITING
-                  </div>
-                )}
+                  key={table.id}
+                  className={`relative p-5 rounded-2xl border flex flex-col justify-between transition-all ${isTableEditing ? 'border-amber-500 shadow-lg shadow-amber-500/20 bg-amber-500/5' :
+                      table.status === 'occupied' ? 'bg-primary/5 border-primary/30 shadow-md' :
+                        table.status === 'reserved' ? 'bg-amber-500/5 border-amber-500/30 shadow-md' :
+                          'bg-card border-border hover:shadow-lg'
+                    }`}
+                >
+                  {isTableEditing && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg animate-bounce flex items-center gap-1 z-10 whitespace-nowrap">
+                      <Loader2 size={10} className="animate-spin" />
+                      CUSTOMER EDITING
+                    </div>
+                  )}
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="font-bold text-lg leading-none">Table {table.tableNumber}</h3>
                     <div className="flex items-center gap-2">
@@ -228,12 +227,11 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                           <Clock size={10} /> {elapsedString}
                         </span>
                       )}
-                      <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
-                        session?.status === 'billing' ? 'bg-purple-600 text-white shadow-sm' :
-                        table.status === 'occupied' ? 'bg-primary text-primary-foreground' :
-                        table.status === 'reserved' ? 'bg-amber-500 text-white' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${session?.status === 'billing' ? 'bg-purple-600 text-white shadow-sm' :
+                          table.status === 'occupied' ? 'bg-primary text-primary-foreground' :
+                            table.status === 'reserved' ? 'bg-amber-500 text-white' :
+                              'bg-muted text-muted-foreground'
+                        }`}>
                         {session?.status === 'billing' ? "BILLING" : table.status.toUpperCase()}
                       </span>
                     </div>
@@ -334,15 +332,15 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
       {selectedTable && (() => {
         const detailSession = selectedTable.activeSession;
         const detailBill = detailSession ? billsMap[detailSession.id] : null;
-        const sessionOrders = orders.filter(o => 
-          o.tableSessionId === detailSession?.id || 
+        const sessionOrders = orders.filter(o =>
+          o.tableSessionId === detailSession?.id ||
           (o as any).table_session_id === detailSession?.id
         );
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setSelectedTable(null)}>
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }} 
-              animate={{ opacity: 1, scale: 1 }} 
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
               className="bg-card border border-border rounded-3xl w-full max-w-lg shadow-2xl relative max-h-[90vh] flex flex-col"
               onClick={e => e.stopPropagation()}
             >
@@ -411,7 +409,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                             <span>· Token #{o.token}</span>
                             <span className="capitalize font-semibold px-2 py-0.5 bg-muted rounded-full ml-1">{o.status}</span>
                           </div>
-                          <button 
+                          <button
                             onClick={() => downloadKOTPrint({
                               token: o.token,
                               tableNumber: String(selectedTable.tableNumber),
@@ -496,7 +494,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
             </button>
             <h3 className="text-2xl font-black mb-1">Clear Table</h3>
             <p className="text-sm font-semibold text-muted-foreground mb-6">How did the customer pay?</p>
-            
+
             {billsMap[showPaymentModal] && (
               <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl mb-6 text-center">
                 <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">Total Bill</p>
@@ -540,7 +538,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                   <span className="text-2xl">💵</span>
                   <div className="flex-1">
                     <label className="text-xs font-bold text-muted-foreground ml-1">Cash Received</label>
-                    <input 
+                    <input
                       type="number"
                       autoFocus
                       placeholder="₹0"
@@ -559,7 +557,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                   <span className="text-2xl">📱</span>
                   <div className="flex-1">
                     <label className="text-xs font-bold text-muted-foreground ml-1">UPI Received</label>
-                    <input 
+                    <input
                       type="number"
                       placeholder="₹0"
                       className="w-full bg-muted border-none rounded-xl p-3 font-bold text-lg focus:ring-2 focus:ring-primary outline-none"
@@ -582,7 +580,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                 </button>
               </div>
             )}
-            
+
             <p className="text-[10px] text-muted-foreground text-center px-4 leading-tight">
               Selecting a payment method will irreversibly close this session and commit it to today's sales report.
             </p>
