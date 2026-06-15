@@ -20,7 +20,14 @@ import {
   Clock,
   XCircle,
   Edit3,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Link, useSearchParams } from "react-router-dom";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useCart } from "@/hooks/useCart";
@@ -1370,41 +1377,46 @@ function OrderPageContent({
             )}
           </Link>
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {isTableMode && onCancelSession && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onCancelSession}
-                disabled={cancellingSession}
-                title="Release Table / Cancel Session"
-                className="bg-muted text-muted-foreground px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl font-semibold text-xs flex items-center gap-1 shadow-sm transition-all disabled:opacity-50 whitespace-nowrap border border-border"
-              >
-                {cancellingSession ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
-                <span className="hidden sm:inline">Release</span>
-              </motion.button>
-            )}
-            {isTableMode && onSessionDone && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onSessionDone}
-                disabled={markingDone}
-                className="bg-destructive text-destructive-foreground px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-2 shadow-md transition-all disabled:opacity-50 whitespace-nowrap"
-              >
-                {markingDone ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} className="sm:w-4 sm:h-4" />}
-                <span className="text-[10px] sm:text-xs">Done Eating</span>
-              </motion.button>
-            )}
-            {isTableMode && tableSessionId && (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsBillOpen(true)}
-                className="bg-secondary/20 text-secondary border border-secondary/30 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-2 shadow-sm transition-all whitespace-nowrap"
-              >
-                <Receipt size={14} className="sm:w-4 sm:h-4" />
-                <span className="text-[10px] sm:text-xs">My Bill</span>
-              </motion.button>
+            {isTableMode && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-2 sm:px-3 sm:py-2 rounded-xl border border-border text-foreground hover:bg-muted transition-colors flex items-center gap-1 shadow-sm">
+                    <MoreVertical size={16} className="sm:w-[18px] sm:h-[18px]" />
+                    <span className="hidden sm:inline text-xs font-semibold">Options</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl shadow-xl border-border/50">
+                  {onSessionDone && (
+                    <DropdownMenuItem 
+                      onClick={onSessionDone} 
+                      disabled={markingDone}
+                      className="gap-3 py-3 px-3 rounded-xl cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 font-bold"
+                    >
+                      {markingDone ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                      Done Eating
+                    </DropdownMenuItem>
+                  )}
+                  {tableSessionId && (
+                    <DropdownMenuItem 
+                      onClick={() => setIsBillOpen(true)}
+                      className="gap-3 py-3 px-3 rounded-xl cursor-pointer font-bold text-secondary focus:text-secondary focus:bg-secondary/10"
+                    >
+                      <Receipt size={16} />
+                      My Bill
+                    </DropdownMenuItem>
+                  )}
+                  {onCancelSession && (
+                    <DropdownMenuItem 
+                      onClick={onCancelSession} 
+                      disabled={cancellingSession}
+                      className="gap-3 py-3 px-3 rounded-xl cursor-pointer font-medium text-muted-foreground focus:text-foreground mt-2 border-t border-border/50"
+                    >
+                      {cancellingSession ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />}
+                      Release Table
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <motion.button
               whileHover={{ scale: 1.05 }}
