@@ -18,12 +18,23 @@ type QueueListener = (state: {
   failed: string[];
 }) => void;
 
-/* ─── Electron check ─── */
-function isElectron(): boolean {
+/* ─── Device checks ─── */
+export function isElectron(): boolean {
   return (
     typeof window !== "undefined" &&
     typeof (window as any).electronAPI !== "undefined"
   );
+}
+
+export function isAndroid(): boolean {
+  return (
+    typeof navigator !== "undefined" &&
+    /android/i.test(navigator.userAgent || navigator.vendor || (window as any).opera)
+  );
+}
+
+export function isAutoPrintSupported(): boolean {
+  return isElectron() || isAndroid();
 }
 
 /* ─── Constants ─── */
@@ -66,7 +77,7 @@ class PrintQueue {
 
   /* ─── Add job to queue ─── */
   enqueue(id: string, data: ReceiptData) {
-    if (!isElectron()) return;
+    if (!isAutoPrintSupported()) return;
 
     // prevent duplicates
     if (this.knownIds.has(id)) return;
@@ -139,15 +150,23 @@ class PrintQueue {
     this.processNext();
   }
 
-  /* ─── Actual print execution (Electron) ─── */
+  /* ─── Actual print execution (Electron or Android) ─── */
   private async executePrint(job: PrintJob): Promise<void> {
-    if (!(window as any).electronAPI) {
-      console.warn("[PrintQueue] Not in Electron, skipping print");
+    const canvas = buildReceiptCanvas(job.data);
+    const dataUrl = canvas.toDataURL("image/png");
+
+    if (isAndroid()) {
+      console.log("[PrintQueue] Dispatching RawBT Intent for Android");
+      const base64Data = dataUrl.split(",")[1];
+      const intentUrl = `intent:${base64Data}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+      window.location.href = intentUrl;
       return;
     }
 
-    const canvas = buildReceiptCanvas(job.data);
-    const dataUrl = canvas.toDataURL("image/png");
+    if (!(window as any).electronAPI) {
+      console.warn("[PrintQueue] Not in Electron or Android, skipping print");
+      return;
+    }
 
     // 🔥 THIS is the key - call Electron
     await (window as any).electronAPI.printReceipt(dataUrl);

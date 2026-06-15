@@ -1,17 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { socket } from "@/lib/socket";
-import { printQueue } from "@/lib/printQueue";
+import { printQueue, isAutoPrintSupported } from "@/lib/printQueue";
 import type { ReceiptData } from "@/lib/receiptGenerator";
 import type { Order } from "@/lib/apiClient";
-
-/** Detect Electron environment */
-function isElectron(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    typeof (window as any).process === "object" &&
-    (window as any).process?.versions?.electron != null
-  );
-}
 
 /** Convert an Order object to ReceiptData */
 function orderToReceiptData(order: Order): ReceiptData {
@@ -66,7 +57,7 @@ export function useAutoPrint(orders: Order[]) {
 
   // Auto-print new orders via queue
   useEffect(() => {
-    if (!isElectron()) return;
+    if (!isAutoPrintSupported()) return;
 
     if (initialLoadRef.current) {
       initialLoadRef.current = false;
@@ -87,7 +78,7 @@ export function useAutoPrint(orders: Order[]) {
 
   // Auto-print when due payment is completed via queue
   useEffect(() => {
-    if (!isElectron()) return;
+    if (!isAutoPrintSupported()) return;
     if (initialLoadRef.current) return;
 
     const prevMap = prevOrderMapRef.current;
@@ -105,7 +96,7 @@ export function useAutoPrint(orders: Order[]) {
 
   // Socket listener (no-op handler, orders refresh triggers diff logic above)
   useEffect(() => {
-    if (!isElectron()) return;
+    if (!isAutoPrintSupported()) return;
     const noop = () => {};
     socket.on("payment-updated", noop);
     return () => { socket.off("payment-updated", noop); };
