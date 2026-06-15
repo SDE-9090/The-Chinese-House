@@ -11,12 +11,15 @@ const Location = () => {
   const { settings } = useBusinessSettings();
 
   const openMaps = () => {
-    if (!data) return;
+    if (!data || !data.map_embed_url) return;
 
-    window.open(
-      "https://www.google.com/maps/dir/?api=1&destination=18.53870,73.90027",
-      "_blank"
-    );
+    let url = data.map_embed_url;
+    const qMatch = url.match(/[?&]q=([^&]+)/);
+    if (qMatch) {
+      url = `https://www.google.com/maps/dir/?api=1&destination=${qMatch[1]}`;
+    }
+
+    window.open(url, "_blank");
   };
 
   if (!data) return null;
@@ -42,28 +45,32 @@ const Location = () => {
 
           {/* MAP */}
 
-          <ScrollReveal direction="left">
-            <div className="relative rounded-2xl overflow-hidden shadow-lg border border-border h-[220px] md:h-[440px]">
+          {data.map_embed_url ? (
+            <ScrollReveal direction="left">
+              <div className="relative rounded-2xl overflow-hidden shadow-lg border border-border h-[220px] md:h-[440px]">
 
-              <iframe
-                src={data.map_embed_url}
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-                title="The Chinese House Location"
-              />
+                <iframe
+                  src={data.map_embed_url}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  title="The Chinese House Location"
+                />
 
-              <button
-                onClick={openMaps}
-                className="absolute bottom-3 right-3 flex items-center gap-2 bg-white text-black px-4 py-2 rounded-full shadow-lg text-sm font-semibold hover:scale-105 transition"
-              >
-                <Navigation size={16} />
-                Directions
-              </button>
+                <button
+                  onClick={openMaps}
+                  className="absolute bottom-3 right-3 flex items-center gap-2 bg-white text-black px-4 py-2 rounded-full shadow-lg text-sm font-semibold hover:scale-105 transition"
+                >
+                  <Navigation size={16} />
+                  Directions
+                </button>
 
-            </div>
-          </ScrollReveal>
+              </div>
+            </ScrollReveal>
+          ) : (
+            <div className="hidden md:block" />
+          )}
 
           {/* INFO */}
 

@@ -13,7 +13,7 @@ export const useLocationContent = () => {
     opening_hours_display: "Tue - Sun: 7 PM - 11 PM • Mon Closed",
     instagram_handle: "@thechinesehouse",
     instagram_url: "https://www.instagram.com/thechinesehouse",
-    map_embed_url: "https://www.google.com/maps?q=18.53870,73.90027&z=17&output=embed",
+    map_embed_url: "",
   };
 
   const [location, setLocation] = useState<LocationContent | null>(null);
