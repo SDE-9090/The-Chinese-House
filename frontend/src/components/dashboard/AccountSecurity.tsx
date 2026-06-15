@@ -243,11 +243,11 @@ const AccountSecurity = () => {
 
             {/* Error / Success */}
             <AnimatePresence>
-              {error && (
+              {!!error && (
                 <motion.p key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="text-destructive text-sm bg-destructive/10 p-3 rounded-xl mb-4">{error}</motion.p>
               )}
-              {success && (
+              {!!success && (
                 <motion.p key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="text-green-600 dark:text-green-400 text-sm bg-green-500/10 p-3 rounded-xl mb-4 flex items-center gap-2">
                   <CheckCircle2 size={14} /> {success}
@@ -449,11 +449,11 @@ const AccountSecurity = () => {
             </div>
 
             <AnimatePresence>
-              {error && (
+              {!!error && (
                 <motion.p key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="text-destructive text-sm bg-destructive/10 p-3 rounded-xl mb-4">{error}</motion.p>
               )}
-              {success && (
+              {!!success && (
                 <motion.p key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="text-green-600 dark:text-green-400 text-sm bg-green-500/10 p-3 rounded-xl mb-4 flex items-center gap-2">
                   <CheckCircle2 size={14} /> {success}
