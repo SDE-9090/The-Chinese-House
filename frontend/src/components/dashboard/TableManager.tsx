@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, type Table, type Order, type SessionBill } from "@/lib/apiClient";
 import OrderCard from "./OrderCard";
 import BillDocument, { downloadBillPrint, downloadKOTPrint } from "@/components/BillDocument";
-import { Loader2, CheckCircle, UtensilsCrossed, Clock, QrCode, Plus, X, Printer, Download, Trash2 } from "lucide-react";
+import { Loader2, CheckCircle, UtensilsCrossed, Clock, QrCode, Plus, X, Printer, Download, Trash2, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -173,8 +173,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           <h2 className="text-xl font-bold flex items-center gap-2">
             <UtensilsCrossed className="text-primary" /> Live Table Status
           </h2>
-          <button onClick={handleManualRefresh} disabled={isRefreshing} className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors">
-            <Loader2 className={`w-5 h-5 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
+          <button onClick={handleManualRefresh} disabled={isRefreshing} className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors" title="Refresh Tables">
+            <RefreshCw className={`w-5 h-5 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
           </button>
         </div>
         {loading ? (
