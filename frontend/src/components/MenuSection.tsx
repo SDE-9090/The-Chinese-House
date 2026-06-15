@@ -186,7 +186,7 @@ ${link}`;
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.3 }}
                     onClick={() => setSelectedItem(item)}
-                    className={`bg-card rounded-2xl overflow-hidden border border-border hover-lift group cursor-pointer ${
+                    className={`bg-card rounded-2xl overflow-hidden border border-border hover-lift group cursor-pointer flex flex-col h-full ${
                       !item.available ? "opacity-70" : ""
                     }`}
                   >
@@ -205,7 +205,7 @@ ${link}`;
                     </div>
 
                     {/* Content */}
-                    <div className="p-3 sm:p-5">
+                    <div className="p-3 sm:p-5 flex flex-col flex-grow">
 
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-heading font-bold text-sm sm:text-lg leading-tight line-clamp-1">
@@ -247,7 +247,7 @@ ${link}`;
                         {item.desc}
                       </p>
 
-                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex gap-2 mt-auto" onClick={(e) => e.stopPropagation()}>
 
                         {!item.available ? (
                           <div className="flex-1 bg-destructive/10 text-destructive py-2 rounded-xl text-xs text-center flex items-center justify-center gap-1">
