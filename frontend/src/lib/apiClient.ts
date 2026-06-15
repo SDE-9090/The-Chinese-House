@@ -389,6 +389,7 @@ export interface BusinessSettings {
   phone?: string;
   email?: string;
   isGstEnabled: boolean;
+  isOnlinePaymentEnabled?: boolean;
   cgstRate: number;
   sgstRate: number;
   kitchenPin?: string;

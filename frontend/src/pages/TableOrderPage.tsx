@@ -321,20 +321,24 @@ export default function TableOrderPage() {
                     <p className="text-center text-sm font-semibold text-muted-foreground">How would you like to pay?</p>
 
                     {/* Online Pay */}
-                    <motion.button
-                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                      onClick={handlePayOnline}
-                      className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-4 rounded-2xl font-bold text-base shadow-lg shadow-primary/25 flex items-center justify-center gap-3"
-                    >
-                      <CreditCard size={20} />
-                      Pay Online · ₹{billData.totalDue.toFixed(2)}
-                    </motion.button>
+                    {business.isOnlinePaymentEnabled !== false && (
+                      <>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                          onClick={handlePayOnline}
+                          className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-4 rounded-2xl font-bold text-base shadow-lg shadow-primary/25 flex items-center justify-center gap-3"
+                        >
+                          <CreditCard size={20} />
+                          Pay Online · ₹{billData.totalDue.toFixed(2)}
+                        </motion.button>
 
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-px bg-border" />
-                      <span className="text-xs text-muted-foreground font-semibold">OR</span>
-                      <div className="flex-1 h-px bg-border" />
-                    </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-px bg-border" />
+                          <span className="text-xs text-muted-foreground font-semibold">OR</span>
+                          <div className="flex-1 h-px bg-border" />
+                        </div>
+                      </>
+                    )}
 
                     {/* Cash */}
                     <motion.button

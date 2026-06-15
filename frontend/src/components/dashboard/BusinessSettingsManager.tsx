@@ -18,6 +18,7 @@ const defaultState: BusinessSettings = {
   phone: "",
   email: "",
   isGstEnabled: true,
+  isOnlinePaymentEnabled: true,
   cgstRate: 2.5,
   sgstRate: 2.5,
   kitchenPin: "1234",
@@ -65,6 +66,7 @@ const BusinessSettingsManager = () => {
         phone: data.phone?.trim() || "",
         email: data.email?.trim() || "",
         isGstEnabled: data.isGstEnabled,
+        isOnlinePaymentEnabled: data.isOnlinePaymentEnabled,
         cgstRate: data.cgstRate,
         sgstRate: data.sgstRate,
         features: data.features,
@@ -166,6 +168,26 @@ const BusinessSettingsManager = () => {
                 checked={data.isGstEnabled}
                 onCheckedChange={(checked) =>
                   setData((prev) => ({ ...prev, isGstEnabled: checked }))
+                }
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">
+              Online Payments
+            </label>
+
+            <div className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3 h-[52px]">
+              <span className="text-sm text-muted-foreground">
+                Enable "Pay Online" option
+              </span>
+
+              <Switch
+                id="online-payment-toggle"
+                checked={data.isOnlinePaymentEnabled ?? true}
+                onCheckedChange={(checked) =>
+                  setData((prev) => ({ ...prev, isOnlinePaymentEnabled: checked }))
                 }
               />
             </div>
