@@ -888,7 +888,9 @@ function OrderPageContent({
               </div>
               <p className="text-xs text-muted-foreground">
                 Payment:{" "}
-                {confirmedOrder.paymentMethod === "online"
+                {confirmedOrder.orderSource === "table"
+                  ? "Added to Table Bill"
+                  : confirmedOrder.paymentMethod === "online"
                   ? "Paid Online"
                   : "Pay at Counter"}
               </p>
