@@ -355,7 +355,19 @@ export async function apiAdminChangeMobile(otp: string, newMobile: string): Prom
   return data;
 }
 
-export async function apiAdminGetInfo(): Promise<{ mobile: string }> {
+export async function apiAdminChangeEmail(otp: string, newEmail: string): Promise<{ message: string; email: string }> {
+  const res = await authFetch(`${API_URL}/admin/change-email`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ otp, newEmail }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to change email");
+  return data;
+}
+
+
+export async function apiAdminGetInfo(): Promise<{ mobile: string | null; email: string | null }> {
   const res = await authFetch(`${API_URL}/admin/info`, {
     headers: authHeaders(),
   });

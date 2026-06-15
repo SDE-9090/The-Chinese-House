@@ -3,6 +3,7 @@ import {
   apiAdminRequestSettingsOtp,
   apiAdminChangePassword,
   apiAdminChangeMobile,
+  apiAdminChangeEmail,
   apiAdminGetInfo,
 } from "@/lib/apiClient";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,7 +19,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-type Mode = "idle" | "change-password" | "change-mobile";
+type Mode = "idle" | "change-password" | "change-mobile" | "change-email";
 
 function validatePassword(pw: string): string | null {
   if (pw.length < 8) return "Password must be at least 8 characters";
@@ -30,7 +31,8 @@ function validatePassword(pw: string): string | null {
 const AccountSecurity = () => {
   const { toast } = useToast();
   const [mode, setMode] = useState<Mode>("idle");
-  const [maskedMobile, setMaskedMobile] = useState("");
+  const [maskedMobile, setMaskedMobile] = useState<string | null>(null);
+  const [maskedEmail, setMaskedEmail] = useState<string | null>(null);
   const [loadingInfo, setLoadingInfo] = useState(true);
 
   // OTP
@@ -45,8 +47,9 @@ const AccountSecurity = () => {
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
 
-  // Change mobile
+  // Change mobile & email
   const [newMobile, setNewMobile] = useState("");
+  const [newEmail, setNewEmail] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -54,8 +57,14 @@ const AccountSecurity = () => {
 
   useEffect(() => {
     apiAdminGetInfo()
-      .then((data) => setMaskedMobile(data.mobile))
-      .catch(() => setMaskedMobile("Unknown"))
+      .then((data) => {
+        setMaskedMobile(data.mobile);
+        setMaskedEmail(data.email);
+      })
+      .catch(() => {
+        setMaskedMobile("Unknown");
+        setMaskedEmail("Unknown");
+      })
       .finally(() => setLoadingInfo(false));
   }, []);
 
@@ -67,6 +76,7 @@ const AccountSecurity = () => {
     setNewPassword("");
     setConfirmPassword("");
     setNewMobile("");
+    setNewEmail("");
     setError("");
     setSuccess("");
     setShowCurrentPw(false);
@@ -147,14 +157,25 @@ const AccountSecurity = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-xl p-3">
-          <Smartphone size={14} />
-          <span>Registered mobile:</span>
-          {loadingInfo ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : (
-            <span className="font-mono font-medium text-foreground">{maskedMobile}</span>
-          )}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-xl p-3">
+            <Smartphone size={14} />
+            <span>Registered mobile:</span>
+            {loadingInfo ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <span className="font-mono font-medium text-foreground">{maskedMobile || "Not Set"}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-xl p-3">
+            <Send size={14} />
+            <span>Recovery email:</span>
+            {loadingInfo ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <span className="font-mono font-medium text-foreground">{maskedEmail || "Not Set"}</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -185,6 +206,18 @@ const AccountSecurity = () => {
             </div>
             <h3 className="font-semibold text-foreground mb-1">Change Mobile Number</h3>
             <p className="text-sm text-muted-foreground">Update your registered mobile for OTP</p>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={() => setMode("change-email")}
+            className="bg-card border border-border rounded-2xl p-6 text-left hover:border-primary/30 transition-colors"
+          >
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mb-3">
+              <Send className="text-primary" size={20} />
+            </div>
+            <h3 className="font-semibold text-foreground mb-1">Recovery Email</h3>
+            <p className="text-sm text-muted-foreground">Update your email used for receiving OTPs</p>
           </motion.button>
         </div>
       )}
@@ -390,6 +423,91 @@ const AccountSecurity = () => {
                 className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-50"
               >
                 {submitting ? "Updating..." : "Update Mobile Number"}
+              </button>
+            </form>
+          </motion.div>
+        )}
+
+        {/* Change Email Form */}
+        {mode === "change-email" && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-card border border-border rounded-2xl p-6"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-heading font-bold text-foreground flex items-center gap-2">
+                <Send size={18} className="text-primary" /> Recovery Email Address
+              </h3>
+              <button onClick={resetForm} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Cancel
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {error && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="text-destructive text-sm bg-destructive/10 p-3 rounded-xl mb-4">{error}</motion.p>
+              )}
+              {success && (
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="text-green-600 dark:text-green-400 text-sm bg-green-500/10 p-3 rounded-xl mb-4 flex items-center gap-2">
+                  <CheckCircle2 size={14} /> {success}
+                </motion.p>
+              )}
+            </AnimatePresence>
+
+            <form onSubmit={handleChangeEmail} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">New Email Address</label>
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => { setNewEmail(e.target.value); setError(""); }}
+                  placeholder="e.g. admin@thechinesehouse.com"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm"
+                  disabled={submitting}
+                />
+              </div>
+
+              {/* OTP Section (only if an email is already set) */}
+              {maskedEmail && (
+                <div className="border-t border-border pt-4">
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">OTP Verification</label>
+                  <p className="text-xs text-muted-foreground mb-2">OTP will be sent to your <strong>current</strong> recovery email address</p>
+                  {!otpSent ? (
+                    <button
+                      type="button"
+                      onClick={handleRequestOtp}
+                      disabled={otpSending || !newEmail.trim()}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 text-primary rounded-xl text-sm font-semibold hover:bg-primary/20 transition-all disabled:opacity-50"
+                    >
+                      {otpSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                      {otpSending ? "Sending..." : "Send OTP to current email"}
+                    </button>
+                  ) : (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={otp}
+                      onChange={(e) => { setOtp(e.target.value.replace(/\D/g, "")); setError(""); }}
+                      placeholder="Enter 6-digit OTP"
+                      className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-center tracking-[0.5em] text-lg font-mono"
+                      disabled={submitting}
+                      autoFocus
+                    />
+                  )}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting || (!!maskedEmail && (!otpSent || otp.length !== 6)) || !newEmail.trim()}
+                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-50"
+              >
+                {submitting ? "Updating..." : (maskedEmail ? "Update Recovery Email" : "Set Recovery Email")}
               </button>
             </form>
           </motion.div>

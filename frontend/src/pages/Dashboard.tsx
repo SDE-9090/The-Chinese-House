@@ -256,8 +256,8 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
             {mode === "login"
               ? (loginMode === "staff" ? "Enter your 4-digit PIN" : "Enter your master login details")
               : mode === "request-reset"
-                ? "We'll send an OTP to your registered mobile"
-                : `Enter the OTP sent to ${maskedMobile}`}
+                ? "We'll send an OTP to your registered email"
+                : `Enter the OTP sent to your email`}
           </p>
 
           {/* Error / Success */}
@@ -391,7 +391,7 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
           {mode === "request-reset" && (
             <form onSubmit={handleRequestReset} className="space-y-4 relative z-10">
               <p className="text-sm text-muted-foreground text-center px-4">
-                Click below to receive an OTP on your registered mobile number.
+                Click below to receive an OTP on your registered email address.
               </p>
               <button
                 type="submit"
