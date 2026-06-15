@@ -392,8 +392,14 @@ const ItemReviewsPage = () => {
               </h2>
 
               <span className="text-sm text-muted-foreground">
-                {filteredSortedReviews.length} review
-                {filteredSortedReviews.length !== 1 ? "s" : ""}
+                {loading ? (
+                  <span className="animate-pulse bg-muted rounded-md h-4 w-16 inline-block" />
+                ) : (
+                  <>
+                    {filteredSortedReviews.length} review
+                    {filteredSortedReviews.length !== 1 ? "s" : ""}
+                  </>
+                )}
               </span>
             </div>
 
@@ -533,9 +539,15 @@ const ItemReviewsPage = () => {
                     ))}
                   </div>
 
-                  <p className="text-sm text-muted-foreground font-semibold">
-                    {total} review{total !== 1 ? "s" : ""}
-                  </p>
+                  <div className="text-sm text-muted-foreground font-semibold">
+                    {loading ? (
+                      <span className="animate-pulse bg-muted rounded-md h-4 w-16 inline-block" />
+                    ) : (
+                      <>
+                        {total} review{total !== 1 ? "s" : ""}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
 
