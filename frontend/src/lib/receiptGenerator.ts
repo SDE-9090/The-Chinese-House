@@ -450,13 +450,17 @@ export function buildZReportCanvas(data: ZReportData): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d")!;
 
+  let expectedHeight = PAD + 10 + 24 + 20 + 24 + 24 + 28 + 28 + 34 + 20 + PAD;
+  if (data.paidRevenue !== undefined) expectedHeight += 28;
+  if (data.pendingRevenue !== undefined) expectedHeight += 28;
+
   canvas.width = W;
-  canvas.height = 450;
+  canvas.height = expectedHeight;
   ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, W, 450);
+  ctx.fillRect(0, 0, W, expectedHeight);
   ctx.strokeStyle = "#e5e7eb";
   ctx.lineWidth = 2;
-  ctx.strokeRect(4, 4, W - 8, 450 - 8);
+  ctx.strokeRect(4, 4, W - 8, expectedHeight - 8);
 
   let y = PAD + 10;
 
@@ -528,8 +532,9 @@ export function printZReport(data: ZReportData) {
 
   printWindow.document.write(`
     <html>
-    <body style="margin:0;display:flex;justify-content:center;">
-      <img src="${dataUrl}" style="width:80mm" onload="window.print();window.close();" />
+    <head><title>Print Z-Report</title></head>
+    <body style="margin:0; display:flex; justify-content:center; align-items:flex-start; padding-top: 20px;">
+      <img src="${dataUrl}" style="width: 80mm; max-width: 100%; height: auto; object-fit: contain;" onload="window.print();window.close();" />
     </body>
     </html>
   `);
@@ -551,8 +556,9 @@ export function printKot(data: ReceiptData) {
 
   printWindow.document.write(`
     <html>
-    <body style="margin:0;display:flex;justify-content:center;">
-      <img src="${dataUrl}" style="width:80mm" onload="window.print();window.close();" />
+    <head><title>Print KOT</title></head>
+    <body style="margin:0; display:flex; justify-content:center; align-items:flex-start; padding-top: 20px;">
+      <img src="${dataUrl}" style="width: 80mm; max-width: 100%; height: auto; object-fit: contain;" onload="window.print();window.close();" />
     </body>
     </html>
   `);
