@@ -134,7 +134,7 @@ const SalesReportUI = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4 pb-10 py-4">
+    <div className="container mx-auto px-4 pb-10 py-2">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="font-heading text-2xl font-bold">Sales Reports</h2>
@@ -147,8 +147,8 @@ const SalesReportUI = () => {
               key={key}
               onClick={() => setReportType(key)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${reportType === key
-                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                  : "bg-card border border-border hover:bg-muted text-muted-foreground"
+                ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                : "bg-card border border-border hover:bg-muted text-muted-foreground"
                 }`}
             >
               {key.charAt(0).toUpperCase() + key.slice(1).replace("wise", "-wise")}
@@ -212,8 +212,8 @@ const SalesReportUI = () => {
               key={t}
               onClick={() => setOrderTypeFilter(t)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${orderTypeFilter === t
-                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                  : "bg-card border border-border hover:bg-muted text-muted-foreground"
+                ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                : "bg-card border border-border hover:bg-muted text-muted-foreground"
                 }`}
             >
               {t === "all" ? "All Types" : t === "dine-in" ? "Dine-in" : t === "takeaway" ? "Takeaway" : "Delivery"}

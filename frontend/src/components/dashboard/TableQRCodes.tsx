@@ -128,21 +128,21 @@ export default function TableQRCodes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold">Table Setup & QR Codes</h2>
           <p className="text-muted-foreground text-sm">Create, delete, and print QR codes for tables</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <button
             onClick={printAllQRs}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition"
+            className="flex-1 sm:flex-none bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition whitespace-nowrap"
           >
-            <Printer size={16} /> Print All QR Codes
+            <Printer size={16} /> Print All QRs
           </button>
           <button
             onClick={() => setShowAddTableModal(true)}
-            className="bg-secondary text-secondary-foreground hover:bg-secondary/90 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition"
+            className="flex-1 sm:flex-none bg-secondary text-secondary-foreground hover:bg-secondary/90 px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition whitespace-nowrap"
           >
             <Plus size={16} /> Add Table
           </button>
