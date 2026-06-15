@@ -923,7 +923,7 @@ const OrderHistory = () => {
 
                 <div className="flex items-center gap-2 mb-2">
                   {order.orderType && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent/15 text-accent-foreground border border-accent/20">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent/15 text-accent border border-accent/20">
                       {order.orderType === "dine-in" ? "Dine-in" : order.orderType === "takeaway" ? "Takeaway" : "Delivery"}
                     </span>
                   )}

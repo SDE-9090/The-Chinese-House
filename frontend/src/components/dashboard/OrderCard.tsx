@@ -215,7 +215,7 @@ const OrderCard = ({
         {/* Row 2 (scrollable badges) */}
         <div className="flex gap-2 mt-2 overflow-x-auto no-scrollbar">
           {order.orderType && (
-            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-accent/15 border border-accent/20 whitespace-nowrap">
+            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-accent/15 text-accent border border-accent/20 whitespace-nowrap">
               {order.orderType === "dine-in"
                 ? "Dine-in"
                 : order.orderType === "takeaway"
