@@ -250,7 +250,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                             <DropdownMenuItem 
                               onClick={() => setShowPaymentModal(session.id)}
                               disabled={closingId === session.id}
-                              className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+                              className="gap-2 text-destructive focus:text-destructive cursor-pointer xl:hidden"
                             >
                               <X size={14} />
                               <span>Force Clear Table</span>
@@ -297,7 +297,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                   )}
 
                   {session && (
-                    <div className="space-y-3">
+                    <div className="flex-1 flex flex-col space-y-3">
                       <div className="flex items-start justify-between">
                         <div>
                           <p className="font-semibold text-sm flex items-center gap-1">
@@ -348,6 +348,19 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                             className="flex-1 bg-muted text-foreground hover:bg-muted/80 py-2 px-2 flex items-center justify-center rounded-xl text-xs font-bold border border-border transition shadow-sm leading-tight text-center"
                           >
                             View Bill
+                          </button>
+                        </div>
+                      )}
+
+                      {(user.role === 'admin' || user.role === 'manager') && (
+                        <div className="hidden xl:flex flex-1 flex-col justify-end mt-3">
+                          <button 
+                            onClick={() => setShowPaymentModal(session.id)}
+                            disabled={closingId === session.id}
+                            className="w-full border border-destructive/30 text-destructive hover:bg-destructive/10 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                          >
+                            {closingId === session.id ? <Loader2 className="animate-spin w-4 h-4" /> : <X size={14} />}
+                            Force Clear Table
                           </button>
                         </div>
                       )}
