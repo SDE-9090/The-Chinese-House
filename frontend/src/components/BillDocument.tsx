@@ -49,6 +49,10 @@ export interface KOTData {
   specialInstructions?: string;
   items: { name: string; quantity: number; note?: string }[];
   date?: string;
+  billDetails?: {
+    total: number;
+    paymentStatus: string;
+  };
 }
 
 export function downloadKOTPrint(kotData: KOTData) {
@@ -102,6 +106,20 @@ export function downloadKOTPrint(kotData: KOTData) {
   <table>
     <tbody>${itemRows}</tbody>
   </table>
+
+  ${kotData.billDetails ? `
+  <div style="margin-top:15px; border-top:2px dashed #000; padding-top:10px;">
+    <div style="display:flex; justify-content:space-between; font-size:18px; font-weight:900;">
+      <span>TOTAL:</span>
+      <span>₹${kotData.billDetails.total.toFixed(2)}</span>
+    </div>
+    <div style="text-align:center; margin-top:10px;">
+      <span style="font-size:20px; font-weight:bold; padding:4px 12px; border:2px solid #000; display:inline-block; text-transform:uppercase;">
+        ${kotData.billDetails.paymentStatus}
+      </span>
+    </div>
+  </div>
+  ` : ""}
 
   <div style="text-align:center;margin-top:20px;font-size:12px;border-top:1px dashed #000;padding-top:10px;">
     - END OF KOT -

@@ -60,6 +60,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
     items: { name: string; quantity: number; note?: string }[];
     orderType: string;
     specialInstructions?: string;
+    paymentStatus?: string;
   } | null>(null);
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
   const [orderType, setOrderType] = useState<"takeaway" | "delivery">("takeaway");
@@ -236,7 +237,8 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
         total: order.total,
         items: cart.map(c => ({ name: c.name, quantity: c.quantity, note: c.note })),
         orderType,
-        specialInstructions: specialInstructions.trim()
+        specialInstructions: specialInstructions.trim(),
+        paymentStatus: order.paymentStatus || "paid"
       });
       setStep("confirmation");
       toast.success(`Order #${order.token} placed successfully!`);
@@ -304,7 +306,11 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
               token: lastOrder.token,
               orderType: lastOrder.orderType,
               items: lastOrder.items,
-              specialInstructions: lastOrder.specialInstructions
+              specialInstructions: lastOrder.specialInstructions,
+              billDetails: {
+                total: lastOrder.total,
+                paymentStatus: lastOrder.paymentStatus || "paid"
+              }
             })}
             className="flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 text-foreground px-6 py-3 rounded-xl font-bold transition-all"
           >
