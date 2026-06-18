@@ -60,7 +60,7 @@ export default function TableOrderPage() {
   // Sync activeTableQr with localStorage
   useEffect(() => {
     if (qrCode && table?.activeSession) {
-      if (table.activeSession.status === "completed" || table.activeSession.status === "cancelled") {
+      if (table.activeSession.status === "completed") {
         localStorage.removeItem("activeTableQr");
       } else {
         localStorage.setItem("activeTableQr", qrCode);
