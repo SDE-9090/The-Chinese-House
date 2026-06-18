@@ -930,67 +930,7 @@ function OrderPageContent({
                     ? "Paid Online"
                     : "Pay at Counter"}
               </p>
-              {confirmedOrder.paymentStatus === "pending" &&
-                confirmedOrder.paidAmount !== undefined &&
-                confirmedOrder.total > (confirmedOrder.paidAmount ?? 0) &&
-                confirmedOrder.orderSource !== "table" && (
-                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mt-2 text-center">
-                    <p className="text-sm font-semibold text-destructive">
-                      Due: ₹
-                      {(
-                        confirmedOrder.total - (confirmedOrder.paidAmount ?? 0)
-                      ).toFixed(2)}
-                    </p>
-                    <p className="text-xs text-destructive/80 mt-1 mb-2">
-                      Please pay the remaining amount online to confirm your
-                      updated order.
-                    </p>
-                    <button
-                      onClick={async () => {
-                        setIsPayingDue(true);
-                        try {
-                          await apiCustomerPayDue(
-                            confirmedOrder.id,
-                            confirmedOrder.customerPhone,
-                          );
-                          setConfirmedOrder((prev) =>
-                            prev
-                              ? {
-                                ...prev,
-                                paymentStatus: "paid" as const,
-                                paidAmount: prev.total,
-                                paymentMethod: "online" as const,
-                              }
-                              : prev,
-                          );
-                          toast({
-                            title: "Payment successful",
-                            description: "Your due amount has been paid.",
-                          });
-                        } catch {
-                          toast({
-                            title: "Payment failed",
-                            description: "Please try again.",
-                            variant: "destructive",
-                          });
-                        } finally {
-                          setIsPayingDue(false);
-                        }
-                      }}
-                      disabled={isPayingDue}
-                      className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {isPayingDue ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <CreditCard size={16} />
-                      )}
-                      {isPayingDue
-                        ? "Processing..."
-                        : `Pay ₹${(confirmedOrder.total - (confirmedOrder.paidAmount ?? 0)).toFixed(2)} Online`}
-                    </button>
-                  </div>
-                )}
+
             </div>
           )}
 
@@ -1081,7 +1021,7 @@ function OrderPageContent({
             {!isTableMode && (
               <div>
                 <label className="text-sm font-semibold mb-1.5 block">
-                  Your Name (Optional)
+                  Your Name
                 </label>
                 <input
                   value={customerName}
