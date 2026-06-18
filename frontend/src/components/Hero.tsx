@@ -69,6 +69,10 @@ const Hero = () => {
   const description = activeHero.description || DEFAULT_HERO.description;
   const image = activeHero.image_url;
 
+  const activeTableQr = localStorage.getItem("activeTableQr");
+  const orderLink = activeTableQr ? `/table/${activeTableQr}` : "/order";
+  const orderText = activeTableQr ? "Return to Table" : "Order Now";
+
   // Parse title: replace <span>...</span> with gradient span
   const renderTitle = () => {
     const parts = titleRaw.split(/(<span>.*?<\/span>)/g);
@@ -117,10 +121,10 @@ const Hero = () => {
             </motion.a>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
-                to="/order"
+                to={orderLink}
                 className="inline-block border-2 border-primary text-primary px-8 py-3.5 rounded-2xl font-semibold text-lg hover:bg-primary hover:text-primary-foreground transition-all"
               >
-                Order Now
+                {orderText}
               </Link>
             </motion.div>
           </div>

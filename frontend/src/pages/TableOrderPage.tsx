@@ -57,6 +57,17 @@ export default function TableOrderPage() {
   // Keep finalBillRef in sync whenever bill changes
   useEffect(() => { if (bill) finalBillRef.current = bill; }, [bill]);
 
+  // Sync activeTableQr with localStorage
+  useEffect(() => {
+    if (qrCode && table?.activeSession) {
+      if (table.activeSession.status === "completed" || table.activeSession.status === "cancelled") {
+        localStorage.removeItem("activeTableQr");
+      } else {
+        localStorage.setItem("activeTableQr", qrCode);
+      }
+    }
+  }, [qrCode, table?.activeSession?.status]);
+
   useEffect(() => {
     const session = table?.activeSession;
     if (session?.status === "billing" && !billFetchedRef.current && !loadingBill) {
@@ -137,6 +148,7 @@ export default function TableOrderPage() {
       toast({ title: "Table released", description: "Your session has been cancelled." });
       localStorage.removeItem("tableSessionId");
       localStorage.removeItem("tableCustomerPhone");
+      localStorage.removeItem("activeTableQr");
       window.location.reload();
     } catch (err: any) {
       toast({ title: "Cannot cancel", description: err.message, variant: "destructive" });
@@ -233,8 +245,8 @@ export default function TableOrderPage() {
           </div>
           <form onSubmit={handleReserve} className="space-y-4">
             <div>
-              <Label>Name</Label>
-              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your Name" required />
+              <Label>Name (Optional)  </Label>
+              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your Name" />
             </div>
             <div>
               <Label>Phone Number (Optional)</Label>
