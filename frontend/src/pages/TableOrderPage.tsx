@@ -114,7 +114,6 @@ export default function TableOrderPage() {
 
   const handleReserve = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return toast({ title: "Please enter your name", variant: "destructive" });
     setReserving(true);
     try {
       await apiReserveTable(table!.id, name, phone);
