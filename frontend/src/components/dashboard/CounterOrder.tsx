@@ -257,7 +257,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
     setCategory("All");
     setStep("menu");
     setLastOrder(null);
-    setOrderType("dine-in");
+    setOrderType("takeaway");
     setSpecialInstructions("");
   };
 
