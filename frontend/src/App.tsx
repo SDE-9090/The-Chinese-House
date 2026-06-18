@@ -36,25 +36,29 @@ function ThemeInit() {
   return null;
 }
 
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+
 function AnimatedRoutes() {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
-      <Suspense fallback={<PageLoader />}>
-        <Routes location={location} key={location.pathname}>
-          {/* Direct Chinese House Routes */}
-          <Route path="/" element={<PageTransition><Index /></PageTransition>} />
-          <Route path="/order" element={<PageTransition><OrderPage /></PageTransition>} />
-          <Route path="/reviews" element={<PageTransition><ItemReviewsPage /></PageTransition>} />
-          <Route path="/token-display" element={<PageTransition><TokenDisplay /></PageTransition>} />
-          <Route path="/gift-voucher" element={<PageTransition><GiftVoucher /></PageTransition>} />
-          <Route path="/table/:qrCode" element={<PageTransition><TableOrderPage /></PageTransition>} />
-          <Route path="/kitchen" element={<PageTransition><KitchenDisplay /></PageTransition>} />
-          <Route path="/dashboard" element={<PageTransition><Dashboard /></PageTransition>} />
-          
-          <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
-        </Routes>
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes location={location} key={location.pathname}>
+            {/* Direct Chinese House Routes */}
+            <Route path="/" element={<PageTransition><Index /></PageTransition>} />
+            <Route path="/order" element={<PageTransition><OrderPage /></PageTransition>} />
+            <Route path="/reviews" element={<PageTransition><ItemReviewsPage /></PageTransition>} />
+            <Route path="/token-display" element={<PageTransition><TokenDisplay /></PageTransition>} />
+            <Route path="/gift-voucher" element={<PageTransition><GiftVoucher /></PageTransition>} />
+            <Route path="/table/:qrCode" element={<PageTransition><TableOrderPage /></PageTransition>} />
+            <Route path="/kitchen" element={<PageTransition><KitchenDisplay /></PageTransition>} />
+            <Route path="/dashboard" element={<PageTransition><Dashboard /></PageTransition>} />
+            
+            <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </AnimatePresence>
   );
 }

@@ -621,7 +621,6 @@ const MenuManager = () => {
     e.preventDefault();
     if (
       !form.name.trim() ||
-      !form.description.trim() ||
       !form.price ||
       !form.price_label.trim() ||
       !form.category

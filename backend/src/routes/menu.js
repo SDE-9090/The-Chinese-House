@@ -119,7 +119,7 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuImage
 
     const { name, description, price, price_label, category, available, variants } = req.body;
 
-    if (!name || !description || !price || !price_label || !category) {
+    if (!name || !price || !price_label || !category) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -149,7 +149,7 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuImage
       [
         name.trim(),
         slug,
-        description.trim(),
+        description ? description.trim() : "",
         parseFloat(price),
         price_label.trim(),
         categoryId,
@@ -238,7 +238,7 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuIma
       [
         name?.trim() || null,
         name ? generateSlug(name) : null,
-        description?.trim() || null,
+        description !== undefined ? description.trim() : null,
         price ? parseFloat(price) : null,
         price_label?.trim() || null,
         categoryId,
