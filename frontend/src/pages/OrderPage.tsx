@@ -997,12 +997,7 @@ function OrderPageContent({
                 <Download size={18} /> Receipt
               </motion.button>
             </div>
-            <Link
-              to="/token-display"
-              className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold text-center hover:bg-primary/90 transition-all"
-            >
-              Track My Order 🚀
-            </Link>
+
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
