@@ -106,7 +106,7 @@ interface OrderCardProps {
   user: { name: string; role: string };
   onAdvanceStatus: (
     orderId: string,
-    currentStatus: Order["status"],
+    newStatus: Order["status"],
   ) => Promise<void>;
   onCancelOrder: (orderId: string) => Promise<void>;
   onEdit: (order: Order) => void;
@@ -139,21 +139,12 @@ const OrderCard = ({
 
   const [loadingPayment, setLoadingPayment] = useState(false);
 
-  const nextLabel =
-    order.status === "new"
-      ? "Start Preparing"
-      : order.status === "preparing"
-        ? "Mark Ready"
-        : order.status === "ready"
-          ? "Complete"
-          : null;
-
   const isTableOrder = order.orderSource === "table";
   const hasDue = !isTableOrder && dueAmount > 0;
 
   const handleAdvanceStatus = async () => {
     if (isUpdating || hasDue) return;
-    await onAdvanceStatus(order.id, order.status);
+    await onAdvanceStatus(order.id, "completed");
   };
 
   const handlePayDue = async () => {
@@ -337,9 +328,7 @@ const OrderCard = ({
               <button
                 disabled={
                   isUpdating || 
-                  isCustomerEditing || 
-                  (user.role === "kitchen" && order.status === "ready") || 
-                  (user.role === "waiter" && order.status === "preparing") // Waiter can click "Start Preparing" (new) and "Complete" (ready)
+                  isCustomerEditing
                 }
                 onClick={handleAdvanceStatus}
                 className="bg-primary text-primary-foreground px-4 py-2 rounded-xl text-xs font-semibold w-full"
@@ -347,7 +336,7 @@ const OrderCard = ({
                 {isUpdating ? (
                   <Loader2 size={14} className="animate-spin mx-auto" />
                 ) : (
-                  nextLabel
+                  "Mark Completed"
                 )}
               </button>
             )}

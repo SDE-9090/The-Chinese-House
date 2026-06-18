@@ -595,12 +595,10 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
 
   const handleAdvanceStatus = async (
     orderId: string,
-    currentStatus: Order["status"],
+    newStatus: Order["status"],
   ) => {
-    const idx = statusFlow.indexOf(currentStatus);
-    if (idx >= statusFlow.length - 1) return;
-
-    const newStatus = statusFlow[idx + 1];
+    const currentOrder = orders.find(o => o.id === orderId);
+    const currentStatus = currentOrder?.status || "new";
 
     // 1. Mark as updating (shows spinner)
     setUpdatingOrders((prev) => ({ ...prev, [orderId]: true }));

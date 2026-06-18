@@ -24,7 +24,7 @@ interface TableManagerProps {
   orders: Order[];
   user: { name: string; role: string };
   onRefresh: () => Promise<void>;
-  onAdvanceStatus: (orderId: string, currentStatus: Order["status"]) => Promise<void>;
+  onAdvanceStatus: (orderId: string, newStatus: Order["status"]) => Promise<void>;
   onCancelOrder: (orderId: string) => Promise<void>;
   isUpdating: Record<string, boolean>;
   editingOrderIds: Set<string>;
