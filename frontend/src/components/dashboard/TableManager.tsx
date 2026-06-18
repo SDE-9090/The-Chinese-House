@@ -228,15 +228,50 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                       CUSTOMER EDITING
                     </div>
                   )}
-                  <div className="flex flex-col xl:flex-row justify-between items-start gap-2 xl:gap-0 mb-4">
-                    <h3 className="font-bold text-lg leading-none whitespace-nowrap">Table {table.tableNumber}</h3>
+                  
+                  {/* 3 Dot Menu at Absolute Top Right */}
+                  {session && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="p-1 hover:bg-muted rounded-md transition text-muted-foreground outline-none">
+                          <MoreVertical size={16} />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                          {(user.role === 'admin' || user.role === 'manager') && (
+                            <DropdownMenuItem 
+                              onClick={() => setTransferTableState({ sessionId: session.id, number: table.tableNumber })}
+                              className="gap-2 cursor-pointer"
+                            >
+                              <ArrowLeftRight size={14} className="text-muted-foreground" />
+                              <span>Transfer Table</span>
+                            </DropdownMenuItem>
+                          )}
+                          {(user.role === 'admin' || user.role === 'manager') && (
+                            <DropdownMenuItem 
+                              onClick={() => setShowPaymentModal(session.id)}
+                              disabled={closingId === session.id}
+                              className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+                            >
+                              <X size={14} />
+                              <span>Force Clear Table</span>
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-2 mb-4 pr-6">
                     <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-bold text-lg leading-none whitespace-nowrap">Table {table.tableNumber}</h3>
                       {elapsedString && (
                         <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-background border border-border text-muted-foreground flex items-center gap-1 shadow-sm whitespace-nowrap" title="Time Occupied">
                           <Clock size={10} /> {elapsedString}
                         </span>
                       )}
-                      <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${session?.status === 'billing' ? 'bg-purple-600 text-white shadow-sm' :
+                    </div>
+                    <div>
+                      <span className={`inline-block px-2.5 py-1 text-xs font-bold rounded-full ${session?.status === 'billing' ? 'bg-purple-600 text-white shadow-sm' :
                           table.status === 'occupied' ? 'bg-primary text-primary-foreground' :
                             table.status === 'reserved' ? 'bg-amber-500 text-white' :
                               'bg-muted text-muted-foreground'
@@ -277,32 +312,6 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                               <p className="text-base font-black text-primary leading-none mt-0.5">₹{billsMap[session.id].totalAmount.toFixed(0)}</p>
                             </div>
                           )}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger className="p-1 -mt-1 -mr-1 hover:bg-muted rounded-md transition text-muted-foreground outline-none">
-                              <MoreVertical size={16} />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                              {(user.role === 'admin' || user.role === 'manager') && (
-                                <DropdownMenuItem 
-                                  onClick={() => setTransferTableState({ sessionId: session.id, number: table.tableNumber })}
-                                  className="gap-2 cursor-pointer"
-                                >
-                                  <ArrowLeftRight size={14} className="text-muted-foreground" />
-                                  <span>Transfer Table</span>
-                                </DropdownMenuItem>
-                              )}
-                              {(user.role === 'admin' || user.role === 'manager') && (
-                                <DropdownMenuItem 
-                                  onClick={() => setShowPaymentModal(session.id)}
-                                  disabled={closingId === session.id}
-                                  className="gap-2 text-destructive focus:text-destructive cursor-pointer"
-                                >
-                                  <X size={14} />
-                                  <span>Force Clear Table</span>
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
                         </div>
                       </div>
 
@@ -327,13 +336,13 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                         <div className="flex gap-2">
                           <button
                             onClick={() => setOrderTableState({ sessionId: session.id, number: table.tableNumber })}
-                            className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 py-2 px-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap"
+                            className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 py-2 px-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition shadow-sm leading-tight"
                           >
-                            <Plus size={14} className="shrink-0" /> Add Items
+                            <Plus size={14} className="shrink-0" /> <span className="text-center">Add Items</span>
                           </button>
                           <button
                             onClick={() => setSelectedTable(table)}
-                            className="flex-1 bg-muted text-foreground hover:bg-muted/80 py-2 px-2 flex items-center justify-center rounded-xl text-xs font-bold border border-border transition shadow-sm whitespace-nowrap"
+                            className="flex-1 bg-muted text-foreground hover:bg-muted/80 py-2 px-2 flex items-center justify-center rounded-xl text-xs font-bold border border-border transition shadow-sm leading-tight text-center"
                           >
                             View Bill
                           </button>
