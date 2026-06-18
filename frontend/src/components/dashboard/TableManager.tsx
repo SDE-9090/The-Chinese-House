@@ -221,11 +221,11 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                       CUSTOMER EDITING
                     </div>
                   )}
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="font-bold text-lg leading-none">Table {table.tableNumber}</h3>
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col xl:flex-row justify-between items-start gap-2 xl:gap-0 mb-4">
+                    <h3 className="font-bold text-lg leading-none whitespace-nowrap">Table {table.tableNumber}</h3>
+                    <div className="flex flex-wrap items-center gap-2">
                       {elapsedString && (
-                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-background border border-border text-muted-foreground flex items-center gap-1 shadow-sm" title="Time Occupied">
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-background border border-border text-muted-foreground flex items-center gap-1 shadow-sm whitespace-nowrap" title="Time Occupied">
                           <Clock size={10} /> {elapsedString}
                         </span>
                       )}
@@ -293,19 +293,19 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                           <div className="grid grid-cols-2 gap-2">
                             <button
                               onClick={() => setOrderTableState({ sessionId: session.id, number: table.tableNumber })}
-                              className="bg-secondary text-secondary-foreground hover:bg-secondary/90 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold transition shadow-sm"
+                              className="bg-secondary text-secondary-foreground hover:bg-secondary/90 py-1.5 px-1 flex flex-wrap items-center justify-center gap-1 rounded-lg text-xs font-bold transition shadow-sm whitespace-nowrap"
                             >
-                              <Plus size={14} /> Add Items
+                              <Plus size={14} className="shrink-0" /> Add Items
                             </button>
                             <button
                               onClick={() => setSelectedTable(table)}
-                              className="bg-primary/10 text-primary hover:bg-primary/20 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold border border-primary/20 transition"
+                              className="bg-primary/10 text-primary hover:bg-primary/20 py-1.5 px-1 flex items-center justify-center gap-1 rounded-lg text-xs font-bold border border-primary/20 transition whitespace-nowrap"
                             >
                               View Bill
                             </button>
                             <button
                               onClick={() => setTransferTableState({ sessionId: session.id, number: table.tableNumber })}
-                              className="col-span-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold border border-amber-500/20 transition"
+                              className="col-span-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold border border-amber-500/20 transition whitespace-nowrap"
                             >
                               Transfer Table
                             </button>
