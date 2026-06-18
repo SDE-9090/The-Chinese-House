@@ -271,7 +271,7 @@ router.patch("/orders/:id/items", auth, async (req, res) => {
           item.priceLabel,
           item.quantity,
           item.image,
-          item.id,
+          parseInt(String(item.id).split('-')[0], 10) || null,
         ],
       );
     }

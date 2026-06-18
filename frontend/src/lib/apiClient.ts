@@ -512,7 +512,7 @@ export interface SalesReportData {
 // ─── Typed Edit Items ────────────────────────────────────
 
 export interface EditOrderItem {
-  id: number; // menu_item_id
+  id: number | string; // menu_item_id or variant_id string
   name: string;
   price: number;
   priceLabel: string;
