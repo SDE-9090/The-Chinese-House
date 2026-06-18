@@ -733,7 +733,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
           <div className="container mx-auto px-4 pb-8">
             <StatsBar orders={orders} />
             {/* Sub-tabs: Active Orders / History */}
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar" style={{ scrollbarWidth: "none" }}>
               {[
                 { key: "active" as const, label: "Active Orders", icon: Package, roles: ["admin", "manager", "waiter", "kitchen"] },
                 { key: "counter-order" as const, label: "New Order (POS)", icon: UtensilsCrossed, roles: ["admin", "manager", "waiter"], check: () => user.features?.pos_system },

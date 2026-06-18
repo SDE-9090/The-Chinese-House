@@ -222,18 +222,18 @@ const OrderCard = ({
       {/* HEADER */}
       <div className="mb-3">
         {/* Row 1 */}
-        <div className="flex items-center justify-between">
-          <span className="bg-primary/10 text-primary px-2 py-1 rounded-md font-bold text-sm">
+        <div className="flex items-start justify-between gap-2">
+          <span className="bg-primary/10 text-primary px-2 py-1 rounded-md font-bold text-sm shrink-0 mt-0.5">
             #{order.token}
           </span>
 
-          <div className="text-right">
-            <p className="font-semibold text-sm leading-tight">
+          <div className="text-right min-w-0 flex-1">
+            <p className="font-semibold text-sm leading-tight truncate">
               {order.customerName}
             </p>
 
             {order.customerPhone && order.customerPhone !== "0000000000" && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground truncate">
                 {order.customerPhone}
               </p>
             )}
@@ -281,7 +281,7 @@ const OrderCard = ({
       {/* FOOTER */}
       <div className="border-t border-border/30 pt-3 space-y-3">
         {/* TOTAL */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-y-3">
           <div className="flex flex-col">
             <span className="font-bold text-lg">₹{order.total}</span>
             {dueAmount === 0 ? (
