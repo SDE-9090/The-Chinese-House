@@ -270,15 +270,16 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                         </span>
                       )}
                     </div>
-                    <div>
-                      <span className={`inline-block px-2.5 py-1 text-xs font-bold rounded-full ${session?.status === 'billing' ? 'bg-purple-600 text-white shadow-sm' :
-                          table.status === 'occupied' ? 'bg-primary text-primary-foreground' :
+                    {!(table.status === 'occupied' && session?.status !== 'billing') && (
+                      <div>
+                        <span className={`inline-block px-2.5 py-1 text-xs font-bold rounded-full ${session?.status === 'billing' ? 'bg-purple-600 text-white shadow-sm' :
                             table.status === 'reserved' ? 'bg-amber-500 text-white' :
-                              'bg-muted text-muted-foreground'
-                        }`}>
-                        {session?.status === 'billing' ? "BILLING" : table.status.toUpperCase()}
-                      </span>
-                    </div>
+                                'bg-muted text-muted-foreground'
+                          }`}>
+                          {session?.status === 'billing' ? "BILLING" : table.status.toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {!session && table.status === 'available' && (
