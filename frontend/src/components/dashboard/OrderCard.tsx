@@ -18,7 +18,7 @@ import { apiPayDue } from "@/lib/apiClient";
 import type { Order } from "@/lib/apiClient";
 import { toast } from "@/hooks/use-toast";
 import { downloadReceipt, printReceipt } from "@/lib/receiptGenerator";
-import { downloadInvoicePdf } from "@/lib/invoicePdfGenerator";
+import { downloadKOTPrint } from "@/components/BillDocument";
 
 const statusConfig = {
   approval_pending: { label: "Pending Approval", color: "bg-amber-500", icon: Clock },
@@ -191,6 +191,21 @@ const OrderCard = ({
 
   const receiptData = buildReceiptData(order);
 
+  const handlePrintKOT = () => {
+    downloadKOTPrint({
+      token: order.token,
+      orderType: order.orderType,
+      items: order.items,
+      specialInstructions: order.specialInstructions,
+      tableNumber: order.tableNumber,
+      // Only include bill details if NOT dine-in
+      billDetails: order.orderType !== "dine-in" ? {
+        total: order.total,
+        paymentStatus: order.paymentStatus || "paid"
+      } : undefined
+    });
+  };
+
   return (
     <motion.div
       layout
@@ -298,10 +313,11 @@ const OrderCard = ({
             </button>
 
             <button
-              onClick={() => downloadInvoicePdf(receiptData)}
+              onClick={handlePrintKOT}
               className="bg-muted p-2 rounded-xl"
+              title="Print KOT"
             >
-              <FileText size={16} />
+              <ChefHat size={16} />
             </button>
           </div>
         </div>
