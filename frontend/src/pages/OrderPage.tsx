@@ -1178,19 +1178,21 @@ function OrderPageContent({
             )}
 
             {/* SPECIAL INSTRUCTIONS */}
-            <div>
-              <label className="text-sm font-semibold mb-1.5 block">
-                Special Instructions <span className="text-muted-foreground font-normal">(Optional)</span>
-              </label>
-              <textarea
-                value={specialInstructions}
-                onChange={(e) => setSpecialInstructions(e.target.value)}
-                placeholder="e.g. No onions, extra spicy, allergies..."
-                maxLength={300}
-                rows={2}
-                className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:ring-2 focus:ring-ring focus:outline-none transition-shadow resize-none text-sm"
-              />
-            </div>
+            {!isTableMode && (
+              <div>
+                <label className="text-sm font-semibold mb-1.5 block">
+                  Special Instructions <span className="text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <textarea
+                  value={specialInstructions}
+                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                  placeholder="e.g. No onions, extra spicy, allergies..."
+                  maxLength={300}
+                  rows={2}
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:ring-2 focus:ring-ring focus:outline-none transition-shadow resize-none text-sm"
+                />
+              </div>
+            )}
 
 
 
@@ -1525,6 +1527,23 @@ function OrderPageContent({
                 ))}
               </AnimatePresence>
 
+              {/* SPECIAL INSTRUCTIONS (TABLE MODE ONLY) */}
+              {isTableMode && (
+                <div className="pt-2">
+                  <label className="text-sm font-semibold mb-1.5 block">
+                    Special Instructions <span className="text-muted-foreground font-normal">(Optional)</span>
+                  </label>
+                  <textarea
+                    value={specialInstructions}
+                    onChange={(e) => setSpecialInstructions(e.target.value)}
+                    placeholder="e.g. No onions, extra spicy, allergies..."
+                    maxLength={300}
+                    rows={2}
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:ring-2 focus:ring-ring focus:outline-none transition-shadow resize-none text-sm"
+                  />
+                </div>
+              )}
+
               {/* 💰 TOTAL */}
               <div className="border-t border-border pt-4 flex justify-between text-lg font-bold">
                 <span>Total</span>
@@ -1544,11 +1563,15 @@ function OrderPageContent({
               <motion.button
                 whileHover={restaurantStatus.open ? { scale: 1.01 } : {}}
                 whileTap={restaurantStatus.open ? { scale: 0.99 } : {}}
-                onClick={() => restaurantStatus.open && setStep("checkout")}
-                disabled={!restaurantStatus.open}
+                onClick={() => restaurantStatus.open && (isTableMode ? handlePlaceOrder() : setStep("checkout"))}
+                disabled={!restaurantStatus.open || placingOrder}
                 className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {restaurantStatus.open ? "Proceed to Checkout" : "Ordering Unavailable"}
+                {placingOrder ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 size={20} className="animate-spin" /> Placing Order...
+                  </span>
+                ) : !restaurantStatus.open ? "Ordering Unavailable" : isTableMode ? "Place Order" : "Proceed to Checkout"}
               </motion.button>
             </div>
           )}
