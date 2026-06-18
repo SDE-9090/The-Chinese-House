@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Plus, Minus, Trash2, X } from "lucide-react";
 import { useDynamicMenu } from "@/hooks/useDynamicMenu";
 import { toast } from "@/hooks/use-toast";
-import type { Order } from "@/lib/apiClient";
+import type { Order, AuthUser } from "@/lib/apiClient";
 
 export type EditItem = {
   id: number; // menu_item_id
@@ -19,9 +19,10 @@ interface EditOrderModalProps {
   onClose: () => void;
   order: Order | null;
   onSave: (items: EditItem[]) => Promise<void>;
+  user?: AuthUser | null;
 }
 
-const EditOrderModal = ({ open, onClose, order, onSave }: EditOrderModalProps) => {
+const EditOrderModal = ({ open, onClose, order, onSave, user }: EditOrderModalProps) => {
   const { items: menuItems } = useDynamicMenu();
   const [items, setItems] = useState<EditItem[]>([]);
   const [saving, setSaving] = useState(false);
@@ -111,7 +112,11 @@ const EditOrderModal = ({ open, onClose, order, onSave }: EditOrderModalProps) =
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-xl font-bold">Edit Order #{order.token}</h2>
-            <p className="text-sm text-muted-foreground">Allowed only before Preparing stage</p>
+            {(user?.role === "admin" || user?.role === "manager") ? (
+              <p className="text-sm text-emerald-600 font-semibold">Admin Override: Post-payment edits allowed</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Allowed only before Preparing stage</p>
+            )}
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-muted transition">
             <X size={18} />

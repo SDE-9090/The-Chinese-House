@@ -322,7 +322,7 @@ const OrderCard = ({
             </button>
           )}
 
-          {order.status === "new" && (
+          {(order.status === "new" || (order.status !== "cancelled" && (user.role === "admin" || user.role === "manager"))) && (
             <button
               onClick={() => onEdit(order)}
               disabled={isCustomerEditing}

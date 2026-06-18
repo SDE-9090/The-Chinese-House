@@ -684,6 +684,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
         order={editOrder}
         onClose={() => setEditOrder(null)}
         onSave={handleSaveEditOrder}
+        user={user}
       />
 
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border/50 pb-3 pt-1 shadow-sm">

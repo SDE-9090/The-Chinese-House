@@ -244,10 +244,13 @@ router.patch("/orders/:id/items", auth, async (req, res) => {
     }
 
     if (orderCheck.rows[0].status !== "new") {
-      await client.query("ROLLBACK");
-      return res
-        .status(400)
-        .json({ error: "Order cannot be updated after preparing started" });
+      // Allow admins and managers to override and edit anytime
+      if (!req.admin || !["admin", "manager"].includes(req.admin.role)) {
+        await client.query("ROLLBACK");
+        return res
+          .status(400)
+          .json({ error: "Order cannot be updated after preparing started" });
+      }
     }
 
     await client.query("DELETE FROM order_items WHERE order_id=$1", [id]);
