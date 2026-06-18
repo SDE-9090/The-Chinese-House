@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, type Table, type Order, type SessionBill } from "@/lib/apiClient";
 import OrderCard from "./OrderCard";
 import BillDocument, { downloadBillPrint, downloadKOTPrint } from "@/components/BillDocument";
-import { Loader2, CheckCircle, UtensilsCrossed, Clock, QrCode, Plus, X, Printer, Download, Trash2, RefreshCw } from "lucide-react";
+import { Loader2, CheckCircle, UtensilsCrossed, Clock, QrCode, Plus, X, Printer, Download, Trash2, RefreshCw, MoreVertical, ArrowLeftRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -15,6 +15,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 import TableOpenModal from "./TableOpenModal";
 import TableOrderModal from "./TableOrderModal";
@@ -256,17 +262,48 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
 
                   {session && (
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-start justify-between">
                         <div>
-                          <p className="font-semibold text-sm">{session.customerName}</p>
+                          <p className="font-semibold text-sm flex items-center gap-1">
+                            {session.customerName}
+                            <CheckCircle className="w-3 h-3 text-emerald-600 inline ml-1" />
+                          </p>
                           <p className="text-xs text-muted-foreground">{session.customerPhone}</p>
                         </div>
-                        {billsMap[session.id] && (
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">Bill Total</p>
-                            <p className="text-base font-black text-primary">₹{billsMap[session.id].totalAmount.toFixed(0)}</p>
-                          </div>
-                        )}
+                        <div className="flex items-start gap-3">
+                          {billsMap[session.id] && (
+                            <div className="text-right">
+                              <p className="text-[10px] uppercase font-bold text-muted-foreground/70">Bill Total</p>
+                              <p className="text-base font-black text-primary leading-none mt-0.5">₹{billsMap[session.id].totalAmount.toFixed(0)}</p>
+                            </div>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger className="p-1 -mt-1 -mr-1 hover:bg-muted rounded-md transition text-muted-foreground outline-none">
+                              <MoreVertical size={16} />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                              {(user.role === 'admin' || user.role === 'manager') && (
+                                <DropdownMenuItem 
+                                  onClick={() => setTransferTableState({ sessionId: session.id, number: table.tableNumber })}
+                                  className="gap-2 cursor-pointer"
+                                >
+                                  <ArrowLeftRight size={14} className="text-muted-foreground" />
+                                  <span>Transfer Table</span>
+                                </DropdownMenuItem>
+                              )}
+                              {(user.role === 'admin' || user.role === 'manager') && (
+                                <DropdownMenuItem 
+                                  onClick={() => setShowPaymentModal(session.id)}
+                                  disabled={closingId === session.id}
+                                  className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+                                >
+                                  <X size={14} />
+                                  <span>Force Clear Table</span>
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
 
                       {session.status === 'billing' ? (
@@ -287,39 +324,19 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                           )}
                         </div>
                       ) : (
-                        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 flex flex-col gap-3">
-                          <div className="text-xs flex items-center justify-center gap-1 text-emerald-600 font-semibold">
-                            <CheckCircle className="w-3 h-3" /> Verified & Active
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => setOrderTableState({ sessionId: session.id, number: table.tableNumber })}
-                              className="bg-secondary text-secondary-foreground hover:bg-secondary/90 py-1.5 px-1 flex flex-wrap items-center justify-center gap-1 rounded-lg text-xs font-bold transition shadow-sm whitespace-nowrap"
-                            >
-                              <Plus size={14} className="shrink-0" /> Add Items
-                            </button>
-                            <button
-                              onClick={() => setSelectedTable(table)}
-                              className="bg-primary/10 text-primary hover:bg-primary/20 py-1.5 px-1 flex items-center justify-center gap-1 rounded-lg text-xs font-bold border border-primary/20 transition whitespace-nowrap"
-                            >
-                              View Bill
-                            </button>
-                            <button
-                              onClick={() => setTransferTableState({ sessionId: session.id, number: table.tableNumber })}
-                              className="col-span-2 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 py-1.5 flex items-center justify-center gap-1.5 rounded-lg text-xs font-bold border border-amber-500/20 transition whitespace-nowrap"
-                            >
-                              Transfer Table
-                            </button>
-                          </div>
-                          {(user.role === 'admin' || user.role === 'manager') && (
-                            <button
-                              onClick={() => setShowPaymentModal(session.id)}
-                              disabled={closingId === session.id}
-                              className="w-full bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 py-1.5 flex items-center justify-center gap-2 rounded-lg text-xs font-semibold border transition disabled:opacity-50"
-                            >
-                              Force Clear Table
-                            </button>
-                          )}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setOrderTableState({ sessionId: session.id, number: table.tableNumber })}
+                            className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 py-2 px-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition shadow-sm whitespace-nowrap"
+                          >
+                            <Plus size={14} className="shrink-0" /> Add Items
+                          </button>
+                          <button
+                            onClick={() => setSelectedTable(table)}
+                            className="flex-1 bg-muted text-foreground hover:bg-muted/80 py-2 px-2 flex items-center justify-center rounded-xl text-xs font-bold border border-border transition shadow-sm whitespace-nowrap"
+                          >
+                            View Bill
+                          </button>
                         </div>
                       )}
                     </div>
