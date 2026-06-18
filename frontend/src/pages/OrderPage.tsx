@@ -1543,10 +1543,10 @@ function OrderPageContent({
                 whileHover={restaurantStatus.open ? { scale: 1.01 } : {}}
                 whileTap={restaurantStatus.open ? { scale: 0.99 } : {}}
                 onClick={() => restaurantStatus.open && (isTableMode ? handlePlaceOrder() : setStep("checkout"))}
-                disabled={!restaurantStatus.open || placingOrder}
+                disabled={!restaurantStatus.open || isPlacing}
                 className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {placingOrder ? (
+                {isPlacing ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 size={20} className="animate-spin" /> Placing Order...
                   </span>
