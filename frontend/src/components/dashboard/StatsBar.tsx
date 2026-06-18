@@ -66,6 +66,7 @@ const StatsBar = ({ orders }: StatsBarProps) => {
     },
   ];
 
+  return (
     <>
       <div className="container mx-auto px-4 py-5 grid grid-cols-2 md:grid-cols-4 gap-3">
         {stats.map((stat) => (
@@ -155,6 +156,7 @@ const StatsBar = ({ orders }: StatsBarProps) => {
         )}
       </AnimatePresence>
     </>
+  );
 };
 
 export default StatsBar;
