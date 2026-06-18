@@ -304,7 +304,9 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                             {session.customerName}
                             <CheckCircle className="w-3 h-3 text-emerald-600 inline ml-1" />
                           </p>
-                          <p className="text-xs text-muted-foreground">{session.customerPhone}</p>
+                          {session.customerPhone && session.customerPhone !== "0000000000" && (
+                            <p className="text-xs text-muted-foreground">{session.customerPhone}</p>
+                          )}
                         </div>
                         <div className="flex items-start gap-3">
                           {billsMap[session.id] && (
