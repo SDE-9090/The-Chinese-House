@@ -158,7 +158,7 @@ const OrderCard = ({
     
     if (orderWorkflow === "multi-step") {
       // Find the next logical status
-      const flow: Order["status"][] = ["approval_pending", "new", "preparing", "ready", "completed"];
+      const flow: Order["status"][] = ["new", "preparing", "ready", "completed"];
       const idx = flow.indexOf(order.status);
       if (idx >= 0 && idx < flow.length - 1) {
         await onAdvanceStatus(order.id, flow[idx + 1]);
