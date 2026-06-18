@@ -226,6 +226,25 @@ const BusinessSettingsManager = () => {
             </div>
           </div>
 
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">
+              Order Workflow
+            </label>
+            <select
+              value={data.orderWorkflow || "quick-complete"}
+              onChange={(e) =>
+                setData((prev) => ({ ...prev, orderWorkflow: e.target.value as "multi-step" | "quick-complete" }))
+              }
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="quick-complete">Quick Complete (1-Click)</option>
+              <option value="multi-step">Detailed (Start ➔ Ready ➔ Complete)</option>
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Choose how orders are advanced on the dashboard.
+            </p>
+          </div>
+
 
 
           {/* GST Rate Inputs */}

@@ -112,6 +112,7 @@ interface OrderCardProps {
   onEdit: (order: Order) => void;
   onRefresh: () => Promise<void>;
   isUpdating: boolean;
+  orderWorkflow?: "multi-step" | "quick-complete";
   isCustomerEditing?: boolean;
 }
 
@@ -123,6 +124,7 @@ const OrderCard = ({
   onEdit,
   onRefresh,
   isUpdating,
+  orderWorkflow = "quick-complete",
   isCustomerEditing = false,
 }: OrderCardProps) => {
   const config =
@@ -142,9 +144,29 @@ const OrderCard = ({
   const isTableOrder = order.orderSource === "table";
   const hasDue = !isTableOrder && dueAmount > 0;
 
+  const nextLabel =
+    order.status === "new"
+      ? "Start Preparing"
+      : order.status === "preparing"
+        ? "Mark Ready"
+        : order.status === "ready"
+          ? "Complete"
+          : null;
+
   const handleAdvanceStatus = async () => {
     if (isUpdating || hasDue) return;
-    await onAdvanceStatus(order.id, "completed");
+    
+    if (orderWorkflow === "multi-step") {
+      // Find the next logical status
+      const flow: Order["status"][] = ["approval_pending", "new", "preparing", "ready", "completed"];
+      const idx = flow.indexOf(order.status);
+      if (idx >= 0 && idx < flow.length - 1) {
+        await onAdvanceStatus(order.id, flow[idx + 1]);
+      }
+    } else {
+      // Quick complete
+      await onAdvanceStatus(order.id, "completed");
+    }
   };
 
   const handlePayDue = async () => {
@@ -328,7 +350,9 @@ const OrderCard = ({
               <button
                 disabled={
                   isUpdating || 
-                  isCustomerEditing
+                  isCustomerEditing ||
+                  (orderWorkflow === "multi-step" && user.role === "kitchen" && order.status === "ready") || 
+                  (orderWorkflow === "multi-step" && user.role === "waiter" && order.status === "preparing")
                 }
                 onClick={handleAdvanceStatus}
                 className="bg-primary text-primary-foreground px-4 py-2 rounded-xl text-xs font-semibold w-full"
@@ -336,7 +360,7 @@ const OrderCard = ({
                 {isUpdating ? (
                   <Loader2 size={14} className="animate-spin mx-auto" />
                 ) : (
-                  "Mark Completed"
+                  orderWorkflow === "multi-step" ? nextLabel : "Mark Completed"
                 )}
               </button>
             )}

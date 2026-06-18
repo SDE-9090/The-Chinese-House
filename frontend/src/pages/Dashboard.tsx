@@ -542,6 +542,13 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
   const [editingOrderIds, setEditingOrderIds] = useState<Set<string>>(new Set());
+  const [orderWorkflow, setOrderWorkflow] = useState<"multi-step" | "quick-complete">("quick-complete");
+
+  useEffect(() => {
+    import("@/lib/apiClient").then(({ apiAdminGetBusinessSettings }) => {
+      apiAdminGetBusinessSettings().then(s => setOrderWorkflow(s.orderWorkflow || "quick-complete")).catch(() => {});
+    });
+  }, []);
 
   const prevStatusesRef = useRef<Record<string, string>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -813,6 +820,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                           onEdit={setEditOrder}
                           onRefresh={refreshOrders}
                           isUpdating={!!updatingOrders[order.id]}
+                          orderWorkflow={orderWorkflow}
                           isCustomerEditing={editingOrderIds.has(order.id)}
                         />
                       ))}
@@ -833,6 +841,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
             onRefresh={refreshOrders}
             onAdvanceStatus={handleAdvanceStatus}
             onCancelOrder={handleCancelOrder}
+            orderWorkflow={orderWorkflow}
             isUpdating={updatingOrders}
             editingOrderIds={editingOrderIds}
           />

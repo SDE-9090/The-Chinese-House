@@ -407,6 +407,7 @@ export interface BusinessSettings {
   kitchenPin?: string;
   theme?: string;
   layoutTheme?: string;
+  orderWorkflow?: "multi-step" | "quick-complete";
   landingPageContent?: LandingPageContent;
 }
 

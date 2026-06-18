@@ -26,11 +26,12 @@ interface TableManagerProps {
   onRefresh: () => Promise<void>;
   onAdvanceStatus: (orderId: string, newStatus: Order["status"]) => Promise<void>;
   onCancelOrder: (orderId: string) => Promise<void>;
+  orderWorkflow?: "multi-step" | "quick-complete";
   isUpdating: Record<string, boolean>;
   editingOrderIds: Set<string>;
 }
 
-export default function TableManager({ orders, user, onRefresh, onAdvanceStatus, onCancelOrder, isUpdating, editingOrderIds }: TableManagerProps) {
+export default function TableManager({ orders, user, onRefresh, onAdvanceStatus, onCancelOrder, orderWorkflow, isUpdating, editingOrderIds }: TableManagerProps) {
   const [tables, setTables] = useState<Table[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);

@@ -42,6 +42,7 @@ function normalizeBusinessSettings(row = {}) {
     sgstRate: row.sgst_rate != null ? Number(row.sgst_rate) : DEFAULT_SGST_RATE,
     kitchenPin: row.kitchen_pin || "1234",
     theme: row.theme || "gourmet-royal",
+    orderWorkflow: row.order_workflow || "quick-complete",
     landingPageContent: row.landing_page_content && Object.keys(row.landing_page_content).length > 0
       ? { ...defaultContent, ...row.landing_page_content }
       : defaultContent
