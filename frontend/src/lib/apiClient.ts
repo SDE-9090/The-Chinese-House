@@ -1846,6 +1846,14 @@ export interface SessionBill {
   totalPaid: number;
   totalDue: number;
   isFullyPaid: boolean;
+  sessionDetails?: {
+    subtotal: number;
+    discount: number;
+    couponCode: string;
+    cgst: number;
+    sgst: number;
+    gstTotal: number;
+  };
 }
 
 export async function apiGetSessionBill(sessionId: string): Promise<SessionBill> {
@@ -1862,6 +1870,28 @@ export async function apiSessionPay(sessionId: string): Promise<void> {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to pay session bill");
+}
+
+export async function apiApplySessionCoupon(sessionId: string, code: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_URL}/tables/sessions/${sessionId}/apply-coupon`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ code }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to apply coupon");
+  }
+  return res.json();
+}
+
+export async function apiRemoveSessionCoupon(sessionId: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_URL}/tables/sessions/${sessionId}/remove-coupon`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to remove coupon");
+  return res.json();
 }
 
 export type { Order, OrderItem, Review, ReviewSummary } from "./orderStore";

@@ -427,6 +427,12 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                           </div>
                         </div>
                       ))}
+                      {detailBill.sessionDetails && detailBill.sessionDetails.discount > 0 && (
+                        <div className="flex justify-between text-sm text-primary font-bold mt-1">
+                          <span>Discount ({detailBill.sessionDetails.couponCode})</span>
+                          <span>-₹{detailBill.sessionDetails.discount.toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="border-t border-border mt-2 pt-2 flex justify-between font-black text-base">
                         <span>Grand Total</span>
                         <span className="text-primary">₹{detailBill.totalAmount.toFixed(2)}</span>

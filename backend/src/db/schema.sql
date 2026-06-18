@@ -360,6 +360,8 @@ CREATE TABLE public.orders (
     token integer NOT NULL,
     customer_name character varying(100) NOT NULL,
     customer_phone character varying(15) NOT NULL,
+    coupon_code character varying(50),
+    discount_amount numeric(10,2) DEFAULT 0,
     total numeric(10,2) DEFAULT 0 NOT NULL,
     payment_method character varying(10) NOT NULL,
     payment_status character varying(10) DEFAULT 'pending'::character varying NOT NULL,

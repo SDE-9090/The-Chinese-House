@@ -3,13 +3,13 @@ import { useParams } from "react-router-dom";
 import {
   apiGetTableByQr, apiReserveTable, apiSessionDone,
   apiGetSessionBill, apiSessionPay, apiGetBusinessSettings,
-  apiCancelSession,
+  apiCancelSession, apiApplySessionCoupon, apiRemoveSessionCoupon,
   setTenantSlug as setGlobalTenantSlug,
   type Table, type SessionBill,
 } from "@/lib/apiClient";
 import OrderPage from "./OrderPage";
 import BillDocument, { downloadBillPrint } from "@/components/BillDocument";
-import { Loader2, QrCode, CheckCircle, CreditCard, Banknote, Download, ArrowLeft } from "lucide-react";
+import { Loader2, QrCode, CheckCircle, CreditCard, Banknote, Download, ArrowLeft, Tag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,10 @@ export default function TableOrderPage() {
   const [loadingBill, setLoadingBill] = useState(false);
   const [payStep, setPayStep] = useState<PayStep>("bill");
   const { settings: business, loading: settingsLoading } = useBusinessSettings();
+
+  const [couponInput, setCouponInput] = useState("");
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState("");
 
   // Prevent over-fetching bill
   const billFetchedRef = useRef(false);
@@ -175,6 +179,35 @@ export default function TableOrderPage() {
     }
   };
 
+  const handleApplyCoupon = async () => {
+    if (!table?.activeSession?.id || !couponInput.trim()) return;
+    setValidatingCoupon(true);
+    setCouponError("");
+    try {
+      await apiApplySessionCoupon(table.activeSession.id, couponInput);
+      toast({ title: "Coupon Applied", description: "Discount added to your bill." });
+      setCouponInput("");
+      billFetchedRef.current = false;
+      fetchBill(table.activeSession.id, table.activeSession);
+    } catch (err: any) {
+      setCouponError(err.message || "Failed to apply coupon");
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = async () => {
+    if (!table?.activeSession?.id) return;
+    try {
+      await apiRemoveSessionCoupon(table.activeSession.id);
+      toast({ title: "Coupon Removed" });
+      billFetchedRef.current = false;
+      fetchBill(table.activeSession.id, table.activeSession);
+    } catch (err: any) {
+      toast({ title: "Failed to remove coupon", variant: "destructive" });
+    }
+  };
+
   if (loading || settingsLoading) {
     return (
       <div className="h-screen flex items-center justify-center p-6 bg-background">
@@ -312,6 +345,66 @@ export default function TableOrderPage() {
                 </p>
               )}
             </div>
+
+            {/* Coupon Section */}
+            {payStep === "bill" && billData && billData.totalDue > 0.01 && (
+              <div className="bg-card border border-border/50 rounded-2xl p-4 shadow-sm">
+                <label className="text-sm font-semibold flex items-center gap-2 mb-3">
+                  <Tag size={16} className="text-primary" />
+                  Have a coupon?
+                </label>
+
+                {billData.sessionDetails?.couponCode ? (
+                  <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+                    <div>
+                      <span className="font-bold text-primary text-sm">
+                        {billData.sessionDetails.couponCode}
+                      </span>
+                      <span className="text-muted-foreground text-xs ml-2">
+                        -₹{billData.sessionDetails.discount}
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleRemoveCoupon}
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(e.target.value.toUpperCase());
+                        setCouponError("");
+                      }}
+                      placeholder="Enter coupon code"
+                      maxLength={20}
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none text-sm uppercase tracking-wider"
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleApplyCoupon}
+                      disabled={validatingCoupon || !couponInput.trim()}
+                      className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {validatingCoupon ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        "Apply"
+                      )}
+                    </motion.button>
+                  </div>
+                )}
+                {couponError && (
+                  <p className="text-destructive text-xs font-medium mt-2">
+                    {couponError}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* ─── Step: choose payment method ─── */}
             <AnimatePresence mode="wait">

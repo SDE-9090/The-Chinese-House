@@ -1195,65 +1195,67 @@ function OrderPageContent({
 
 
             {/* COUPON CODE */}
-            <div className="bg-card border border-border/50 rounded-2xl p-5 space-y-3">
-              <label className="text-sm font-semibold flex items-center gap-2">
-                <Tag size={16} className="text-primary" />
-                Have a coupon?
-              </label>
+            {!isTableMode && (
+              <div className="bg-card border border-border/50 rounded-2xl p-5 space-y-3">
+                <label className="text-sm font-semibold flex items-center gap-2">
+                  <Tag size={16} className="text-primary" />
+                  Have a coupon?
+                </label>
 
-              {appliedCoupon ? (
-                <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
-                  <div>
-                    <span className="font-bold text-primary text-sm">
-                      {appliedCoupon.code}
-                    </span>
-                    <span className="text-muted-foreground text-xs ml-2">
-                      {appliedCoupon.discountType === "percent"
-                        ? `${appliedCoupon.value}% off`
-                        : `₹${appliedCoupon.discount} off`}
-                    </span>
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+                    <div>
+                      <span className="font-bold text-primary text-sm">
+                        {appliedCoupon.code}
+                      </span>
+                      <span className="text-muted-foreground text-xs ml-2">
+                        {appliedCoupon.discountType === "percent"
+                          ? `${appliedCoupon.value}% off`
+                          : `₹${appliedCoupon.discount} off`}
+                      </span>
+                    </div>
+                    <button
+                      onClick={removeCoupon}
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
-                  <button
-                    onClick={removeCoupon}
-                    className="text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    value={couponInput}
-                    onChange={(e) => {
-                      setCouponInput(e.target.value.toUpperCase());
-                      setCouponError("");
-                    }}
-                    placeholder="Enter coupon code"
-                    maxLength={20}
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none text-sm uppercase tracking-wider"
-                  />
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleApplyCoupon}
-                    disabled={validatingCoupon || !couponInput.trim()}
-                    className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {validatingCoupon ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      "Apply"
-                    )}
-                  </motion.button>
-                </div>
-              )}
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      value={couponInput}
+                      onChange={(e) => {
+                        setCouponInput(e.target.value.toUpperCase());
+                        setCouponError("");
+                      }}
+                      placeholder="Enter coupon code"
+                      maxLength={20}
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none text-sm uppercase tracking-wider"
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleApplyCoupon}
+                      disabled={validatingCoupon || !couponInput.trim()}
+                      className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {validatingCoupon ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        "Apply"
+                      )}
+                    </motion.button>
+                  </div>
+                )}
 
-              {couponError && (
-                <p className="text-destructive text-xs font-medium">
-                  {couponError}
-                </p>
-              )}
-            </div>
+                {couponError && (
+                  <p className="text-destructive text-xs font-medium">
+                    {couponError}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* ORDER SUMMARY */}
             <div className="bg-card border border-border/50 rounded-2xl p-5 space-y-2">
