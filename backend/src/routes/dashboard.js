@@ -308,14 +308,14 @@ router.patch("/orders/:id/items", auth, async (req, res) => {
       sgstRate: businessSettings.sgstRate,
     });
 
-    const paidAmount = parseFloat(orderCheck.rows[0].paid_amount || 0);
-    const due = totals.total - paidAmount;
-    const newPaymentStatus = due <= 0 ? "paid" : "pending";
+    const newPaidAmount = totals.total;
+    const due = 0;
+    const newPaymentStatus = "paid";
 
     await client.query(
       `UPDATE orders
-       SET subtotal=$1, total=$2, discount=$3, cgst=$4, sgst=$5, gst_total=$6, gst_rate=$7, payment_status=$8
-       WHERE id=$9 AND business_id=$10`,
+       SET subtotal=$1, total=$2, discount=$3, cgst=$4, sgst=$5, gst_total=$6, gst_rate=$7, payment_status=$8, paid_amount=$9
+       WHERE id=$10 AND business_id=$11`,
       [
         totals.subtotal,
         totals.total,
@@ -325,6 +325,7 @@ router.patch("/orders/:id/items", auth, async (req, res) => {
         totals.gstTotal,
         totals.gstRate,
         newPaymentStatus,
+        newPaidAmount,
         id,
         req.business_id,
       ],
@@ -341,7 +342,7 @@ router.patch("/orders/:id/items", auth, async (req, res) => {
       message: "Order updated successfully",
       subtotal: totals.subtotal,
       total: totals.total,
-      paidAmount,
+      paidAmount: newPaidAmount,
       due,
       paymentStatus: newPaymentStatus,
     });
