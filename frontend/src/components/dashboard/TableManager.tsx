@@ -216,7 +216,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                 <motion.div
                   layout
                   key={table.id}
-                  className={`relative p-5 rounded-2xl border flex flex-col justify-between transition-all ${isTableEditing ? 'border-amber-500 shadow-lg shadow-amber-500/20 bg-amber-500/5' :
+                  className={`relative p-5 rounded-2xl border flex flex-col transition-all ${isTableEditing ? 'border-amber-500 shadow-lg shadow-amber-500/20 bg-amber-500/5' :
                       table.status === 'occupied' ? 'bg-primary/5 border-primary/30 shadow-md' :
                         table.status === 'reserved' ? 'bg-amber-500/5 border-amber-500/30 shadow-md' :
                           'bg-card border-border hover:shadow-lg'
