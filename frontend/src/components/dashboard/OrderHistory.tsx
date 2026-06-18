@@ -782,9 +782,11 @@ const OrderHistory = () => {
                       <p className="font-semibold text-sm">
                         {order.customerName}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {order.customerPhone}
-                      </p>
+                      {order.customerPhone && order.customerPhone !== "0000000000" && (
+                        <p className="text-xs text-muted-foreground">
+                          {order.customerPhone}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

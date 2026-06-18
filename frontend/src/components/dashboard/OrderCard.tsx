@@ -217,7 +217,7 @@ const OrderCard = ({
               {order.customerName}
             </p>
 
-            {order.customerPhone && (
+            {order.customerPhone && order.customerPhone !== "0000000000" && (
               <p className="text-xs text-muted-foreground">
                 {order.customerPhone}
               </p>
