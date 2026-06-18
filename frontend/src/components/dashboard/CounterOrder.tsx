@@ -62,7 +62,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
     specialInstructions?: string;
   } | null>(null);
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
-  const [orderType, setOrderType] = useState<"dine-in" | "takeaway" | "delivery">("dine-in");
+  const [orderType, setOrderType] = useState<"takeaway" | "delivery">("takeaway");
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [noteModalItem, setNoteModalItem] = useState<{ id: string | number; name: string; note: string } | null>(null);
   const [cashReceived, setCashReceived] = useState<number | null>(null);
@@ -373,7 +373,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
             <div>
               <p className="text-sm font-semibold mb-2">Order Type</p>
               <div className="flex gap-2">
-                {(["dine-in", "takeaway", "delivery"] as const).map((type) => (
+                {(["takeaway", "delivery"] as const).map((type) => (
                   <button
                     key={type}
                     onClick={() => setOrderType(type)}
@@ -382,7 +382,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
                       : "bg-background border-border text-muted-foreground hover:bg-muted"
                       }`}
                   >
-                    {type === "dine-in" ? "Dine-in" : type === "takeaway" ? "Takeaway" : "Delivery"}
+                    {type === "takeaway" ? "Takeaway" : "Delivery"}
                   </button>
                 ))}
               </div>
