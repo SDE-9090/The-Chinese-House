@@ -147,19 +147,39 @@ function OrderPageContent({
   } = useCart();
 
   const [variantModalItem, setVariantModalItem] = useState<DynamicMenuItem | null>(null);
+  const [variantModalContext, setVariantModalContext] = useState<"cart" | "edit">("cart");
 
   const handleVariantAdd = (item: DynamicMenuItem, variant: { name: string; price: number }, quantity: number) => {
-    addItem({
+    const newItem = {
       id: `${item.id}-${variant.name}`,
       name: `${item.name} (${variant.name})`,
       price: variant.price,
       priceLabel: `₹${variant.price}`,
-      image: item.image,
+      image: item.image || "/placeholder.svg",
       quantity,
-    });
-    toast({
-      title: `${item.name} (${variant.name}) added to cart`,
-    });
+    };
+
+    if (variantModalContext === "edit") {
+      const currentItems = getCurrentEditItems();
+      const existing = currentItems.find((existingItem) => existingItem.id === newItem.id);
+
+      const nextItems = existing
+        ? currentItems.map((existingItem) =>
+          existingItem.id === newItem.id
+            ? { ...existingItem, quantity: existingItem.quantity + quantity }
+            : existingItem,
+        )
+        : [...currentItems, newItem];
+
+      syncEditItems(nextItems);
+      setEditAddItem("");
+    } else {
+      addItem(newItem);
+      toast({
+        title: `${item.name} (${variant.name}) added to cart`,
+      });
+    }
+    setVariantModalContext("cart");
   };
 
   const OrderSkeleton = () => (
@@ -525,6 +545,12 @@ function OrderPageContent({
 
     const menuItem = menuItems.find((m) => m.id === selectedMenuItemId);
     if (!menuItem || typeof menuItem.id !== "number") return;
+
+    if (menuItem.variants && menuItem.variants.length > 0) {
+      setVariantModalContext("edit");
+      setVariantModalItem(menuItem);
+      return;
+    }
 
     const currentItems = getCurrentEditItems();
     const existing = currentItems.find((item) => item.id === menuItem.id);
@@ -1749,6 +1775,7 @@ function OrderPageContent({
                                   whileTap={{ scale: 0.97 }}
                                   onClick={() => {
                                     if (item.variants && item.variants.length > 0) {
+                                      setVariantModalContext("cart");
                                       setVariantModalItem(item);
                                     } else {
                                       addItem({

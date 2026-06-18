@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Minus, Trash2, X } from "lucide-react";
-import { useDynamicMenu } from "@/hooks/useDynamicMenu";
+import { useDynamicMenu, type DynamicMenuItem } from "@/hooks/useDynamicMenu";
 import { toast } from "@/hooks/use-toast";
 import type { Order, AuthUser } from "@/lib/apiClient";
+import VariantSelectionModal from "@/components/VariantSelectionModal";
 
 export type EditItem = {
   id: number | string; // menu_item_id
@@ -28,6 +29,7 @@ const EditOrderModal = ({ open, onClose, order, onSave, user }: EditOrderModalPr
   const [items, setItems] = useState<EditItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [selectedItem, setSelectedItem] = useState("");
+  const [variantModalItem, setVariantModalItem] = useState<DynamicMenuItem | null>(null);
 
   useEffect(() => {
     if (order) {
@@ -62,6 +64,11 @@ const EditOrderModal = ({ open, onClose, order, onSave, user }: EditOrderModalPr
     const menuItem = menuItems.find((m) => String(m.id) === selectedItem);
     if (!menuItem || !menuItem.id) return;
 
+    if (menuItem.variants && menuItem.variants.length > 0) {
+      setVariantModalItem(menuItem);
+      return;
+    }
+
     setItems((prev) => {
       const existing = prev.find((x) => x.id === menuItem.id);
       if (existing) {
@@ -72,16 +79,40 @@ const EditOrderModal = ({ open, onClose, order, onSave, user }: EditOrderModalPr
       return [
         ...prev,
         {
-          id: menuItem.id,
+          id: menuItem.id!,
           name: menuItem.name,
           price: menuItem.price,
-          priceLabel: menuItem.priceLabel,
+          priceLabel: menuItem.priceLabel || "",
           quantity: 1,
           image: menuItem.image,
         },
       ];
     });
     setSelectedItem("");
+  };
+
+  const handleVariantAdd = (item: any) => {
+    setItems((prev) => {
+      const existing = prev.find((x) => x.id === item.id);
+      if (existing) {
+        return prev.map((x) =>
+          x.id === item.id ? { ...x, quantity: x.quantity + item.quantity } : x
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          priceLabel: item.priceLabel || "",
+          quantity: item.quantity,
+          image: item.image || "/placeholder.svg",
+        },
+      ];
+    });
+    setSelectedItem("");
+    setVariantModalItem(null);
   };
 
   const handleSave = async () => {
@@ -191,6 +222,13 @@ const EditOrderModal = ({ open, onClose, order, onSave, user }: EditOrderModalPr
           </button>
         </div>
       </motion.div>
+
+      <VariantSelectionModal
+        item={variantModalItem as any}
+        isOpen={!!variantModalItem}
+        onClose={() => setVariantModalItem(null)}
+        onAdd={handleVariantAdd as any}
+      />
     </div>
   );
 };
