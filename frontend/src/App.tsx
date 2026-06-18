@@ -68,7 +68,7 @@ const App = () => (
     <TooltipProvider>
       <ThemeInit />
       <Toaster />
-      <Sonner />
+      <Sonner position="top-center" />
       <BrowserRouter>
         <ThemeInjector />
         <AnimatedRoutes />
