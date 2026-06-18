@@ -1049,6 +1049,12 @@ function OrderPageContent({
             </Link>
           </div>
         </motion.div>
+        <VariantSelectionModal
+          item={variantModalItem as any}
+          isOpen={!!variantModalItem}
+          onClose={() => setVariantModalItem(null)}
+          onAdd={handleVariantAdd as any}
+        />
       </div>
     );
   }
