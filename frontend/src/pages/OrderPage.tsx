@@ -927,8 +927,8 @@ function OrderPageContent({
                 {confirmedOrder.orderSource === "table"
                   ? "Added to Table Bill"
                   : confirmedOrder.paymentMethod === "online"
-                  ? "Paid Online"
-                  : "Pay at Counter"}
+                    ? "Paid Online"
+                    : "Pay at Counter"}
               </p>
               {confirmedOrder.paymentStatus === "pending" &&
                 confirmedOrder.paidAmount !== undefined &&
@@ -1081,7 +1081,7 @@ function OrderPageContent({
             {!isTableMode && (
               <div>
                 <label className="text-sm font-semibold mb-1.5 block">
-                  Your Name *
+                  Your Name (Optional)
                 </label>
                 <input
                   value={customerName}
@@ -1100,7 +1100,7 @@ function OrderPageContent({
             {!isTableMode && (
               <div>
                 <label className="text-sm font-semibold mb-1.5 block">
-                  Phone Number
+                  Phone Number (Optional)
                 </label>
                 <input
                   value={customerPhone}
@@ -1109,7 +1109,7 @@ function OrderPageContent({
                       e.target.value.replace(/\D/g, "").slice(0, 10),
                     )
                   }
-                  placeholder="10-digit mobile number (Optional)"
+                  placeholder="10-digit mobile number"
                   className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:ring-2 focus:ring-ring focus:outline-none transition-shadow"
                 />
                 {errors.phone && (
@@ -1117,7 +1117,7 @@ function OrderPageContent({
                 )}
               </div>
             )}
-            
+
             {/* ORDER HISTORY BUTTON */}
             {customerPhone.trim().length === 10 && (
               <>
@@ -1183,36 +1183,36 @@ function OrderPageContent({
                               </span>
                             </div>
 
-                        {/* Date */}
-                        <div className="text-xs text-muted-foreground">
-                          {formatDateTime(order.createdAt)}
-                        </div>
-
-                        {/* Items */}
-                        <div className="text-xs space-y-0.5">
-                          {order.items?.map((item: any, idx: number) => (
-                            <div key={idx}>
-                              • {item.name} {item.qty && `x${item.qty}`}
+                            {/* Date */}
+                            <div className="text-xs text-muted-foreground">
+                              {formatDateTime(order.createdAt)}
                             </div>
-                          ))}
-                        </div>
 
-                        {/* Reorder */}
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => handleReorder(order)}
-                          className="text-secondary text-xs mt-1 font-semibold"
-                        >
-                          Reorder
-                        </motion.button>
-                      </div>
-                    ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </>
-        )}
+                            {/* Items */}
+                            <div className="text-xs space-y-0.5">
+                              {order.items?.map((item: any, idx: number) => (
+                                <div key={idx}>
+                                  • {item.name} {item.qty && `x${item.qty}`}
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Reorder */}
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => handleReorder(order)}
+                              className="text-secondary text-xs mt-1 font-semibold"
+                            >
+                              Reorder
+                            </motion.button>
+                          </div>
+                        ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
 
             {/* ORDER TYPE */}
             {!isTableMode && (
@@ -1417,8 +1417,8 @@ function OrderPageContent({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl shadow-xl border-border/50">
                   {onSessionDone && (
-                    <DropdownMenuItem 
-                      onClick={onSessionDone} 
+                    <DropdownMenuItem
+                      onClick={onSessionDone}
                       disabled={markingDone}
                       className="gap-3 py-3 px-3 rounded-xl cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 font-bold"
                     >
@@ -1427,7 +1427,7 @@ function OrderPageContent({
                     </DropdownMenuItem>
                   )}
                   {tableSessionId && (
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => setIsBillOpen(true)}
                       className="gap-3 py-3 px-3 rounded-xl cursor-pointer font-bold text-secondary focus:text-secondary focus:bg-secondary/10"
                     >
@@ -1436,8 +1436,8 @@ function OrderPageContent({
                     </DropdownMenuItem>
                   )}
                   {onCancelSession && (
-                    <DropdownMenuItem 
-                      onClick={onCancelSession} 
+                    <DropdownMenuItem
+                      onClick={onCancelSession}
                       disabled={cancellingSession}
                       className="gap-3 py-3 px-3 rounded-xl cursor-pointer font-medium text-muted-foreground focus:text-foreground mt-2 border-t border-border/50"
                     >
@@ -1730,11 +1730,11 @@ function OrderPageContent({
                           </div>
                           <div className="p-3 flex flex-col flex-grow">
                             <h3 className="font-bold text-base leading-tight flex items-start gap-1.5">
-                            <span className="flex-1">{item.name}</span>
-                            {item.diet_type === "veg" && <span className="w-3 h-3 rounded-sm border border-green-600 bg-green-50 flex items-center justify-center mt-1 shrink-0" title="Veg"><span className="w-1.5 h-1.5 rounded-full bg-green-600"></span></span>}
-                            {item.diet_type === "non-veg" && <span className="w-3 h-3 rounded-sm border border-red-600 bg-red-50 flex items-center justify-center mt-1 shrink-0" title="Non-Veg"><span className="w-1.5 h-1.5 rounded-full bg-red-600"></span></span>}
-                            {item.diet_type === "egg" && <span className="w-3 h-3 rounded-sm border border-yellow-600 bg-yellow-50 flex items-center justify-center mt-1 shrink-0" title="Contains Egg"><span className="w-1.5 h-1.5 rounded-full bg-yellow-600"></span></span>}
-                          </h3>
+                              <span className="flex-1">{item.name}</span>
+                              {item.diet_type === "veg" && <span className="w-3 h-3 rounded-sm border border-green-600 bg-green-50 flex items-center justify-center mt-1 shrink-0" title="Veg"><span className="w-1.5 h-1.5 rounded-full bg-green-600"></span></span>}
+                              {item.diet_type === "non-veg" && <span className="w-3 h-3 rounded-sm border border-red-600 bg-red-50 flex items-center justify-center mt-1 shrink-0" title="Non-Veg"><span className="w-1.5 h-1.5 rounded-full bg-red-600"></span></span>}
+                              {item.diet_type === "egg" && <span className="w-3 h-3 rounded-sm border border-yellow-600 bg-yellow-50 flex items-center justify-center mt-1 shrink-0" title="Contains Egg"><span className="w-1.5 h-1.5 rounded-full bg-yellow-600"></span></span>}
+                            </h3>
                             <p className="text-muted-foreground text-xs mb-3 line-clamp-2">
                               {item.desc}
                             </p>
