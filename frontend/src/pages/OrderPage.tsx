@@ -650,8 +650,18 @@ function OrderPageContent({
       });
     } finally {
       setIsSavingEdit(false);
+      apiEditingEnd(confirmedOrder.id);
     }
   };
+
+  // Cleanup editing state on unmount
+  useEffect(() => {
+    return () => {
+      if (isEditing && confirmedOrder?.id) {
+        apiEditingEnd(confirmedOrder.id);
+      }
+    };
+  }, [isEditing, confirmedOrder?.id]);
 
 
   if (step === "confirmation" && confirmedOrder) {
