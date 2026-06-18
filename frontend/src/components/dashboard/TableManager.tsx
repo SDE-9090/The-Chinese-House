@@ -66,7 +66,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 60000);
+    const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -193,13 +193,15 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
               let elapsedString = "";
               if (session?.startTime) {
                 const elapsedMs = now - new Date(session.startTime).getTime();
-                const elapsedMins = Math.max(0, Math.floor(elapsedMs / 60000));
-                if (elapsedMins < 60) {
-                  elapsedString = `${elapsedMins}m`;
+                const totalSecs = Math.max(0, Math.floor(elapsedMs / 1000));
+                const h = Math.floor(totalSecs / 3600);
+                const m = Math.floor((totalSecs % 3600) / 60);
+                const s = totalSecs % 60;
+                
+                if (h > 0) {
+                  elapsedString = `${h}h ${m}m ${s}s`;
                 } else {
-                  const h = Math.floor(elapsedMins / 60);
-                  const m = elapsedMins % 60;
-                  elapsedString = `${h}h ${m}m`;
+                  elapsedString = `${m}m ${s}s`;
                 }
               }
 
