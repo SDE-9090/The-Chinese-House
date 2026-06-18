@@ -597,7 +597,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
 
   // ─── MENU + CART ───
   return (
-    <div>
+    <div className={cartCount > 0 ? "pb-28" : "pb-6"}>
       {/* Search + Categories */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1">
