@@ -262,8 +262,8 @@ router.patch("/orders/:id/items", auth, async (req, res) => {
       }
       subtotal += item.price * item.quantity;
       await client.query(
-        `INSERT INTO order_items (order_id, name, price, price_label, quantity, image, menu_item_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        `INSERT INTO order_items (order_id, name, price, price_label, quantity, image, menu_item_id, business_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [
           id,
           item.name,
@@ -272,6 +272,7 @@ router.patch("/orders/:id/items", auth, async (req, res) => {
           item.quantity,
           item.image,
           parseInt(String(item.id).split('-')[0], 10) || null,
+          req.business_id,
         ],
       );
     }
