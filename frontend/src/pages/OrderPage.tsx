@@ -93,7 +93,7 @@ function OrderPageContent({
   const [customerName, setCustomerName] = useState(defaultName);
   const [customerPhone, setCustomerPhone] = useState(defaultPhone);
   const paymentMethod = "online" as const;
-  const [orderType, setOrderType] = useState<"dine-in" | "takeaway" | "delivery">("dine-in");
+  const [orderType, setOrderType] = useState<"dine-in" | "takeaway" | "delivery">(isTableMode ? "dine-in" : "takeaway");
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [confirmedOrder, setConfirmedOrder] = useState<Order | null>(null);
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
@@ -1154,28 +1154,7 @@ function OrderPageContent({
               </>
             )}
 
-            {/* ORDER TYPE */}
-            {!isTableMode && (
-              <div>
-                <label className="text-sm font-semibold mb-1.5 block">
-                  Order Type
-                </label>
-                <div className="flex gap-2">
-                  {(["dine-in", "takeaway", "delivery"] as const).map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setOrderType(type)}
-                      className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${orderType === type
-                        ? "bg-primary text-primary-foreground border-primary shadow-md"
-                        : "bg-card border-border text-muted-foreground hover:bg-muted"
-                        }`}
-                    >
-                      {type === "dine-in" ? "Dine-in" : type === "takeaway" ? "Takeaway" : "Delivery"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+
 
             {/* SPECIAL INSTRUCTIONS */}
             {!isTableMode && (
@@ -1324,7 +1303,7 @@ function OrderPageContent({
               disabled={isPlacing || !restaurantStatus.open}
               className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {!restaurantStatus.open ? "Restaurant Closed" : isPlacing ? "Placing..." : isTableMode ? "Place Order (Pay Later)" : `Pay ₹${pricing.total} & Place Order`}
+              {!restaurantStatus.open ? "Restaurant Closed" : isPlacing ? "Placing..." : isTableMode ? "Place Order (Pay Later)" : `Place Order`}
             </motion.button>
           </motion.div>
         </div>
