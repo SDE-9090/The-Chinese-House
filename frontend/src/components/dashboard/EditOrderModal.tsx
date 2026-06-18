@@ -6,12 +6,13 @@ import { toast } from "@/hooks/use-toast";
 import type { Order, AuthUser } from "@/lib/apiClient";
 
 export type EditItem = {
-  id: number; // menu_item_id
+  id: number | string; // menu_item_id
   name: string;
   price: number;
   priceLabel: string;
   quantity: number;
   image?: string;
+  note?: string;
 };
 
 interface EditOrderModalProps {
@@ -38,13 +39,13 @@ const EditOrderModal = ({ open, onClose, order, onSave, user }: EditOrderModalPr
 
   const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-  const increaseQty = (id: number) => {
+  const increaseQty = (id: number | string) => {
     setItems((prev) =>
       prev.map((i) => (i.id === id ? { ...i, quantity: i.quantity + 1 } : i))
     );
   };
 
-  const decreaseQty = (id: number) => {
+  const decreaseQty = (id: number | string) => {
     setItems((prev) =>
       prev
         .map((i) => (i.id === id ? { ...i, quantity: Math.max(0, i.quantity - 1) } : i))
@@ -52,7 +53,7 @@ const EditOrderModal = ({ open, onClose, order, onSave, user }: EditOrderModalPr
     );
   };
 
-  const removeItem = (id: number) => {
+  const removeItem = (id: number | string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
