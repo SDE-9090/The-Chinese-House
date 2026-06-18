@@ -204,7 +204,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                 const h = Math.floor(totalSecs / 3600);
                 const m = Math.floor((totalSecs % 3600) / 60);
                 const s = totalSecs % 60;
-                
+
                 if (h > 0) {
                   elapsedString = `${h}h ${m}m ${s}s`;
                 } else {
@@ -217,9 +217,9 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                   layout
                   key={table.id}
                   className={`relative p-5 rounded-2xl border flex flex-col transition-all ${isTableEditing ? 'border-amber-500 shadow-lg shadow-amber-500/20 bg-amber-500/5' :
-                      table.status === 'occupied' ? 'bg-primary/5 border-primary/30 shadow-md' :
-                        table.status === 'reserved' ? 'bg-amber-500/5 border-amber-500/30 shadow-md' :
-                          'bg-card border-border hover:shadow-lg'
+                    table.status === 'occupied' ? 'bg-primary/5 border-primary/30 shadow-md' :
+                      table.status === 'reserved' ? 'bg-amber-500/5 border-amber-500/30 shadow-md' :
+                        'bg-card border-border hover:shadow-lg'
                     }`}
                 >
                   {isTableEditing && (
@@ -228,7 +228,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                       CUSTOMER EDITING
                     </div>
                   )}
-                  
+
                   {/* 3 Dot Menu at Absolute Top Right */}
                   {session && (
                     <div className="absolute top-4 right-4 z-10">
@@ -238,7 +238,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 rounded-xl">
                           {(user.role === 'admin' || user.role === 'manager') && (
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => setTransferTableState({ sessionId: session.id, number: table.tableNumber })}
                               className="gap-2 cursor-pointer"
                             >
@@ -247,7 +247,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                             </DropdownMenuItem>
                           )}
                           {(user.role === 'admin' || user.role === 'manager') && (
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => setShowPaymentModal(session.id)}
                               disabled={closingId === session.id}
                               className="gap-2 text-destructive focus:text-destructive cursor-pointer xl:hidden"
@@ -273,8 +273,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                     {!(table.status === 'occupied' && session?.status !== 'billing') && (
                       <div>
                         <span className={`inline-block px-2.5 py-1 text-xs font-bold rounded-full ${session?.status === 'billing' ? 'bg-purple-600 text-white shadow-sm' :
-                            table.status === 'reserved' ? 'bg-amber-500 text-white' :
-                                'bg-muted text-muted-foreground'
+                          table.status === 'reserved' ? 'bg-amber-500 text-white' :
+                            'bg-muted text-muted-foreground'
                           }`}>
                           {session?.status === 'billing' ? "BILLING" : table.status.toUpperCase()}
                         </span>
@@ -297,7 +297,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                   )}
 
                   {session && (
-                    <div className="flex-1 flex flex-col space-y-3">
+                    <div className="flex-1 flex flex-col space-y-5">
                       <div className="flex items-start justify-between">
                         <div>
                           <p className="font-semibold text-sm flex items-center gap-1">
@@ -354,7 +354,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
 
                       {(user.role === 'admin' || user.role === 'manager') && (
                         <div className="hidden xl:flex flex-1 flex-col justify-end mt-3">
-                          <button 
+                          <button
                             onClick={() => setShowPaymentModal(session.id)}
                             disabled={closingId === session.id}
                             className="w-full border border-destructive/30 text-destructive hover:bg-destructive/10 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
