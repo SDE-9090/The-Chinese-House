@@ -12,6 +12,7 @@ export interface DynamicMenuItem {
   image: string;
   category: string;
   available: boolean;
+  diet_type?: "veg" | "non-veg" | "egg" | "none";
   variants?: { name: string; price: number }[];
 }
 
@@ -19,7 +20,7 @@ export function useDynamicMenu() {
   const [items, setItems] = useState<DynamicMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const CACHE_KEY = "menu_cache_default";
+  const CACHE_KEY = "menu_cache_v2";
   const CACHE_TIME = 5 * 60 * 1000; // 5 minutes
 
   const fetchMenu = async () => {
@@ -36,6 +37,7 @@ export function useDynamicMenu() {
         image: d.image_url || "/placeholder.svg",
         category: d.category,
         available: d.available,
+        diet_type: d.diet_type,
         variants: d.variants || [],
       }));
 
