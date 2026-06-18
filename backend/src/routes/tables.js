@@ -195,9 +195,7 @@ router.post("/:tableId/reserve", async (req, res) => {
 
   const finalPhone = customerPhone?.trim() || "0000000000";
 
-  if (!customerName) {
-    return res.status(400).json({ error: "Name is required" });
-  }
+  const finalName = customerName?.trim() || "Guest";
 
   const client = await pool.connect();
   try {
@@ -226,7 +224,7 @@ router.post("/:tableId/reserve", async (req, res) => {
       `INSERT INTO table_sessions (table_id, customer_name, customer_phone, otp, status, is_verified, business_id)
        VALUES ($1, $2, $3, '000000', 'active', true, $4)
        RETURNING *`,
-      [tableId, customerName, finalPhone, req.business_id]
+      [tableId, finalName, finalPhone, req.business_id]
     );
 
     // Mark table as occupied immediately

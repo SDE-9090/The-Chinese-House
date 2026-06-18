@@ -203,13 +203,8 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
   };
 
   const handlePlaceOrder = async () => {
-    let finalName = customerName.trim();
+    let finalName = customerName.trim() || "Guest";
     let finalPhone = customerPhone.trim();
-
-    if (!finalName) {
-      toast.error("Customer name is required for Counter orders");
-      return;
-    }
     if (finalPhone && finalPhone.length < 10) {
       toast.error("If provided, phone number must be 10 digits");
       return;
@@ -573,10 +568,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
 
         <button
           onClick={handlePlaceOrder}
-          disabled={
-            placing || 
-            !customerName.trim()
-          }
+          disabled={placing}
           className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold text-lg hover:bg-primary/90 transition-all disabled:opacity-50"
         >
           {placing ? "Placing Order..." : `Place Order • ₹${pricing.total.toFixed(2)}`}

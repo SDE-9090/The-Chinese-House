@@ -26,9 +26,7 @@ router.post("/", async (req, res) => {
   const { customerName, customerPhone, items, paymentMethod, couponCode, orderType, specialInstructions, orderSource, tableSessionId, splitCash = 0, splitUpi = 0 } =
     req.body;
 
-  if (!customerName?.trim()) {
-    return res.status(400).json({ error: "Customer Name is required" });
-  }
+  const name = customerName?.trim() || "Guest";
 
 
 
@@ -40,7 +38,7 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Invalid payment method" });
   }
 
-  const name = customerName.trim();
+
   const phone = customerPhone?.trim() || "0000000000";
 
   const client = await pool.connect();
