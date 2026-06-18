@@ -118,9 +118,12 @@ router.post("/", async (req, res) => {
       sgstRate: businessSettings.sgstRate,
     });
 
-    // Table orders are always pending — payment happens at the end of the session
-    const paymentStatus = (orderSource === "table") ? "pending" : "paid";
-    const paidAmount = paymentStatus === "paid" ? totals.total : 0;
+    // Use explicitly provided paidAmount (e.g. from POS), otherwise 0
+    const providedPaidAmount = req.body.paidAmount !== undefined ? Number(req.body.paidAmount) : 0;
+    
+    // If table order OR no explicit payment provided, it's pending.
+    const paymentStatus = (orderSource === "table" || providedPaidAmount < totals.total) ? "pending" : "paid";
+    const paidAmount = paymentStatus === "paid" ? totals.total : providedPaidAmount;
 
     const initialStatus = "new";
 

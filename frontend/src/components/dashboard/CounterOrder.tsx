@@ -229,11 +229,12 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
         "counter", // orderSource
         undefined, // tableSessionId
         parseFloat(splitCash) || 0,
-        parseFloat(splitUpi) || 0
+        parseFloat(splitUpi) || 0,
+        pricing.total
       );
 
-      setLastOrder({ 
-        token: order.token, 
+      setLastOrder({
+        token: order.token,
         total: order.total,
         items: cart.map(c => ({ name: c.name, quantity: c.quantity, note: c.note })),
         orderType,
@@ -290,7 +291,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
           <p className="text-xl font-semibold">₹{lastOrder.total.toFixed(2)}</p>
           <p className="text-xs text-muted-foreground mt-2">Payment: At Counter</p>
         </div>
-        
+
         {cashReceived !== null && lastOrder && cashReceived >= lastOrder.total && (
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 mb-6">
             <p className="text-emerald-700 dark:text-emerald-400 text-sm font-semibold mb-1">Return Change</p>
@@ -355,7 +356,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
               <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Customer Name *"
+                placeholder="Customer Name (Optional)"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
@@ -467,17 +468,15 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
           <div className="grid grid-cols-3 gap-2 mb-4">
             <button
               onClick={() => setPaymentMethod("counter")}
-              className={`py-2 px-2 rounded-xl text-sm font-bold border transition-all ${
-                paymentMethod === "counter" ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"
-              }`}
+              className={`py-2 px-2 rounded-xl text-sm font-bold border transition-all ${paymentMethod === "counter" ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"
+                }`}
             >
               💵 Cash
             </button>
             <button
               onClick={() => setPaymentMethod("online")}
-              className={`py-2 px-2 rounded-xl text-sm font-bold border transition-all ${
-                paymentMethod === "online" ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"
-              }`}
+              className={`py-2 px-2 rounded-xl text-sm font-bold border transition-all ${paymentMethod === "online" ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"
+                }`}
             >
               📱 Online/UPI
             </button>
@@ -487,9 +486,8 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
                 setSplitCash("");
                 setSplitUpi("");
               }}
-              className={`py-2 px-2 rounded-xl text-sm font-bold border transition-all ${
-                paymentMethod === "split" ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"
-              }`}
+              className={`py-2 px-2 rounded-xl text-sm font-bold border transition-all ${paymentMethod === "split" ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"
+                }`}
             >
               ⚖️ Split
             </button>
@@ -500,11 +498,10 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
               <div className="flex flex-wrap gap-2 mb-3">
                 <button
                   onClick={() => setCashReceived(pricing.total)}
-                  className={`flex-1 py-2.5 px-2 rounded-xl text-sm font-bold border transition-colors ${
-                    cashReceived === pricing.total 
-                      ? "bg-emerald-500 text-white border-emerald-500 shadow-md" 
+                  className={`flex-1 py-2.5 px-2 rounded-xl text-sm font-bold border transition-colors ${cashReceived === pricing.total
+                      ? "bg-emerald-500 text-white border-emerald-500 shadow-md"
                       : "bg-background border-border hover:border-emerald-500/50 text-emerald-600"
-                  }`}
+                    }`}
                 >
                   Exact: ₹{pricing.total.toFixed(0)}
                 </button>
@@ -512,11 +509,10 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
                   <button
                     key={amt}
                     onClick={() => setCashReceived(amt)}
-                    className={`flex-1 py-2.5 px-2 rounded-xl text-sm font-bold border transition-colors ${
-                      cashReceived === amt 
-                        ? "bg-emerald-500 text-white border-emerald-500 shadow-md" 
+                    className={`flex-1 py-2.5 px-2 rounded-xl text-sm font-bold border transition-colors ${cashReceived === amt
+                        ? "bg-emerald-500 text-white border-emerald-500 shadow-md"
                         : "bg-background border-border hover:border-emerald-500/50 text-emerald-600"
-                    }`}
+                      }`}
                   >
                     ₹{amt}
                   </button>
@@ -538,7 +534,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
                 <span className="text-2xl">💵</span>
                 <div className="flex-1">
                   <label className="text-xs font-bold text-muted-foreground ml-1">Cash Received</label>
-                  <input 
+                  <input
                     type="number"
                     placeholder="₹0"
                     className="w-full bg-muted border-none rounded-xl p-3 font-bold text-lg focus:ring-2 focus:ring-primary outline-none"
@@ -555,7 +551,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
                 <span className="text-2xl">📱</span>
                 <div className="flex-1">
                   <label className="text-xs font-bold text-muted-foreground ml-1">UPI Received</label>
-                  <input 
+                  <input
                     type="number"
                     placeholder="₹0"
                     className="w-full bg-muted border-none rounded-xl p-3 font-bold text-lg focus:ring-2 focus:ring-primary outline-none"

@@ -544,7 +544,8 @@ export async function apiPlaceOrder(
   orderSource?: "counter" | "table",
   tableSessionId?: string | null,
   splitCash?: number,
-  splitUpi?: number
+  splitUpi?: number,
+  paidAmount?: number
 ): Promise<Order> {
   if (!isApiMode()) {
     return localPlaceOrder(
@@ -564,7 +565,8 @@ export async function apiPlaceOrder(
       orderSource: orderSource || "counter",
       tableSessionId: tableSessionId || null,
       splitCash,
-      splitUpi
+      splitUpi,
+      paidAmount
     }),
   });
 
