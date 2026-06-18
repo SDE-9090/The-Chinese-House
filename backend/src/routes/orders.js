@@ -539,6 +539,7 @@ router.patch("/:id/customer-edit", async (req, res) => {
 
     const io = req.app.get("io");
     io.emit("order-updated", { id });
+    io.emit("order-editing", { id, editing: false });
 
     await invalidateDashboardCache();
 
