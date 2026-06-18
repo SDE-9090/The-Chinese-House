@@ -59,14 +59,14 @@ export default function TableOrderPage() {
 
   // Sync activeTableQr with localStorage
   useEffect(() => {
-    if (qrCode && table?.activeSession) {
-      if (table.activeSession.status === "completed") {
-        localStorage.removeItem("activeTableQr");
-      } else {
-        localStorage.setItem("activeTableQr", qrCode);
-      }
+    if (!qrCode || !table) return;
+    
+    if (table.activeSession && table.activeSession.status !== "completed") {
+      localStorage.setItem("activeTableQr", qrCode);
+    } else {
+      localStorage.removeItem("activeTableQr");
     }
-  }, [qrCode, table?.activeSession?.status]);
+  }, [qrCode, table]);
 
   useEffect(() => {
     const session = table?.activeSession;
