@@ -76,6 +76,7 @@ interface FormData {
   category: string;
   image?: File | null;
   available: boolean;
+  diet_type: "veg" | "non-veg" | "egg" | "none";
   variants: { name: string; price: number }[];
 }
 
@@ -87,6 +88,7 @@ const emptyForm: FormData = {
   category: "",
   image: null,
   available: true,
+  diet_type: "none",
   variants: [],
 };
 // ─── Sortable Desktop Row ───
@@ -175,7 +177,12 @@ const SortableDesktopRow = ({
         )}
       </td>
       <td className="py-3">
-        <p className="font-semibold">{item.name}</p>
+        <p className="font-semibold flex items-center gap-1.5">
+          {item.name}
+          {item.diet_type === "veg" && <span className="w-2.5 h-2.5 rounded-sm border border-green-600 bg-green-50 flex items-center justify-center" title="Veg"><span className="w-1 h-1 rounded-full bg-green-600"></span></span>}
+          {item.diet_type === "non-veg" && <span className="w-2.5 h-2.5 rounded-sm border border-red-600 bg-red-50 flex items-center justify-center" title="Non-Veg"><span className="w-1 h-1 rounded-full bg-red-600"></span></span>}
+          {item.diet_type === "egg" && <span className="w-2.5 h-2.5 rounded-sm border border-yellow-600 bg-yellow-50 flex items-center justify-center" title="Contains Egg"><span className="w-1 h-1 rounded-full bg-yellow-600"></span></span>}
+        </p>
         <p className="text-xs text-muted-foreground line-clamp-1">
           {item.description}
         </p>
@@ -282,11 +289,10 @@ const SortableMobileCard = ({
       ref={setNodeRef}
       style={style}
       className={`group bg-card border rounded-2xl p-4 transition-all duration-200
-      ${
-        selected
+      ${selected
           ? "border-primary/40 bg-primary/5"
           : "border-border hover:bg-muted/20 hover:-translate-y-[2px] hover:shadow-md"
-      }`}
+        }`}
     >
       {/* HEADER */}
       <div className="flex gap-3 items-start">
@@ -327,8 +333,11 @@ const SortableMobileCard = ({
           {/* Title */}
           <div className="flex justify-between gap-2">
             <div>
-              <p className="font-semibold text-sm leading-tight">
+              <p className="font-semibold text-sm leading-tight flex items-center gap-1.5">
                 {item.name}
+                {item.diet_type === "veg" && <span className="w-2.5 h-2.5 rounded-sm border border-green-600 bg-green-50 flex items-center justify-center" title="Veg"><span className="w-1 h-1 rounded-full bg-green-600"></span></span>}
+                {item.diet_type === "non-veg" && <span className="w-2.5 h-2.5 rounded-sm border border-red-600 bg-red-50 flex items-center justify-center" title="Non-Veg"><span className="w-1 h-1 rounded-full bg-red-600"></span></span>}
+                {item.diet_type === "egg" && <span className="w-2.5 h-2.5 rounded-sm border border-yellow-600 bg-yellow-50 flex items-center justify-center" title="Contains Egg"><span className="w-1 h-1 rounded-full bg-yellow-600"></span></span>}
               </p>
 
               {item.description && (
@@ -612,6 +621,7 @@ const MenuManager = () => {
       category: item.category,
       image: null,
       available: item.available,
+      diet_type: item.diet_type || "none",
       variants: item.variants || [],
     });
     setModalOpen(true);
@@ -642,6 +652,7 @@ const MenuManager = () => {
           price_label: form.price_label,
           category: form.category,
           image: form.image || undefined,
+          diet_type: form.diet_type,
           available: form.available,
           variants: form.variants.length > 0 ? form.variants : [],
         });
@@ -654,6 +665,7 @@ const MenuManager = () => {
           price_label: form.price_label,
           category: form.category,
           image: form.image || undefined,
+          diet_type: form.diet_type,
           available: form.available,
           variants: form.variants.length > 0 ? form.variants : [],
         });
@@ -842,11 +854,10 @@ const MenuManager = () => {
             <button
               key={cat}
               onClick={() => setCatFilter(cat)}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                catFilter === cat
+              className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${catFilter === cat
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
+                }`}
             >
               {cat}
             </button>
@@ -1064,7 +1075,7 @@ const MenuManager = () => {
 
                 <div>
                   <label className="text-sm font-semibold mb-1 block">
-                    Description *
+                    Description
                   </label>
                   <textarea
                     value={form.description}
@@ -1073,7 +1084,7 @@ const MenuManager = () => {
                     }
                     maxLength={300}
                     rows={2}
-                    placeholder="Brief description..."
+                    placeholder="Brief description (optional)..."
                     className="w-full px-3 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm resize-none"
                   />
                 </div>
@@ -1102,23 +1113,42 @@ const MenuManager = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-semibold mb-1 block">
-                    Category *
-                  </label>
-                  <select
-                    value={form.category}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, category: e.target.value }))
-                    }
-                    className="w-full px-3 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm"
-                  >
-                    {categoryNames.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-semibold mb-1 block">
+                      Category *
+                    </label>
+                    <select
+                      value={form.category}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, category: e.target.value }))
+                      }
+                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm"
+                    >
+                      {categoryNames.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold mb-1 block">
+                      Dietary Preference
+                    </label>
+                    <select
+                      value={form.diet_type}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, diet_type: e.target.value as any }))
+                      }
+                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm"
+                    >
+                      <option value="none">None / N/A</option>
+                      <option value="veg">🟢 Veg</option>
+                      <option value="non-veg">🔺 Non-Veg</option>
+                      <option value="egg">🟡 Contains Egg</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Variants Section */}

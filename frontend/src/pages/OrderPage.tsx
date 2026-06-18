@@ -88,6 +88,7 @@ function OrderPageContent({
 
 
   const [activeCategory, setActiveCategory] = useState("All");
+  const [vegOnly, setVegOnly] = useState(false);
   const [step, setStep] = useState<Step>("menu");
   const [customerName, setCustomerName] = useState(defaultName);
   const [customerPhone, setCustomerPhone] = useState(defaultPhone);
@@ -186,6 +187,8 @@ function OrderPageContent({
       : menuItems.filter((m) => m.category === activeCategory)
   )
     .filter((m) => {
+      if (vegOnly && m.diet_type === "non-veg") return false;
+      if (vegOnly && m.diet_type === "egg") return false;
       if (!search.trim()) return true;
       const q = search.toLowerCase();
       return (
@@ -1633,6 +1636,22 @@ function OrderPageContent({
                     </motion.button>
                   ))}
                 </div>
+                <div className="flex items-center gap-2 px-1">
+                  <button
+                    onClick={() => setVegOnly(!vegOnly)}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${vegOnly ? 'bg-green-600' : 'bg-muted-foreground/30'}`}
+                  >
+                    <motion.div
+                      className="absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-sm"
+                      animate={{ x: vegOnly ? 20 : 0 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  </button>
+                  <span className="text-sm font-semibold flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-sm border border-green-600 bg-green-50 flex items-center justify-center"><span className="w-1.5 h-1.5 rounded-full bg-green-600"></span></span>
+                    Veg Only
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -1683,9 +1702,12 @@ function OrderPageContent({
                             </div>
                           </div>
                           <div className="p-3 flex flex-col flex-grow">
-                            <h3 className="font-heading font-bold text-sm mb-0.5">
-                              {item.name}
-                            </h3>
+                            <h3 className="font-bold text-base leading-tight flex items-start gap-1.5">
+                            <span className="flex-1">{item.name}</span>
+                            {item.diet_type === "veg" && <span className="w-3 h-3 rounded-sm border border-green-600 bg-green-50 flex items-center justify-center mt-1 shrink-0" title="Veg"><span className="w-1.5 h-1.5 rounded-full bg-green-600"></span></span>}
+                            {item.diet_type === "non-veg" && <span className="w-3 h-3 rounded-sm border border-red-600 bg-red-50 flex items-center justify-center mt-1 shrink-0" title="Non-Veg"><span className="w-1.5 h-1.5 rounded-full bg-red-600"></span></span>}
+                            {item.diet_type === "egg" && <span className="w-3 h-3 rounded-sm border border-yellow-600 bg-yellow-50 flex items-center justify-center mt-1 shrink-0" title="Contains Egg"><span className="w-1.5 h-1.5 rounded-full bg-yellow-600"></span></span>}
+                          </h3>
                             <p className="text-muted-foreground text-xs mb-3 line-clamp-2">
                               {item.desc}
                             </p>

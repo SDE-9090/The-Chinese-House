@@ -287,7 +287,8 @@ CREATE TABLE public.menu_items (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     category_id integer NOT NULL,
-    business_id uuid NOT NULL
+    business_id uuid NOT NULL,
+    diet_type character varying(20) DEFAULT 'none'::character varying
 );
 
 

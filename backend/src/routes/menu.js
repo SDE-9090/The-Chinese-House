@@ -117,7 +117,7 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuImage
 
   try {
 
-    const { name, description, price, price_label, category, available, variants } = req.body;
+    const { name, description, price, price_label, category, available, variants, diet_type } = req.body;
 
     if (!name || !price || !price_label || !category) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -142,8 +142,8 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuImage
 
     const { rows } = await pool.query(
       `INSERT INTO menu_items
-      (name, slug, description, price, price_label, category_id, image_url, available, business_id, variants)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      (name, slug, description, price, price_label, category_id, image_url, available, business_id, variants, diet_type)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
       RETURNING *,
       (SELECT name FROM menu_categories WHERE id=$6) AS category`,
       [
@@ -156,7 +156,8 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuImage
         image_url,
         available !== false,
         req.business_id,
-        variantsJson
+        variantsJson,
+        diet_type || 'none'
       ]
     );
 
@@ -188,7 +189,7 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuIma
   try {
 
     const { id } = req.params;
-    const { name, description, price, price_label, category, available, variants } = req.body;
+    const { name, description, price, price_label, category, available, variants, diet_type } = req.body;
 
     let categoryId = null;
 
@@ -231,7 +232,8 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuIma
            image_url = COALESCE($7,image_url),
            available = COALESCE($8,available),
            variants = COALESCE($9,variants),
-           updated_at = NOW()
+           updated_at = NOW(),
+           diet_type = COALESCE($12,diet_type)
        WHERE id = $10 AND business_id = $11 AND is_deleted = FALSE
        RETURNING *,
        (SELECT name FROM menu_categories WHERE id = menu_items.category_id) AS category`,
@@ -246,7 +248,8 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuIma
         available !== undefined ? available : null,
         variantsJson,
         id,
-        req.business_id
+        req.business_id,
+        diet_type || null
       ]
     );
 

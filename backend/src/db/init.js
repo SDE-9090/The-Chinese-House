@@ -32,6 +32,9 @@ ALTER TABLE business_settings
 ALTER TABLE admin_account
   ADD COLUMN IF NOT EXISTS email TEXT;
 
+ALTER TABLE menu_items
+  ADD COLUMN IF NOT EXISTS diet_type VARCHAR(20) DEFAULT 'none';
+
 INSERT INTO business_settings (id, restaurant_name, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate)
 SELECT 1,
        'The Chinese House',

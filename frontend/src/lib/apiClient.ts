@@ -1070,6 +1070,7 @@ export interface MenuItem {
   price: number
   price_label: string
   category: string
+  diet_type: "veg" | "non-veg" | "egg" | "none"
   image_url: string | null
   available: boolean
   sort_order: number
@@ -1098,6 +1099,7 @@ export async function apiCreateMenuItem(data: {
   price: number
   price_label: string
   category: string
+  diet_type?: "veg" | "non-veg" | "egg" | "none"
   image?: File | null
   available?: boolean
   variants?: { name: string; price: number }[]
@@ -1110,6 +1112,10 @@ export async function apiCreateMenuItem(data: {
   formData.append("price", String(data.price))
   formData.append("price_label", data.price_label)
   formData.append("category", data.category)
+
+  if (data.diet_type) {
+    formData.append("diet_type", data.diet_type)
+  }
 
   if (data.available !== undefined) {
     formData.append("available", String(data.available))
@@ -1149,6 +1155,7 @@ export async function apiUpdateMenuItem(
     price: number
     price_label: string
     category: string
+    diet_type: "veg" | "non-veg" | "egg" | "none"
     image: File | null
     available: boolean
     variants: { name: string; price: number }[]
@@ -1162,6 +1169,7 @@ export async function apiUpdateMenuItem(
   if (data.price !== undefined) formData.append("price", String(data.price))
   if (data.price_label) formData.append("price_label", data.price_label)
   if (data.category) formData.append("category", data.category)
+  if (data.diet_type) formData.append("diet_type", data.diet_type)
 
   if (data.available !== undefined) {
     formData.append("available", String(data.available))
