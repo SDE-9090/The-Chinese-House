@@ -91,22 +91,23 @@ const EditOrderModal = ({ open, onClose, order, onSave, user }: EditOrderModalPr
     setSelectedItem("");
   };
 
-  const handleVariantAdd = (item: any) => {
+  const handleVariantAdd = (item: DynamicMenuItem, variant: { name: string; price: number }, quantity: number) => {
+    const newItemId = `${item.id}-${variant.name}`;
     setItems((prev) => {
-      const existing = prev.find((x) => x.id === item.id);
+      const existing = prev.find((x) => x.id === newItemId);
       if (existing) {
         return prev.map((x) =>
-          x.id === item.id ? { ...x, quantity: x.quantity + item.quantity } : x
+          x.id === newItemId ? { ...x, quantity: x.quantity + quantity } : x
         );
       }
       return [
         ...prev,
         {
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          priceLabel: item.priceLabel || "",
-          quantity: item.quantity,
+          id: newItemId,
+          name: `${item.name} (${variant.name})`,
+          price: variant.price,
+          priceLabel: `₹${variant.price}`,
+          quantity: quantity,
           image: item.image || "/placeholder.svg",
         },
       ];
