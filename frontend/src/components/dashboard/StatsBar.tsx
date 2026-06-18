@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, TrendingUp, DollarSign, XCircle, X } from "lucide-react";
+import { ShoppingBag, TrendingUp, DollarSign, XCircle, X, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
 import type { Order } from "@/lib/apiClient";
 
 interface StatsBarProps {
@@ -9,6 +9,7 @@ interface StatsBarProps {
 
 const StatsBar = ({ orders }: StatsBarProps) => {
   const [showCancelledModal, setShowCancelledModal] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const activeOrders = orders.filter((o) =>
     ["new", "preparing", "ready"].includes(o.status)
@@ -68,23 +69,45 @@ const StatsBar = ({ orders }: StatsBarProps) => {
 
   return (
     <>
-      <div className="container mx-auto px-4 py-5 grid grid-cols-2 md:grid-cols-4 gap-3">
-        {stats.map((stat) => (
-          <motion.div
-            key={stat.label}
-            onClick={stat.label === "Cancelled" ? () => setShowCancelledModal(true) : undefined}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`bg-gradient-to-br ${stat.gradient} border border-border/50 rounded-2xl p-4 text-center ${
-              stat.label === "Cancelled" ? "cursor-pointer hover:shadow-md transition-shadow hover:border-destructive/30" : ""
-            }`}
-          >
-            <stat.icon size={18} className={`mx-auto mb-1 ${stat.label === "Cancelled" ? "text-destructive/70" : "text-muted-foreground"}`} />
-            <p className="text-2xl font-bold">{stat.value}</p>
-            <p className="text-xs text-muted-foreground">{stat.label}</p>
-          </motion.div>
-        ))}
+      <div className="container mx-auto px-4 pt-5 pb-2">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors mx-auto bg-card border border-border/50 px-4 py-2 rounded-full shadow-sm hover:shadow-md"
+        >
+          <BarChart3 size={16} className="text-primary" />
+          {isExpanded ? "Hide Statistics" : "View Daily Statistics"}
+          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
       </div>
+
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="container mx-auto px-4 pb-5 pt-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+              {stats.map((stat) => (
+                <motion.div
+                  key={stat.label}
+                  onClick={stat.label === "Cancelled" ? () => setShowCancelledModal(true) : undefined}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`bg-gradient-to-br ${stat.gradient} border border-border/50 rounded-2xl p-4 text-center ${
+                    stat.label === "Cancelled" ? "cursor-pointer hover:shadow-md transition-shadow hover:border-destructive/30" : ""
+                  }`}
+                >
+                  <stat.icon size={18} className={`mx-auto mb-1 ${stat.label === "Cancelled" ? "text-destructive/70" : "text-muted-foreground"}`} />
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Cancelled Orders Modal */}
       <AnimatePresence>
