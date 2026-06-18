@@ -217,23 +217,27 @@ Thank you!`;
       console.error("SMS failed:", err.message),
     );
 
-    await invalidateOrderHistoryCache(phone);
-    await invalidateDashboardCache();
-    await invalidateActiveOrdersHistoryCache(phone);
+    invalidateOrderHistoryCache(phone).catch(console.error);
+    invalidateDashboardCache().catch(console.error);
+    invalidateActiveOrdersHistoryCache(phone).catch(console.error);
 
-    const itemsResult = await pool.query(
-      `SELECT menu_item_id, name, price, price_label as "priceLabel", quantity, image
-       FROM order_items
-       WHERE order_id = $1`,
-      [order.id],
-    );
+    const responseItems = items.map((i) => ({
+      id: i.id,
+      menu_item_id: parseInt(String(i.id).split('-')[0], 10) || null,
+      name: i.name,
+      price: Number(i.price) || 0,
+      priceLabel: i.priceLabel || "Full",
+      quantity: Number(i.quantity) || 1,
+      image: i.image || "/placeholder.jpg",
+      note: i.note || undefined
+    }));
 
     const responseData = {
       id: order.id,
       token: order.token,
       customerName: order.customer_name,
       customerPhone: order.customer_phone,
-      items: mapOrderItems(itemsResult.rows),
+      items: responseItems,
       subtotal: parseFloat(order.subtotal),
       discount: parseFloat(order.discount || 0),
       cgst: parseFloat(order.cgst || 0),

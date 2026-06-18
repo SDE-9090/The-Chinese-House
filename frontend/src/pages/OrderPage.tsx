@@ -496,13 +496,13 @@ function OrderPageContent({
         isTableMode ? "table" : "counter",
         tableSessionId || null
       );
-      // fetch estimated wait time
-      try {
-        const estimateData = await apiGetEstimate();
+      // fetch estimated wait time in background
+      apiGetEstimate().then(estimateData => {
         setEstimatedTime(estimateData.estimatedMinutes);
-      } catch (err) {
+      }).catch(err => {
         console.error("Failed to fetch estimated time:", err);
-      }
+      });
+
       setConfirmedOrder(order);
       clearCart();
       setStep("confirmation");
