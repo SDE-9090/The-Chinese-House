@@ -87,6 +87,29 @@ app.get("/api/flush-redis-urgent", async (req, res) => {
   }
 });
 
+// Database schema migration for decimals
+app.get("/api/migrate-decimals", async (req, res) => {
+  try {
+    const pool = require("./db/pool");
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("ALTER TABLE orders ALTER COLUMN points_earned TYPE numeric(10,2) USING points_earned::numeric(10,2)");
+      await client.query("ALTER TABLE orders ALTER COLUMN points_redeemed TYPE numeric(10,2) USING points_redeemed::numeric(10,2)");
+      await client.query("ALTER TABLE customers ALTER COLUMN points_balance TYPE numeric(10,2) USING points_balance::numeric(10,2)");
+      await client.query("COMMIT");
+      res.json({ message: "Database altered successfully for decimal points." });
+    } catch(err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Routes
 app.use("/api/orders", orderRoutes);
 app.use("/api/dashboard", dashboardRoutes);

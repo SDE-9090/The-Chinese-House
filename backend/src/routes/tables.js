@@ -664,7 +664,7 @@ router.post("/sessions/:sessionId/close", adminAuth, async (req, res) => {
 
         // Earnings
         const totalAfterDiscount = Math.max(0, sessionTotal - loyaltyDiscount);
-        const pointsEarned = Math.floor(totalAfterDiscount / 100) * settings.loyalty_points_per_100;
+        const pointsEarned = parseFloat(((totalAfterDiscount / 100) * settings.loyalty_points_per_100).toFixed(2));
 
         if (pointsEarned > 0) {
           await client.query(`

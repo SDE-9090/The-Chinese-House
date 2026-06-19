@@ -180,7 +180,7 @@ router.patch("/orders/:id/status", auth, async (req, res) => {
       const settings = settingsRes.rows[0];
       
       if (settings && settings.loyalty_enabled) {
-        const pointsEarned = Math.floor(parseFloat(order.total) / 100) * settings.loyalty_points_per_100;
+        const pointsEarned = parseFloat(((parseFloat(order.total) / 100) * settings.loyalty_points_per_100).toFixed(2));
         
         if (pointsEarned > 0) {
           // Record points_earned
