@@ -37,6 +37,7 @@ import {
   ImageIcon,
   Megaphone,
   QrCode,
+  Users,
 } from "lucide-react";
 
 import { Loader2 } from "lucide-react";
@@ -66,6 +67,7 @@ const CounterOrder = lazy(() => import("@/components/dashboard/CounterOrder"));
 const BusinessSettingsManager = lazy(() => import("@/components/dashboard/BusinessSettingsManager"));
 const TableManager = lazy(() => import("@/components/dashboard/TableManager"));
 const StaffManager = lazy(() => import("@/components/dashboard/StaffManager"));
+const CustomerManagement = lazy(() => import("@/components/dashboard/CustomerManagement"));
 const PageContentManager = lazy(() => import("@/components/dashboard/PageContentManager"));
 
 // Fallback loader for dashboard tabs
@@ -918,6 +920,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               {[
                 { key: "coupons" as const, label: "Coupons", icon: Ticket, check: () => user.features?.coupon_engine },
                 { key: "reviews" as const, label: "Reviews", icon: MessageSquare, check: () => user.features?.customer_reviews },
+                { key: "customers" as const, label: "Customers", icon: Users },
                 { key: "qr-codes" as const, label: "QR Codes", icon: QrCode, check: () => user.features?.qr_digital_ordering !== false },
               ].filter(st => !st.check || st.check()).map((st) => (
                 <button
@@ -937,6 +940,8 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               <CouponManagement />
             ) : managementSubTab === "reviews" ? (
               <ReviewManagement />
+            ) : managementSubTab === "customers" ? (
+              <CustomerManagement />
             ) : (
               <TableQRCodes />
             )}

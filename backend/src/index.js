@@ -22,6 +22,7 @@ const kitchenRoutes = require("./routes/kitchen");
 const tablesRoutes = require("./routes/tables");
 const staffRoutes = require("./routes/staff");
 const reportsRoutes = require("./routes/reports");
+const customersRoutes = require("./routes/customers");
 const { tenantEnforcer } = require("./middleware/tenantEnforcer");
 
 const app = express();
@@ -92,6 +93,7 @@ app.use("/api/promotions", promotionRoutes);
 app.use("/api/kitchen", kitchenRoutes);
 app.use("/api/tables", tablesRoutes);
 app.use("/api/staff", staffRoutes);
+app.use("/api/customers", customersRoutes);
 
 // ---- Start Server ----
 server.listen(PORT, () => {

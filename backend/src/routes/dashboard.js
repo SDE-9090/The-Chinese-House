@@ -169,6 +169,37 @@ router.patch("/orders/:id/status", auth, async (req, res) => {
       token: update.rows[0].token,
       status: update.rows[0].status,
     });
+    
+    // Loyalty Points Logic
+    if (status === "completed" && update.rows[0].customer_phone && update.rows[0].customer_phone !== "0000000000") {
+      const order = update.rows[0];
+      const settingsRes = await pool.query(
+        "SELECT loyalty_enabled, loyalty_points_per_100 FROM business_settings WHERE business_id = $1", 
+        [req.business_id]
+      );
+      const settings = settingsRes.rows[0];
+      
+      if (settings && settings.loyalty_enabled) {
+        const pointsEarned = Math.floor(parseFloat(order.total) / 100) * settings.loyalty_points_per_100;
+        
+        if (pointsEarned > 0) {
+          // Record points_earned
+          await pool.query("UPDATE orders SET points_earned = $1 WHERE id = $2", [pointsEarned, order.id]);
+          
+          // Upsert customers table
+          await pool.query(`
+            INSERT INTO customers (business_id, phone, name, points_balance, total_spent, last_visit)
+            VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+            ON CONFLICT (business_id, phone)
+            DO UPDATE SET 
+              points_balance = customers.points_balance + $4,
+              total_spent = customers.total_spent + $5,
+              last_visit = CURRENT_TIMESTAMP,
+              name = CASE WHEN customers.name = '' OR customers.name = 'Guest' THEN EXCLUDED.name ELSE customers.name END
+          `, [req.business_id, order.customer_phone, order.customer_name || 'Guest', pointsEarned, order.total]);
+        }
+      }
+    }
 
     await invalidateDashboardCache(req.business_id);
     await invalidateActiveOrdersHistoryCache(update.rows[0].customer_phone, req.business_id);

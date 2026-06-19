@@ -23,7 +23,7 @@ function mapOrderItems(rows) {
 
 // ---------------- PLACE NEW ORDER ----------------
 router.post("/", async (req, res) => {
-  const { customerName, customerPhone, items, paymentMethod, couponCode, orderType, specialInstructions, orderSource, tableSessionId, splitCash = 0, splitUpi = 0 } =
+  const { customerName, customerPhone, items, paymentMethod, couponCode, orderType, specialInstructions, orderSource, tableSessionId, splitCash = 0, splitUpi = 0, pointsRedeemed = 0 } =
     req.body;
 
   const name = customerName?.trim() || "Guest";
@@ -110,6 +110,43 @@ router.post("/", async (req, res) => {
     }
 
     const businessSettings = await ensureBusinessSettings(client, req.business_id);
+    
+    // Loyalty Points Redemption Logic
+    let loyaltyDiscount = 0;
+    const requestedPoints = parseInt(pointsRedeemed, 10) || 0;
+    let actualPointsRedeemed = 0;
+    
+    if (requestedPoints > 0 && phone !== "0000000000") {
+      const loyaltySettingsRes = await client.query(
+        "SELECT loyalty_enabled, loyalty_discount_per_point FROM business_settings WHERE business_id = $1", 
+        [req.business_id]
+      );
+      const loyaltySettings = loyaltySettingsRes.rows[0];
+      
+      if (loyaltySettings && loyaltySettings.loyalty_enabled) {
+        const customerRes = await client.query(
+          "SELECT points_balance FROM customers WHERE business_id = $1 AND phone = $2 FOR UPDATE",
+          [req.business_id, phone]
+        );
+        
+        if (customerRes.rows.length > 0) {
+          const customer = customerRes.rows[0];
+          actualPointsRedeemed = Math.min(requestedPoints, customer.points_balance);
+          loyaltyDiscount = actualPointsRedeemed * parseFloat(loyaltySettings.loyalty_discount_per_point);
+          
+          discount += loyaltyDiscount;
+          
+          await client.query(
+            "UPDATE customers SET points_balance = points_balance - $1 WHERE business_id = $2 AND phone = $3",
+            [actualPointsRedeemed, req.business_id, phone]
+          );
+          
+          if (discount > subtotal) {
+             discount = subtotal;
+          }
+        }
+      }
+    }
     const totals = calculateOrderTotals({
       subtotal,
       discount,
@@ -131,8 +168,8 @@ router.post("/", async (req, res) => {
       `INSERT INTO orders
         (token, customer_name, customer_phone, subtotal, total, payment_method,
          payment_status, paid_amount, coupon_code, discount, cgst, sgst, gst_total, gst_rate,
-         order_type, special_instructions, order_source, table_session_id, status, split_cash, split_upi, business_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+         order_type, special_instructions, order_source, table_session_id, status, split_cash, split_upi, points_redeemed, business_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
        RETURNING *`,
       [
         token,
@@ -156,6 +193,7 @@ router.post("/", async (req, res) => {
         initialStatus,
         splitCash,
         splitUpi,
+        actualPointsRedeemed,
         req.business_id
       ],
     );

@@ -21,6 +21,7 @@ import {
   XCircle,
   Edit3,
   MoreVertical,
+  Star,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -258,9 +259,12 @@ function OrderPageContent({
     setCouponInput("");
   };
 
+  const loyaltyDiscountValue = pointsRedeemed * (loyaltySettings?.discount_per_point ?? 1);
+  const totalDiscount = (appliedCoupon?.discount ?? 0) + loyaltyDiscountValue;
+
   const pricing = calculateOrderPricing(
     total,
-    appliedCoupon?.discount ?? 0,
+    totalDiscount,
     businessSettings,
   );
 
@@ -286,7 +290,39 @@ function OrderPageContent({
 
   // Hoist all hooks here to avoid Rules of Hooks violations
   const hasInitializedEdit = useRef(false);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [loyaltySettings, setLoyaltySettings] = useState<{ enabled: boolean; points_per_100: number; discount_per_point: number } | null>(null);
+  const [pointsRedeemed, setPointsRedeemed] = useState(0);
+  const [checkingLoyalty, setCheckingLoyalty] = useState(false);
 
+  useEffect(() => {
+    if (customerPhone.length === 10 && !isTableMode) {
+      setCheckingLoyalty(true);
+      fetch(`${import.meta.env.VITE_API_URL || ""}/api/customers/loyalty/${customerPhone}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("admin_token") || ""}`,
+        }
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.enabled) {
+            setLoyaltyPoints(data.points || 0);
+            if (data.settings) {
+              setLoyaltySettings({
+                enabled: data.settings.loyalty_enabled,
+                points_per_100: data.settings.loyalty_points_per_100,
+                discount_per_point: data.settings.loyalty_discount_per_point
+              });
+            }
+          }
+        })
+        .catch(console.error)
+        .finally(() => setCheckingLoyalty(false));
+    } else {
+      setLoyaltyPoints(0);
+      setPointsRedeemed(0);
+    }
+  }, [customerPhone, isTableMode]);
   useEffect(() => {
     if (step === "confirmation" && confirmedOrder) {
       // Show edit button while order is in 'new' status
@@ -494,7 +530,11 @@ function OrderPageContent({
         orderType,
         specialInstructions.trim(),
         isTableMode ? "table" : "counter",
-        tableSessionId || null
+        tableSessionId || null,
+        0,
+        0,
+        undefined,
+        pointsRedeemed
       );
       // fetch estimated wait time in background
       apiGetEstimate().then(estimateData => {
@@ -1068,6 +1108,45 @@ function OrderPageContent({
               </div>
             )}
 
+            {/* LOYALTY BANNER */}
+            {loyaltyPoints > 0 && loyaltySettings?.enabled && !isTableMode && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 p-4 rounded-xl border border-primary/20 bg-primary/5 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-primary flex items-center gap-2">
+                      <Star className="w-4 h-4 fill-primary" />
+                      Loyalty Reward Available
+                    </h4>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      You have {loyaltyPoints} points worth ₹{(loyaltyPoints * loyaltySettings.discount_per_point).toFixed(2)}.
+                    </p>
+                  </div>
+                  {pointsRedeemed > 0 ? (
+                    <button
+                      onClick={() => setPointsRedeemed(0)}
+                      className="text-xs font-semibold px-3 py-1.5 rounded bg-destructive/10 text-destructive"
+                    >
+                      Remove
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                         const maxPoints = Math.floor(pricing.subtotal / loyaltySettings.discount_per_point);
+                         setPointsRedeemed(Math.min(loyaltyPoints, maxPoints || loyaltyPoints));
+                      }}
+                      className="text-xs font-semibold px-3 py-1.5 rounded bg-primary text-primary-foreground"
+                    >
+                      Redeem
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
             {/* ORDER HISTORY BUTTON */}
             {customerPhone.trim().length === 10 && (
               <>
@@ -1272,7 +1351,18 @@ function OrderPageContent({
                     className="flex justify-between text-sm text-primary font-medium"
                   >
                     <span>Discount ({appliedCoupon.code})</span>
-                    <span>-₹{pricing.discount}</span>
+                    <span>-₹{(appliedCoupon?.discount ?? 0).toFixed(2)}</span>
+                  </motion.div>
+                )}
+
+                {pointsRedeemed > 0 && loyaltySettings?.enabled && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="flex justify-between text-sm text-primary font-medium"
+                  >
+                    <span>Loyalty Reward ({pointsRedeemed} pts)</span>
+                    <span>-₹{loyaltyDiscountValue.toFixed(2)}</span>
                   </motion.div>
                 )}
 

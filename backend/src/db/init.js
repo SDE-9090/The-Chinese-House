@@ -53,6 +53,7 @@ async function init() {
   try {
     await pool.query(schema);
     await pool.query(GST_SQL);
+    await require("./migrate-loyalty")();
     console.log("✅ Database initialized successfully");
   } catch (err) {
     console.error("❌ Database init failed:", err.message);
