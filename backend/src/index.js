@@ -79,7 +79,7 @@ app.get("/api/health", (_, res) => res.json({ status: "ok" }));
 // Urgent flush endpoint
 app.get("/api/flush-redis-urgent", async (req, res) => {
   try {
-    const redisClient = require("../../config/redis");
+    const redisClient = require("../config/redis");
     await redisClient.flushAll();
     res.json({ message: "Flushed all Redis databases on production." });
   } catch(e) {
