@@ -128,6 +128,42 @@ function OrderPageContent({
   const [isPayingDue, setIsPayingDue] = useState(false);
   const [editAddItem, setEditAddItem] = useState("");
   const editTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Hoist all hooks here to avoid Rules of Hooks violations
+  const hasInitializedEdit = useRef(false);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [loyaltySettings, setLoyaltySettings] = useState<{ enabled: boolean; points_per_100: number; discount_per_point: number } | null>(null);
+  const [pointsRedeemed, setPointsRedeemed] = useState(0);
+  const [checkingLoyalty, setCheckingLoyalty] = useState(false);
+
+  useEffect(() => {
+    if (customerPhone.length === 10 && !isTableMode) {
+      setCheckingLoyalty(true);
+      fetch(`${import.meta.env.VITE_API_URL || ""}/api/customers/loyalty/${customerPhone}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("admin_token") || ""}`,
+        }
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.enabled) {
+            setLoyaltyPoints(data.points || 0);
+            if (data.settings) {
+              setLoyaltySettings({
+                enabled: data.settings.loyalty_enabled,
+                points_per_100: data.settings.loyalty_points_per_100,
+                discount_per_point: data.settings.loyalty_discount_per_point
+              });
+            }
+          }
+        })
+        .catch(console.error)
+        .finally(() => setCheckingLoyalty(false));
+    } else {
+      setLoyaltyPoints(0);
+      setPointsRedeemed(0);
+    }
+  }, [customerPhone, isTableMode]);
   const editItemsRef = useRef<Order["items"]>([]);
   const [open, setOpen] = useState(false);
   const [couponInput, setCouponInput] = useState("");
@@ -288,41 +324,7 @@ function OrderPageContent({
     }
   };
 
-  // Hoist all hooks here to avoid Rules of Hooks violations
-  const hasInitializedEdit = useRef(false);
-  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
-  const [loyaltySettings, setLoyaltySettings] = useState<{ enabled: boolean; points_per_100: number; discount_per_point: number } | null>(null);
-  const [pointsRedeemed, setPointsRedeemed] = useState(0);
-  const [checkingLoyalty, setCheckingLoyalty] = useState(false);
 
-  useEffect(() => {
-    if (customerPhone.length === 10 && !isTableMode) {
-      setCheckingLoyalty(true);
-      fetch(`${import.meta.env.VITE_API_URL || ""}/api/customers/loyalty/${customerPhone}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("admin_token") || ""}`,
-        }
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.enabled) {
-            setLoyaltyPoints(data.points || 0);
-            if (data.settings) {
-              setLoyaltySettings({
-                enabled: data.settings.loyalty_enabled,
-                points_per_100: data.settings.loyalty_points_per_100,
-                discount_per_point: data.settings.loyalty_discount_per_point
-              });
-            }
-          }
-        })
-        .catch(console.error)
-        .finally(() => setCheckingLoyalty(false));
-    } else {
-      setLoyaltyPoints(0);
-      setPointsRedeemed(0);
-    }
-  }, [customerPhone, isTableMode]);
   useEffect(() => {
     if (step === "confirmation" && confirmedOrder) {
       // Show edit button while order is in 'new' status
