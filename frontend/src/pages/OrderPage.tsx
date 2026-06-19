@@ -443,6 +443,15 @@ function OrderPageContent({
     return () => clearTimeout(timer);
   }, [menuLoading, searchParams, menuItems, items, addItem]);
 
+  // Cleanup editing state on unmount
+  useEffect(() => {
+    return () => {
+      if (isEditing && confirmedOrder?.id) {
+        apiEditingEnd(confirmedOrder.id);
+      }
+    };
+  }, [isEditing, confirmedOrder?.id]);
+
   // Early returns must happen AFTER all hooks are defined
   if (settingsLoading || menuLoading) {
     return (
@@ -695,15 +704,6 @@ function OrderPageContent({
       apiEditingEnd(confirmedOrder.id);
     }
   };
-
-  // Cleanup editing state on unmount
-  useEffect(() => {
-    return () => {
-      if (isEditing && confirmedOrder?.id) {
-        apiEditingEnd(confirmedOrder.id);
-      }
-    };
-  }, [isEditing, confirmedOrder?.id]);
 
 
   if (step === "confirmation" && confirmedOrder) {
