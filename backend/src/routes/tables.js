@@ -3,7 +3,8 @@ const router = express.Router();
 const pool = require("../db/pool");
 const { invalidateDashboardCache } = require("../helpers/cacheHelper");
 const { adminAuth } = require("../middleware/adminAuth");
-const { roundCurrency } = require("../utils/gst");
+const { roundCurrency, calculateOrderTotals } = require("../utils/gst");
+const { ensureBusinessSettings } = require("../utils/businessSettings");
 
 
 
@@ -597,10 +598,96 @@ router.post("/sessions/:sessionId/pay", async (req, res) => {
 // Closes the session, marks outstanding orders as paid, frees the table
 router.post("/sessions/:sessionId/close", adminAuth, async (req, res) => {
   const { sessionId } = req.params;
-  const { paymentMethod = "counter", splitCash = 0, splitUpi = 0 } = req.body; // cash, upi, card, split, counter
+  const { paymentMethod = "counter", splitCash = 0, splitUpi = 0, customerPhone, pointsRedeemed } = req.body;
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+
+    const sessionRes = await client.query(
+      "SELECT sum(total) as session_total FROM orders WHERE table_session_id = $1 AND status != 'cancelled'",
+      [sessionId]
+    );
+    const sessionTotal = parseFloat(sessionRes.rows[0]?.session_total || 0);
+
+    let loyaltyDiscount = 0;
+    const requestedPoints = parseInt(pointsRedeemed, 10) || 0;
+    const finalPhone = customerPhone && customerPhone.length === 10 ? customerPhone : null;
+    let actualPointsRedeemed = 0;
+
+    if (finalPhone) {
+      await client.query("UPDATE table_sessions SET customer_phone = $1 WHERE id = $2", [finalPhone, sessionId]);
+      await client.query("UPDATE orders SET customer_phone = $1 WHERE table_session_id = $2", [finalPhone, sessionId]);
+
+      const settingsRes = await client.query(
+        "SELECT loyalty_enabled, loyalty_discount_per_point, loyalty_points_per_100 FROM business_settings WHERE business_id = $1",
+        [req.business_id]
+      );
+      const settings = settingsRes.rows[0];
+
+      if (settings && settings.loyalty_enabled) {
+        // Redemptions
+        if (requestedPoints > 0) {
+          const customerRes = await client.query(
+            "SELECT points_balance FROM customers WHERE business_id = $1 AND phone = $2 FOR UPDATE",
+            [req.business_id, finalPhone]
+          );
+          if (customerRes.rows.length > 0) {
+            actualPointsRedeemed = Math.min(requestedPoints, customerRes.rows[0].points_balance);
+            loyaltyDiscount = actualPointsRedeemed * parseFloat(settings.loyalty_discount_per_point);
+            if (loyaltyDiscount > sessionTotal) loyaltyDiscount = sessionTotal;
+
+            // Deduct points
+            await client.query(
+              "UPDATE customers SET points_balance = points_balance - $1 WHERE business_id = $2 AND phone = $3",
+              [actualPointsRedeemed, req.business_id, finalPhone]
+            );
+
+            // Add discount to session and absorb into the most recent order
+            await client.query(
+              "UPDATE table_sessions SET discount_amount = COALESCE(discount_amount, 0) + $1 WHERE id = $2",
+              [loyaltyDiscount, sessionId]
+            );
+            
+            await client.query(`
+              UPDATE orders 
+              SET total = GREATEST(0, total - $1),
+                  discount = COALESCE(discount, 0) + $1,
+                  points_redeemed = $2
+              WHERE id = (
+                SELECT id FROM orders 
+                WHERE table_session_id = $3 AND status != 'cancelled' 
+                ORDER BY created_at DESC LIMIT 1
+              )
+            `, [loyaltyDiscount, actualPointsRedeemed, sessionId]);
+          }
+        }
+
+        // Earnings
+        const totalAfterDiscount = Math.max(0, sessionTotal - loyaltyDiscount);
+        const pointsEarned = Math.floor(totalAfterDiscount / 100) * settings.loyalty_points_per_100;
+
+        if (pointsEarned > 0) {
+          await client.query(`
+            UPDATE orders SET points_earned = $1 
+            WHERE id = (
+              SELECT id FROM orders 
+              WHERE table_session_id = $2 AND status != 'cancelled' 
+              ORDER BY created_at DESC LIMIT 1
+            )
+          `, [pointsEarned, sessionId]);
+
+          await client.query(`
+            INSERT INTO customers (business_id, phone, name, points_balance, total_spent, last_visit)
+            VALUES ($1, $2, 'Guest', $3, $4, CURRENT_TIMESTAMP)
+            ON CONFLICT (business_id, phone)
+            DO UPDATE SET 
+              points_balance = customers.points_balance + $3,
+              total_spent = customers.total_spent + $4,
+              last_visit = CURRENT_TIMESTAMP
+          `, [req.business_id, finalPhone, pointsEarned, totalAfterDiscount]);
+        }
+      }
+    }
 
     // Mark outstanding orders as settled by the provided payment method
     await client.query(

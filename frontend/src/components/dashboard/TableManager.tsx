@@ -62,6 +62,13 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [splitUpi, setSplitUpi] = useState<string>("");
   const [closingId, setClosingId] = useState<string | null>(null);
   const [billsMap, setBillsMap] = useState<Record<string, SessionBill>>({}); // sessionId -> bill
+  
+  // Loyalty State
+  const [loyaltyPhone, setLoyaltyPhone] = useState("");
+  const [pointsRedeemed, setPointsRedeemed] = useState(0);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [checkingLoyalty, setCheckingLoyalty] = useState(false);
+  const [loyaltySettings, setLoyaltySettings] = useState<{ enabled: boolean; points_per_100: number; discount_per_point: number } | null>(null);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null); // For admin detail modal
   const [business, setBusiness] = useState<any>(null);
   const [deletingTableId, setDeletingTableId] = useState<string | null>(null);
@@ -142,6 +149,36 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
     apiGetBusinessSettings().then(setBusiness).catch(() => { });
   }, []);
 
+  useEffect(() => {
+    if (loyaltyPhone.length === 10) {
+      setCheckingLoyalty(true);
+      fetch(`${import.meta.env.VITE_API_URL || ""}/api/customers/loyalty/${loyaltyPhone}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("admin_token") || ""}`,
+        }
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.enabled) {
+            setLoyaltyPoints(data.points || 0);
+            if (data.settings) {
+              setLoyaltySettings({
+                enabled: data.settings.loyalty_enabled,
+                points_per_100: data.settings.loyalty_points_per_100,
+                discount_per_point: data.settings.loyalty_discount_per_point
+              });
+            }
+          }
+        })
+        .catch(console.error)
+        .finally(() => setCheckingLoyalty(false));
+    } else {
+      setLoyaltyPoints(0);
+      setPointsRedeemed(0);
+      setLoyaltySettings(null);
+    }
+  }, [loyaltyPhone]);
+
 
 
 
@@ -151,7 +188,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const handleCloseSession = async (sessionId: string, method: string) => {
     setClosingId(sessionId);
     try {
-      await apiSessionClose(sessionId, method, parseFloat(splitCash) || 0, parseFloat(splitUpi) || 0);
+      await apiSessionClose(sessionId, method, parseFloat(splitCash) || 0, parseFloat(splitUpi) || 0, loyaltyPhone || undefined, pointsRedeemed);
       await fetchTables();
       await onRefresh();
       toast({ title: `Table cleared (${method.toUpperCase()})` });
@@ -164,6 +201,9 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
       setSplitMode(false);
       setSplitCash("");
       setSplitUpi("");
+      setLoyaltyPhone("");
+      setPointsRedeemed(0);
+      setLoyaltyPoints(0);
     }
   };
 
@@ -519,7 +559,14 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                   )}
                   {(user.role === 'admin' || user.role === 'manager') && (
                     <button
-                      onClick={() => setShowPaymentModal(detailSession.id)}
+                      onClick={() => {
+                        setShowPaymentModal(detailSession.id);
+                        if (detailSession.customerPhone && detailSession.customerPhone !== "0000000000") {
+                          setLoyaltyPhone(detailSession.customerPhone);
+                        } else {
+                          setLoyaltyPhone("");
+                        }
+                      }}
                       disabled={closingId === detailSession.id}
                       className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
                     >
@@ -546,12 +593,73 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
             <h3 className="text-2xl font-black mb-1">Clear Table</h3>
             <p className="text-sm font-semibold text-muted-foreground mb-6">How did the customer pay?</p>
 
-            {billsMap[showPaymentModal] && (
-              <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl mb-6 text-center">
-                <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">Total Bill</p>
-                <p className="text-4xl font-black text-primary">₹{(billsMap[showPaymentModal].totalAmount).toFixed(0)}</p>
+            {billsMap[showPaymentModal] && (() => {
+              const baseTotal = billsMap[showPaymentModal].totalAmount;
+              const loyaltyDiscountValue = loyaltySettings?.enabled ? (pointsRedeemed * (loyaltySettings.discount_per_point || 1)) : 0;
+              const finalTotal = Math.max(0, baseTotal - loyaltyDiscountValue);
+
+              return (
+                <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl mb-6 text-center space-y-2">
+                  <div className="flex justify-between text-sm text-muted-foreground font-semibold px-4">
+                    <span>Subtotal</span>
+                    <span>₹{baseTotal.toFixed(2)}</span>
+                  </div>
+                  {pointsRedeemed > 0 && loyaltySettings?.enabled && (
+                    <div className="flex justify-between text-sm text-primary font-bold px-4">
+                      <span>Loyalty Reward</span>
+                      <span>-₹{loyaltyDiscountValue.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-primary/10">
+                    <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">Total Due</p>
+                    <p className="text-4xl font-black text-primary">₹{finalTotal.toFixed(0)}</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="mb-6 space-y-3">
+              <div>
+                <label className="text-xs font-bold text-muted-foreground ml-1">Customer Phone (Loyalty)</label>
+                <input
+                  type="text"
+                  maxLength={10}
+                  value={loyaltyPhone}
+                  onChange={(e) => setLoyaltyPhone(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Enter phone number..."
+                  className="w-full bg-muted border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-primary outline-none mt-1"
+                />
               </div>
-            )}
+
+              {checkingLoyalty && <p className="text-xs text-muted-foreground ml-1">Checking loyalty points...</p>}
+              
+              {!checkingLoyalty && loyaltyPoints > 0 && loyaltySettings?.enabled && (
+                <div className="bg-orange-500/10 border border-orange-500/20 p-3 rounded-xl flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-orange-600">Loyalty Member</p>
+                    <p className="text-sm font-semibold text-orange-700">{loyaltyPoints} points available</p>
+                  </div>
+                  {pointsRedeemed > 0 ? (
+                    <button
+                      onClick={() => setPointsRedeemed(0)}
+                      className="text-xs font-bold bg-destructive/10 text-destructive px-3 py-1.5 rounded-lg"
+                    >
+                      Remove
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        const maxPoints = Math.floor(billsMap[showPaymentModal].totalAmount / loyaltySettings.discount_per_point);
+                        setPointsRedeemed(Math.min(loyaltyPoints, maxPoints || loyaltyPoints));
+                      }}
+                      className="text-xs font-bold bg-orange-500 text-white px-3 py-1.5 rounded-lg"
+                    >
+                      Redeem
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
 
             {!splitMode ? (
               <div className="grid grid-cols-2 gap-3 mb-6">
@@ -598,7 +706,9 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                       onChange={(e) => {
                         setSplitCash(e.target.value);
                         const val = parseFloat(e.target.value) || 0;
-                        const total = billsMap[showPaymentModal]?.totalAmount || 0;
+                        const baseTotal = billsMap[showPaymentModal]?.totalAmount || 0;
+                        const loyaltyDiscountValue = loyaltySettings?.enabled ? (pointsRedeemed * (loyaltySettings.discount_per_point || 1)) : 0;
+                        const total = Math.max(0, baseTotal - loyaltyDiscountValue);
                         setSplitUpi(Math.max(0, total - val).toString());
                       }}
                     />
@@ -616,7 +726,9 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                       onChange={(e) => {
                         setSplitUpi(e.target.value);
                         const val = parseFloat(e.target.value) || 0;
-                        const total = billsMap[showPaymentModal]?.totalAmount || 0;
+                        const baseTotal = billsMap[showPaymentModal]?.totalAmount || 0;
+                        const loyaltyDiscountValue = loyaltySettings?.enabled ? (pointsRedeemed * (loyaltySettings.discount_per_point || 1)) : 0;
+                        const total = Math.max(0, baseTotal - loyaltyDiscountValue);
                         setSplitCash(Math.max(0, total - val).toString());
                       }}
                     />

@@ -1784,11 +1784,24 @@ export async function apiSessionDone(sessionId: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to mark session as done");
 }
 
-export async function apiSessionClose(sessionId: string, paymentMethod: string = "counter", splitCash: number = 0, splitUpi: number = 0): Promise<void> {
+export async function apiSessionClose(
+  sessionId: string, 
+  paymentMethod: string = "counter", 
+  splitCash: number = 0, 
+  splitUpi: number = 0,
+  customerPhone?: string,
+  pointsRedeemed?: number
+): Promise<void> {
   const res = await authFetch(`${API_URL}/tables/sessions/${sessionId}/close`, {
     method: "POST",
     headers: dashHeaders(),
-    body: JSON.stringify({ paymentMethod, splitCash, splitUpi }),
+    body: JSON.stringify({ 
+      paymentMethod, 
+      splitCash, 
+      splitUpi,
+      customerPhone,
+      pointsRedeemed
+    }),
   });
   if (!res.ok) throw new Error("Failed to close session");
 }

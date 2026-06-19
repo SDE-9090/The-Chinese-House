@@ -170,8 +170,8 @@ router.patch("/orders/:id/status", auth, async (req, res) => {
       status: update.rows[0].status,
     });
     
-    // Loyalty Points Logic
-    if (status === "completed" && update.rows[0].customer_phone && update.rows[0].customer_phone !== "0000000000") {
+    // Loyalty Points Logic (Skip table orders, they are handled in apiSessionClose)
+    if (status === "completed" && update.rows[0].customer_phone && update.rows[0].customer_phone !== "0000000000" && !update.rows[0].table_session_id) {
       const order = update.rows[0];
       const settingsRes = await pool.query(
         "SELECT loyalty_enabled, loyalty_points_per_100 FROM business_settings WHERE business_id = $1", 
