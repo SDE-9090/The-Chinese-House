@@ -145,7 +145,7 @@ router.post("/eod-report", async (req, res) => {
       const pdfBuffer = await generatePDFBuffer(b.restaurant_name, salesData, cancelData);
       
       const dateStr = new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
-      const filename = `Z-Report-${b.restaurant_name.replace(/[^a-z0-9]/gi, '_')}-${dateStr.replace(/\\//g, '-')}.pdf`;
+      const filename = `Z-Report-${b.restaurant_name.replace(/[^a-z0-9]/gi, '_')}-${dateStr.replaceAll('/', '-')}.pdf`;
 
       // Send Email
       try {
