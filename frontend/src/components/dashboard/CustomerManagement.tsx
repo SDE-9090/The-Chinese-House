@@ -19,7 +19,7 @@ export default function CustomerManagement() {
 
   const fetchCustomers = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/customers?search=${search}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/customers?search=${search}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("admin_token")}`,
         },

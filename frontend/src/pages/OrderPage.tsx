@@ -139,7 +139,7 @@ function OrderPageContent({
   useEffect(() => {
     if (customerPhone.length === 10 && !isTableMode) {
       setCheckingLoyalty(true);
-      fetch(`${import.meta.env.VITE_API_URL || ""}/api/customers/loyalty/${customerPhone}`, {
+      fetch(`${import.meta.env.VITE_API_URL || ""}/customers/loyalty/${customerPhone}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("admin_token") || ""}`,
         }

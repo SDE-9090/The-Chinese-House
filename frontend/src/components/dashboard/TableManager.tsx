@@ -152,7 +152,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   useEffect(() => {
     if (loyaltyPhone.length === 10) {
       setCheckingLoyalty(true);
-      fetch(`${import.meta.env.VITE_API_URL || ""}/api/customers/loyalty/${loyaltyPhone}`, {
+      fetch(`${import.meta.env.VITE_API_URL || ""}/customers/loyalty/${loyaltyPhone}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("admin_token") || ""}`,
         }
