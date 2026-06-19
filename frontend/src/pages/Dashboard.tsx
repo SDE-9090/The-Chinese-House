@@ -548,7 +548,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
 
   useEffect(() => {
     import("@/lib/apiClient").then(({ apiAdminGetBusinessSettings }) => {
-      apiAdminGetBusinessSettings().then(s => setOrderWorkflow(s.orderWorkflow || "quick-complete")).catch(() => {});
+      apiAdminGetBusinessSettings().then(s => setOrderWorkflow(s.orderWorkflow || "quick-complete")).catch(() => { });
     });
   }, []);
 
@@ -950,9 +950,9 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
           <div className="container mx-auto px-4 pb-8 py-4">
             <div className="flex gap-2 mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
               {[
-                { key: "security" as const, label: "Login Logs", icon: Shield },
-                { key: "account" as const, label: "Security", icon: ShieldCheck },
                 { key: "business" as const, label: "Business & GST", icon: Settings },
+                { key: "account" as const, label: "Security", icon: ShieldCheck },
+                { key: "security" as const, label: "Login Logs", icon: Shield },
               ].map((st) => (
                 <button
                   key={st.key}
