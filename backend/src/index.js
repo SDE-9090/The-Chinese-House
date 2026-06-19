@@ -110,6 +110,18 @@ app.get("/api/migrate-decimals", async (req, res) => {
   }
 });
 
+app.get("/api/debug-db", async (req, res) => {
+  try {
+    const pool = require("./db/pool");
+    const { query } = req.query;
+    if (!query) return res.json({ error: "No query provided" });
+    const result = await pool.query(query);
+    res.json({ rows: result.rows });
+  } catch(e) {
+    res.json({ error: e.message });
+  }
+});
+
 // Routes
 app.use("/api/orders", orderRoutes);
 app.use("/api/dashboard", dashboardRoutes);

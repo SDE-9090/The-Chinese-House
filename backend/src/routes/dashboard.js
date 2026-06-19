@@ -196,7 +196,7 @@ router.patch("/orders/:id/status", auth, async (req, res) => {
               total_spent = customers.total_spent + $5,
               last_visit = CURRENT_TIMESTAMP,
               name = CASE WHEN customers.name = '' OR customers.name = 'Guest' THEN EXCLUDED.name ELSE customers.name END
-          `, [req.business_id, order.customer_phone, order.customer_name || 'Guest', pointsEarned, order.total]);
+          `, [req.business_id, order.customer_phone, order.customer_name || 'Guest', pointsEarned, parseFloat(order.total)]);
         }
       }
     }
