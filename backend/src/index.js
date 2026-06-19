@@ -21,6 +21,7 @@ const promotionRoutes = require("./routes/promotions");
 const kitchenRoutes = require("./routes/kitchen");
 const tablesRoutes = require("./routes/tables");
 const staffRoutes = require("./routes/staff");
+const reportsRoutes = require("./routes/reports");
 const { tenantEnforcer } = require("./middleware/tenantEnforcer");
 
 const app = express();
@@ -40,6 +41,10 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
+// ---- System Cron Routes ----
+// These must come before tenant enforcer since they run system-wide
+app.use("/api/reports", reportsRoutes);
 
 // ---- Single-Tenant Enforcer ----
 app.use(tenantEnforcer);
