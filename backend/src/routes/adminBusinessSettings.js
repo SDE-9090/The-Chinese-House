@@ -37,6 +37,9 @@ router.put("/", adminAuth, async (req, res) => {
     landingPageContent,
     features,
     orderWorkflow,
+    loyaltyEnabled,
+    loyaltyPointsPer100,
+    loyaltyDiscountPerPoint,
   } = req.body;
 
   if (restaurantName !== undefined) {
@@ -84,6 +87,22 @@ router.put("/", adminAuth, async (req, res) => {
     return res.status(400).json({ error: "Invalid GSTIN format" });
   }
 
+  if (loyaltyEnabled !== undefined && typeof loyaltyEnabled !== "boolean") {
+    return res.status(400).json({ error: "Loyalty toggle must be true or false" });
+  }
+
+  if (loyaltyPointsPer100 !== undefined) {
+    if (typeof loyaltyPointsPer100 !== "number" || loyaltyPointsPer100 < 0) {
+      return res.status(400).json({ error: "Points per 100 must be a non-negative number" });
+    }
+  }
+
+  if (loyaltyDiscountPerPoint !== undefined) {
+    if (typeof loyaltyDiscountPerPoint !== "number" || loyaltyDiscountPerPoint < 0) {
+      return res.status(400).json({ error: "Discount per point must be a non-negative number" });
+    }
+  }
+
   try {
     const current = await ensureBusinessSettings(pool, req.business_id);
     const next = {
@@ -100,12 +119,15 @@ router.put("/", adminAuth, async (req, res) => {
       sgstRate: typeof sgstRate === "number" ? sgstRate : current.sgstRate,
       kitchenPin: typeof kitchenPin === "string" ? kitchenPin : current.kitchenPin,
       orderWorkflow: typeof orderWorkflow === "string" && ["multi-step", "quick-complete"].includes(orderWorkflow) ? orderWorkflow : current.orderWorkflow,
+      loyaltyEnabled: typeof loyaltyEnabled === "boolean" ? loyaltyEnabled : current.loyaltyEnabled,
+      loyaltyPointsPer100: typeof loyaltyPointsPer100 === "number" ? loyaltyPointsPer100 : current.loyaltyPointsPer100,
+      loyaltyDiscountPerPoint: typeof loyaltyDiscountPerPoint === "number" ? loyaltyDiscountPerPoint : current.loyaltyDiscountPerPoint,
       landingPageContent: landingPageContent !== undefined ? landingPageContent : current.landingPageContent,
     };
 
     const result = await pool.query(
-      `INSERT INTO business_settings (business_id, restaurant_name, gstin, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate, kitchen_pin, updated_at, landing_page_content, order_workflow)
-       VALUES ($10, $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $11, $12)
+      `INSERT INTO business_settings (business_id, restaurant_name, gstin, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate, kitchen_pin, updated_at, landing_page_content, order_workflow, loyalty_enabled, loyalty_points_per_100, loyalty_discount_per_point)
+       VALUES ($10, $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $11, $12, $13, $14, $15)
        ON CONFLICT (business_id) DO UPDATE SET
          restaurant_name = EXCLUDED.restaurant_name,
          gstin = EXCLUDED.gstin,
@@ -118,8 +140,11 @@ router.put("/", adminAuth, async (req, res) => {
          kitchen_pin = EXCLUDED.kitchen_pin,
          landing_page_content = EXCLUDED.landing_page_content,
          order_workflow = EXCLUDED.order_workflow,
+         loyalty_enabled = EXCLUDED.loyalty_enabled,
+         loyalty_points_per_100 = EXCLUDED.loyalty_points_per_100,
+         loyalty_discount_per_point = EXCLUDED.loyalty_discount_per_point,
          updated_at = NOW()
-       RETURNING id, restaurant_name, gstin, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate, kitchen_pin, landing_page_content, order_workflow`,
+       RETURNING id, restaurant_name, gstin, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate, kitchen_pin, landing_page_content, order_workflow, loyalty_enabled, loyalty_points_per_100, loyalty_discount_per_point`,
       [
         next.restaurantName,
         next.gstin,
@@ -133,6 +158,9 @@ router.put("/", adminAuth, async (req, res) => {
         req.business_id,
         JSON.stringify(next.landingPageContent),
         next.orderWorkflow,
+        next.loyaltyEnabled,
+        next.loyaltyPointsPer100,
+        next.loyaltyDiscountPerPoint
       ],
     );
 

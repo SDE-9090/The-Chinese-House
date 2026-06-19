@@ -409,6 +409,9 @@ export interface BusinessSettings {
   layoutTheme?: string;
   orderWorkflow?: "multi-step" | "quick-complete";
   landingPageContent?: LandingPageContent;
+  loyaltyEnabled?: boolean;
+  loyaltyPointsPer100?: number;
+  loyaltyDiscountPerPoint?: number;
 }
 
 export async function apiAdminGetBusinessSettings(): Promise<BusinessSettings> {

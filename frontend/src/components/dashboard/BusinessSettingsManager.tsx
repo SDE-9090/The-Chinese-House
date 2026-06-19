@@ -34,6 +34,9 @@ const defaultState: BusinessSettings = {
   cgstRate: 2.5,
   sgstRate: 2.5,
   kitchenPin: "1234",
+  loyaltyEnabled: true,
+  loyaltyPointsPer100: 10,
+  loyaltyDiscountPerPoint: 1.00,
 };
 
 const BusinessSettingsManager = () => {
@@ -85,6 +88,9 @@ const BusinessSettingsManager = () => {
         cgstRate: data.cgstRate,
         sgstRate: data.sgstRate,
         features: data.features,
+        loyaltyEnabled: data.loyaltyEnabled,
+        loyaltyPointsPer100: data.loyaltyPointsPer100,
+        loyaltyDiscountPerPoint: data.loyaltyDiscountPerPoint,
       });
       setData(updated);
       toast({ title: "Saved", description: "Business settings updated." });
@@ -381,6 +387,87 @@ const BusinessSettingsManager = () => {
         >
           <Save size={16} /> {saving ? "Saving..." : "Save Business Settings"}
         </button>
+      </div>
+
+      {/* Loyalty Program Settings */}
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500 lucide lucide-gift"><polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7"/><line x1="12" x2="12" y1="22" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+          </div>
+          <div>
+            <h2 className="font-heading text-lg font-bold">Loyalty Program</h2>
+            <p className="text-sm text-muted-foreground">
+              Configure points earned per ₹100 and discount value per point.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <label className="text-sm font-medium text-foreground mb-1.5 block">
+              Program Status
+            </label>
+
+            <div className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3 h-[52px]">
+              <span className="text-sm text-muted-foreground">
+                Enable Loyalty Program
+              </span>
+
+              <Switch
+                id="loyalty-toggle"
+                checked={data.loyaltyEnabled ?? true}
+                onCheckedChange={(checked) =>
+                  setData((prev) => ({ ...prev, loyaltyEnabled: checked }))
+                }
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">
+              Points Earned (per ₹100 spent)
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={data.loyaltyPointsPer100 ?? 10}
+              onChange={(e) => {
+                const val = parseInt(e.target.value);
+                setData((prev) => ({
+                  ...prev,
+                  loyaltyPointsPer100: isNaN(val) ? 0 : Math.max(0, val),
+                }));
+              }}
+              disabled={!data.loyaltyEnabled}
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="10"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">
+              Discount Value (₹ per Point)
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={0.1}
+              value={data.loyaltyDiscountPerPoint ?? 1}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                setData((prev) => ({
+                  ...prev,
+                  loyaltyDiscountPerPoint: isNaN(val) ? 0 : Math.max(0, val),
+                }));
+              }}
+              disabled={!data.loyaltyEnabled}
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+              placeholder="1.0"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Danger Zone */}

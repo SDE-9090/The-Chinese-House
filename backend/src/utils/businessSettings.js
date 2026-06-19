@@ -43,6 +43,9 @@ function normalizeBusinessSettings(row = {}) {
     kitchenPin: row.kitchen_pin || "1234",
     theme: row.theme || "gourmet-royal",
     orderWorkflow: row.order_workflow || "quick-complete",
+    loyaltyEnabled: row.loyalty_enabled !== false, // Default to true if null, or maybe false? The DB has default true. Let's say row.loyalty_enabled ?? false. Wait, existing DB might have it null? Actually schema has default true.
+    loyaltyPointsPer100: row.loyalty_points_per_100 != null ? Number(row.loyalty_points_per_100) : 10,
+    loyaltyDiscountPerPoint: row.loyalty_discount_per_point != null ? Number(row.loyalty_discount_per_point) : 1.00,
     landingPageContent: row.landing_page_content && Object.keys(row.landing_page_content).length > 0
       ? { ...defaultContent, ...row.landing_page_content }
       : defaultContent
