@@ -400,13 +400,6 @@ const BusinessSettingsManager = () => {
           </span>
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-semibold text-primary-foreground transition-opacity disabled:opacity-50"
-        >
-          <Save size={16} /> {saving ? "Saving..." : "Save Business Settings"}
-        </button>
       </div>
 
       {/* Loyalty Program Settings */}
@@ -488,6 +481,17 @@ const BusinessSettingsManager = () => {
             />
           </div>
         </div>
+      </div>
+
+      {/* Global Save Button */}
+      <div className="flex justify-end sticky bottom-6 z-10 pt-4">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 font-bold text-primary-foreground transition-all hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-xl shadow-primary/30"
+        >
+          <Save size={20} /> {saving ? "Saving..." : "Save All Settings"}
+        </button>
       </div>
 
       {/* Danger Zone */}
