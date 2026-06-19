@@ -189,6 +189,10 @@ function OrderPageContent({
   const [variantModalContext, setVariantModalContext] = useState<"cart" | "edit">("cart");
 
   const handleVariantAdd = (item: DynamicMenuItem, variant: { name: string; price: number }, quantity: number) => {
+    if (isTableLocked) {
+      toast({ title: "Table Locked", description: "You cannot modify the cart until the table is unlocked.", variant: "destructive" });
+      return;
+    }
     const newItem = {
       id: `${item.id}-${variant.name}`,
       name: `${item.name} (${variant.name})`,
@@ -523,6 +527,14 @@ function OrderPageContent({
   };
 
   const handlePlaceOrder = async () => {
+    if (isTableLocked) {
+      toast({
+        title: "Table Locked",
+        description: "Please wait for a waiter to unlock your table before placing an order.",
+        variant: "destructive"
+      });
+      return;
+    }
     if (!restaurantStatus.open) {
       toast({
         title: "Restaurant Closed",
@@ -583,6 +595,10 @@ function OrderPageContent({
     editItemsRef.current.length > 0 ? editItemsRef.current : editItems;
 
   const handleEditQty = (id: number | string, delta: number) => {
+    if (isTableLocked) {
+      toast({ title: "Table Locked", description: "You cannot modify the cart until the table is unlocked.", variant: "destructive" });
+      return;
+    }
     const nextItems = getCurrentEditItems()
       .map((i) =>
         i.id === id ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i,
@@ -1401,13 +1417,13 @@ function OrderPageContent({
               </div>
             )}
             <motion.button
-              whileHover={restaurantStatus.open ? { scale: 1.01 } : {}}
-              whileTap={restaurantStatus.open ? { scale: 0.99 } : {}}
+              whileHover={restaurantStatus.open && !isTableLocked ? { scale: 1.01 } : {}}
+              whileTap={restaurantStatus.open && !isTableLocked ? { scale: 0.99 } : {}}
               onClick={handlePlaceOrder}
-              disabled={isPlacing || !restaurantStatus.open}
+              disabled={isPlacing || !restaurantStatus.open || isTableLocked}
               className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {!restaurantStatus.open ? "Restaurant Closed" : isPlacing ? "Placing..." : isTableMode ? "Place Order (Pay Later)" : `Place Order`}
+              {!restaurantStatus.open ? "Restaurant Closed" : isPlacing ? "Placing..." : isTableLocked ? "Table Locked" : isTableMode ? "Place Order (Pay Later)" : `Place Order`}
             </motion.button>
           </motion.div>
         </div>
@@ -1479,6 +1495,10 @@ function OrderPageContent({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => {
+                if (isTableLocked) {
+                  toast({ title: "Table Locked", description: "You cannot view the cart until the table is unlocked.", variant: "destructive" });
+                  return;
+                }
                 if (count > 0) setStep("cart");
               }}
               className="relative bg-primary text-primary-foreground px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-md shadow-primary/20 transition-all whitespace-nowrap"
@@ -1644,17 +1664,22 @@ function OrderPageContent({
                 </div>
               )}
               <motion.button
-                whileHover={restaurantStatus.open ? { scale: 1.01 } : {}}
-                whileTap={restaurantStatus.open ? { scale: 0.99 } : {}}
-                onClick={() => restaurantStatus.open && (isTableMode ? handlePlaceOrder() : setStep("checkout"))}
-                disabled={!restaurantStatus.open || isPlacing}
+                whileHover={restaurantStatus.open && !isTableLocked ? { scale: 1.01 } : {}}
+                whileTap={restaurantStatus.open && !isTableLocked ? { scale: 0.99 } : {}}
+                onClick={() => {
+                  if (isTableLocked) return;
+                  if (restaurantStatus.open) {
+                    isTableMode ? handlePlaceOrder() : setStep("checkout");
+                  }
+                }}
+                disabled={!restaurantStatus.open || isPlacing || isTableLocked}
                 className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isPlacing ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 size={20} className="animate-spin" /> Placing Order...
                   </span>
-                ) : !restaurantStatus.open ? "Ordering Unavailable" : isTableMode ? "Place Order" : "Proceed to Checkout"}
+                ) : !restaurantStatus.open ? "Ordering Unavailable" : isTableLocked ? "Table is Locked" : isTableMode ? "Place Order" : "Proceed to Checkout"}
               </motion.button>
             </div>
           )}
@@ -1794,12 +1819,16 @@ function OrderPageContent({
                               ) : inCart ? (
                                 <div className="flex items-center justify-between">
                                   <button
-                                    onClick={() =>
+                                    onClick={() => {
+                                      if (isTableLocked) {
+                                        toast({ title: "Table Locked", description: "You cannot modify the cart until the table is unlocked.", variant: "destructive" });
+                                        return;
+                                      }
                                       updateQuantity(
                                         item.id!,
                                         inCart.quantity - 1,
-                                      )
-                                    }
+                                      );
+                                    }}
                                     className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-all"
                                   >
                                     {inCart.quantity === 1 ? (
@@ -1812,12 +1841,16 @@ function OrderPageContent({
                                     {inCart.quantity}
                                   </span>
                                   <button
-                                    onClick={() =>
+                                    onClick={() => {
+                                      if (isTableLocked) {
+                                        toast({ title: "Table Locked", description: "You cannot modify the cart until the table is unlocked.", variant: "destructive" });
+                                        return;
+                                      }
                                       updateQuantity(
                                         item.id!,
                                         inCart.quantity + 1,
-                                      )
-                                    }
+                                      );
+                                    }}
                                     className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-secondary hover:text-secondary-foreground transition-all"
                                   >
                                     <Plus size={12} />
@@ -1828,6 +1861,10 @@ function OrderPageContent({
                                   whileHover={{ scale: 1.03 }}
                                   whileTap={{ scale: 0.97 }}
                                   onClick={() => {
+                                    if (isTableLocked) {
+                                      toast({ title: "Table Locked", description: "You cannot modify the cart until the table is unlocked.", variant: "destructive" });
+                                      return;
+                                    }
                                     if (item.variants && item.variants.length > 0) {
                                       setVariantModalContext("cart");
                                       setVariantModalItem(item);
