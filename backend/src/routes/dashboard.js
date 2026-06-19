@@ -74,6 +74,7 @@ function formatOrderRows(rows) {
 // ---------------- GET TODAY ORDERS ----------------
 // ======================================================
 router.get("/orders", auth, async (req, res) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
   try {
     const { rows } = await pool.query(
       `SELECT o.*, oi.name AS item_name, oi.price AS item_price,
@@ -101,6 +102,7 @@ router.get("/orders", auth, async (req, res) => {
 // ---------------- GET ALL ORDERS ----------------
 // ======================================================
 router.get("/orders/all", auth, async (req, res) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
   try {
     const { rows } = await pool.query(
       `SELECT o.*, oi.name AS item_name, oi.price AS item_price,
