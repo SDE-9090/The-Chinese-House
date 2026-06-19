@@ -340,7 +340,10 @@ export async function apiAdminDeleteStaff(id: string): Promise<{ message: string
 }
 
 export async function apiGetStaffPerformance(): Promise<StaffPerformance[]> {
-  const res = await authFetch(`${API_URL}/dashboard/staff/performance`, { cache: 'no-store' });
+  const res = await authFetch(`${API_URL}/dashboard/staff/performance`, {
+    headers: authHeaders(),
+    cache: 'no-store'
+  });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to fetch staff performance");
   return data;
