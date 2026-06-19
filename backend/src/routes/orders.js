@@ -46,6 +46,18 @@ router.post("/", async (req, res) => {
   try {
     await client.query("BEGIN");
 
+    // Validate that all items exist in the database
+    const itemIds = [...new Set(items.map(item => parseInt(String(item.id).split('-')[0], 10)).filter(id => !isNaN(id)))];
+    if (itemIds.length > 0) {
+      const menuCheckRes = await client.query(
+        "SELECT id FROM menu_items WHERE id = ANY($1::int[]) AND business_id = $2",
+        [itemIds, req.business_id]
+      );
+      if (menuCheckRes.rows.length !== itemIds.length) {
+        throw new Error("Some items in your cart are no longer available on the menu. Please clear your cart and try again.");
+      }
+    }
+
     const today = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
     year: "numeric",
@@ -487,6 +499,18 @@ router.patch("/:id/customer-edit", async (req, res) => {
 
   try {
     await client.query("BEGIN");
+
+    // Validate that all items exist in the database
+    const itemIds = [...new Set(items.map(item => parseInt(String(item.id).split('-')[0], 10)).filter(id => !isNaN(id)))];
+    if (itemIds.length > 0) {
+      const menuCheckRes = await client.query(
+        "SELECT id FROM menu_items WHERE id = ANY($1::int[]) AND business_id = $2",
+        [itemIds, req.business_id]
+      );
+      if (menuCheckRes.rows.length !== itemIds.length) {
+        throw new Error("Some items in your cart are no longer available on the menu. Please clear your cart and try again.");
+      }
+    }
 
     const orderCheck = await client.query(
       "SELECT status, customer_phone, created_at, paid_amount, coupon_code, discount FROM orders WHERE id=$1 AND business_id=$2",

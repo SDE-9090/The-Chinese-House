@@ -572,8 +572,9 @@ export async function apiPlaceOrder(
     }),
   });
 
-  if (!res.ok) throw new Error("Failed to place order");
-  return res.json();
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data?.error || "Failed to place order");
+  return data;
 }
 
 export async function apiGetTokens(): Promise<{ id: string; token: number; status: string; customerName?: string }[]> {
