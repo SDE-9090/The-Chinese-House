@@ -263,8 +263,17 @@ export default function TableOrderPage() {
 
   const session = table.activeSession;
 
-  // ─── State 1: No active session → Reservation Form ───
+  // ─── State 1: No active session ───
   if (!session) {
+    if (table.qrRoutingMode === 'waiter_unlock') {
+      return (
+        <OrderPage
+          isTableMode={true}
+          tableNumber={table.tableNumber}
+          isTableLocked={true}
+        />
+      );
+    }
     return (
       <div className="min-h-screen p-6 flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20">
         <div className="w-full max-w-sm bg-card p-6 rounded-2xl shadow-xl border border-border">

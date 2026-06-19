@@ -95,11 +95,12 @@ router.post("/:tableId/admin-open", adminAuth, async (req, res) => {
     );
 
     // Create a VERIFIED session
+    const waiterId = req.admin && req.admin.isStaff ? req.admin.id : null;
     const sessionRes = await client.query(
-      `INSERT INTO table_sessions (table_id, customer_name, customer_phone, otp, status, is_verified, business_id)
-       VALUES ($1, $2, $3, $4, 'active', true, $5)
+      `INSERT INTO table_sessions (table_id, customer_name, customer_phone, otp, status, is_verified, business_id, waiter_id)
+       VALUES ($1, $2, $3, $4, 'active', true, $5, $6)
        RETURNING id`,
-      [tableId, finalName, finalPhone, "123456", req.business_id] // Placeholder OTP
+      [tableId, finalName, finalPhone, "123456", req.business_id, waiterId] // Placeholder OTP
     );
 
     await client.query("UPDATE tables SET status = 'occupied' WHERE id = $1 AND business_id = $2", [tableId, req.business_id]);
@@ -148,7 +149,10 @@ router.get("/qr/:qrCode", async (req, res) => {
   const { qrCode } = req.params;
   try {
     const { rows } = await pool.query(
-      `SELECT id, table_number, status FROM tables WHERE qr_code = $1 AND business_id = $2`,
+      `SELECT t.id, t.table_number, t.status, bs.qr_routing_mode 
+       FROM tables t
+       JOIN business_settings bs ON bs.business_id = t.business_id
+       WHERE t.qr_code = $1 AND t.business_id = $2`,
       [qrCode, req.business_id]
     );
 
@@ -171,6 +175,7 @@ router.get("/qr/:qrCode", async (req, res) => {
       id: tableData.id,
       tableNumber: tableData.table_number,
       qrCode,
+      qrRoutingMode: tableData.qr_routing_mode || 'claim',
       status: tableData.status,
       activeSession: sessionData ? {
         id: sessionData.id,

@@ -11,10 +11,12 @@ import {
   Loader2,
   Printer,
   FileText,
+  FileText,
   Edit3,
+  UserCircle2,
 } from "lucide-react";
 
-import { apiPayDue } from "@/lib/apiClient";
+import { apiPayDue, apiClaimOrder } from "@/lib/apiClient";
 import type { Order } from "@/lib/apiClient";
 import { toast } from "@/hooks/use-toast";
 import { downloadReceipt, printReceipt } from "@/lib/receiptGenerator";
@@ -140,6 +142,7 @@ const OrderCard = ({
   const dueAmount = Math.max(0, order.total - paidAmount);
 
   const [loadingPayment, setLoadingPayment] = useState(false);
+  const [claiming, setClaiming] = useState(false);
 
   const isTableOrder = order.orderSource === "table";
   const hasDue = !isTableOrder && dueAmount > 0;
@@ -186,6 +189,19 @@ const OrderCard = ({
       });
     } finally {
       setLoadingPayment(false);
+    }
+  };
+
+  const handleClaim = async () => {
+    try {
+      setClaiming(true);
+      await apiClaimOrder(order.id);
+      await onRefresh();
+      toast({ title: "Order Claimed", description: "You are now serving this order." });
+    } catch (err: any) {
+      toast({ title: "Failed to claim", description: err.message, variant: "destructive" });
+    } finally {
+      setClaiming(false);
     }
   };
 
@@ -255,6 +271,13 @@ const OrderCard = ({
           {order.tableNumber && (
             <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground whitespace-nowrap">
               Table {order.tableNumber}
+            </span>
+          )}
+
+          {order.waiterName && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-secondary text-secondary-foreground flex items-center gap-1 whitespace-nowrap">
+              <UserCircle2 size={12} />
+              {order.waiterName}
             </span>
           )}
 
@@ -335,6 +358,16 @@ const OrderCard = ({
               ) : (
                 `Pay ₹${dueAmount.toFixed(2)}`
               )}
+            </button>
+          )}
+
+          {isTableOrder && !order.waiterId && user.role === "waiter" && order.status !== "completed" && order.status !== "cancelled" && (
+            <button
+              onClick={handleClaim}
+              disabled={claiming}
+              className="bg-blue-600 text-white px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1"
+            >
+              {claiming ? <Loader2 size={14} className="animate-spin" /> : "Claim Order"}
             </button>
           )}
 

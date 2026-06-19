@@ -51,6 +51,8 @@ function formatOrderRows(rows) {
         tableNumber: row.table_number || null,
         tableSessionId: row.table_session_id || null,
         orderSource: row.order_source || 'counter',
+        waiterId: row.waiter_id || null,
+        waiterName: row.waiter_name || null,
       });
     }
     if (row.item_name) {
@@ -76,11 +78,13 @@ router.get("/orders", auth, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT o.*, oi.name AS item_name, oi.price AS item_price,
               oi.price_label AS item_price_label, oi.quantity AS item_quantity, oi.image AS item_image, oi.menu_item_id AS item_menu_item_id, oi.note AS item_note,
-              t.table_number
+              t.table_number,
+              s.name AS waiter_name
        FROM orders o
        LEFT JOIN order_items oi ON oi.order_id = o.id
        LEFT JOIN table_sessions ts ON o.table_session_id = ts.id
        LEFT JOIN tables t ON ts.table_id = t.id
+       LEFT JOIN staff s ON o.waiter_id = s.id
        WHERE (o.created_at AT TIME ZONE 'Asia/Kolkata')::date = (NOW() AT TIME ZONE 'Asia/Kolkata')::date
          AND o.business_id = $1
        ORDER BY o.created_at DESC, o.id`,
@@ -101,11 +105,13 @@ router.get("/orders/all", auth, async (req, res) => {
     const { rows } = await pool.query(
       `SELECT o.*, oi.name AS item_name, oi.price AS item_price,
               oi.price_label AS item_price_label, oi.quantity AS item_quantity, oi.image AS item_image, oi.menu_item_id AS item_menu_item_id, oi.note AS item_note,
-              t.table_number
+              t.table_number,
+              s.name AS waiter_name
        FROM orders o
        LEFT JOIN order_items oi ON oi.order_id = o.id
        LEFT JOIN table_sessions ts ON o.table_session_id = ts.id
        LEFT JOIN tables t ON ts.table_id = t.id
+       LEFT JOIN staff s ON o.waiter_id = s.id
        WHERE o.business_id = $1
        ORDER BY o.created_at DESC, o.id
        LIMIT 1000`,
@@ -1388,6 +1394,91 @@ router.get("/table-analytics/:tableNumber/history", auth, async (req, res) => {
   } catch (err) {
     console.error("Table History Error:", err);
     res.status(500).json({ error: "Failed to fetch table history" });
+  }
+});
+
+// ======================================================
+// ---------------- CLAIM ORDER (Staff) ----------------
+// ======================================================
+router.patch("/orders/:id/claim", auth, async (req, res) => {
+  try {
+    // Only staff should be claiming orders
+    if (!req.admin || !req.admin.isStaff) {
+      return res.status(403).json({ error: "Only staff members can claim orders." });
+    }
+
+    const orderId = req.params.id;
+    const waiterId = req.admin.id;
+
+    const result = await pool.query(
+      "UPDATE orders SET waiter_id = $1 WHERE id = $2 AND business_id = $3 AND waiter_id IS NULL RETURNING id",
+      [waiterId, orderId, req.business_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "Order not found or already claimed." });
+    }
+
+    const io = req.app.get("io");
+    if (io) io.emit("orders-updated");
+    await invalidateDashboardCache();
+
+    res.json({ message: "Order claimed successfully", orderId });
+  } catch (err) {
+    console.error("Claim Order Error:", err);
+    res.status(500).json({ error: "Failed to claim order" });
+  }
+});
+
+// ======================================================
+// ---------------- STAFF PERFORMANCE ----------------
+// ======================================================
+router.get("/staff/performance", auth, async (req, res) => {
+  try {
+    // Determine current month range
+    const startOfMonth = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+
+    const endOfMonth = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0));
+
+    const query = `
+      SELECT 
+        s.id,
+        s.name,
+        COALESCE(SUM(o.total), 0) as total_sales,
+        COUNT(o.id) as total_orders
+      FROM staff s
+      LEFT JOIN orders o ON o.waiter_id = s.id 
+         AND o.business_id = s.business_id
+         AND o.status = 'completed'
+         AND (o.created_at AT TIME ZONE 'Asia/Kolkata') >= $2::timestamp 
+         AND (o.created_at AT TIME ZONE 'Asia/Kolkata') <= $3::timestamp
+      WHERE s.business_id = $1 AND s.role = 'waiter'
+      GROUP BY s.id, s.name
+      ORDER BY total_sales DESC;
+    `;
+
+    const { rows } = await pool.query(query, [req.business_id, \`\${startOfMonth} 00:00:00\`, \`\${endOfMonth} 23:59:59\`]);
+
+    res.json(rows.map(r => ({
+      id: r.id,
+      name: r.name,
+      totalSales: parseFloat(r.total_sales),
+      totalOrders: parseInt(r.total_orders, 10)
+    })));
+
+  } catch (err) {
+    console.error("Staff Performance Error:", err);
+    res.status(500).json({ error: "Failed to fetch staff performance" });
   }
 });
 

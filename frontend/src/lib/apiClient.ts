@@ -280,6 +280,13 @@ export interface StaffMember {
   created_at: string;
 }
 
+export interface StaffPerformance {
+  id: string;
+  name: string;
+  totalSales: number;
+  totalOrders: number;
+}
+
 export async function apiAdminListStaff(): Promise<StaffMember[]> {
   const res = await authFetch(`${API_URL}/staff`, {
     headers: authHeaders(),
@@ -318,6 +325,13 @@ export async function apiAdminDeleteStaff(id: string): Promise<{ message: string
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to delete staff");
+  return data;
+}
+
+export async function apiGetStaffPerformance(): Promise<StaffPerformance[]> {
+  const res = await authFetch(`${API_URL}/dashboard/staff/performance`, { cache: 'no-store' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch staff performance");
   return data;
 }
 
@@ -412,6 +426,7 @@ export interface BusinessSettings {
   loyaltyEnabled?: boolean;
   loyaltyPointsPer100?: number;
   loyaltyDiscountPerPoint?: number;
+  qrRoutingMode?: "claim" | "waiter_unlock";
 }
 
 export async function apiAdminGetBusinessSettings(): Promise<BusinessSettings> {
@@ -741,6 +756,17 @@ export async function apiUpdateOrderStatus(
     body: JSON.stringify({ status }),
   });
   if (!res.ok) throw new Error("Failed to update status");
+}
+
+export async function apiClaimOrder(orderId: string): Promise<{ message: string }> {
+  if (!isApiMode()) return { message: "Local mode" };
+  const res = await authFetch(`${API_URL}/dashboard/orders/${orderId}/claim`, {
+    method: "PATCH",
+    headers: dashHeaders(dashboardPassword),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to claim order");
+  return data;
 }
 
 export async function apiUpdatePaymentStatus(
@@ -1705,6 +1731,7 @@ export interface Table {
   qrCode: string;
   status: "available" | "occupied" | "reserved";
   activeSession: TableSession | null;
+  qrRoutingMode?: "claim" | "waiter_unlock";
 }
 
 export interface TableSession {

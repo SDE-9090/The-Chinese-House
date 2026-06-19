@@ -43,6 +43,23 @@ router.post("/", async (req, res) => {
 
   const client = await pool.connect();
 
+  let waiterId = null;
+  // Try to extract waiter_id from Authorization token if it's a staff request
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.substring(7);
+    try {
+      const jwt = require("jsonwebtoken");
+      const { JWT_SECRET } = require("../middleware/adminAuth");
+      const decoded = jwt.verify(token, JWT_SECRET);
+      if (decoded && decoded.isStaff) {
+        waiterId = decoded.id;
+      }
+    } catch (e) {
+      // ignore invalid token
+    }
+  }
+
   try {
     await client.query("BEGIN");
 
@@ -55,6 +72,17 @@ router.post("/", async (req, res) => {
       );
       if (menuCheckRes.rows.length !== itemIds.length) {
         throw new Error("Some items in your cart are no longer available on the menu. Please clear your cart and try again.");
+      }
+    }
+
+    // Look up table session to inherit waiter_id if it's a QR order
+    if (tableSessionId) {
+      const tsRes = await client.query(
+        "SELECT waiter_id FROM table_sessions WHERE id = $1 AND business_id = $2",
+        [tableSessionId, req.business_id]
+      );
+      if (tsRes.rows.length > 0 && tsRes.rows[0].waiter_id) {
+        waiterId = tsRes.rows[0].waiter_id;
       }
     }
 
@@ -180,8 +208,8 @@ router.post("/", async (req, res) => {
       `INSERT INTO orders
         (token, customer_name, customer_phone, subtotal, total, payment_method,
          payment_status, paid_amount, coupon_code, discount, cgst, sgst, gst_total, gst_rate,
-         order_type, special_instructions, order_source, table_session_id, status, split_cash, split_upi, points_redeemed, business_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+         order_type, special_instructions, order_source, table_session_id, status, split_cash, split_upi, points_redeemed, business_id, waiter_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
        RETURNING *`,
       [
         token,
@@ -206,7 +234,8 @@ router.post("/", async (req, res) => {
         splitCash,
         splitUpi,
         actualPointsRedeemed,
-        req.business_id
+        req.business_id,
+        waiterId
       ],
     );
 

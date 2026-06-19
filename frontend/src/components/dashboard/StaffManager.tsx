@@ -16,13 +16,15 @@ import {
   apiAdminCreateStaff,
   apiAdminUpdateStaff,
   apiAdminDeleteStaff,
-  type StaffMember
+  apiGetStaffPerformance,
+  type StaffMember,
+  type StaffPerformance
 } from "@/lib/apiClient";
 import { toast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
 const StaffManager = () => {
-  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [staff, setStaff] = useState<(StaffMember & { performance?: StaffPerformance })[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
@@ -41,8 +43,15 @@ const StaffManager = () => {
   const loadStaff = async () => {
     try {
       setLoading(true);
-      const data = await apiAdminListStaff();
-      setStaff(data);
+      const [data, perfData] = await Promise.all([
+        apiAdminListStaff(),
+        apiGetStaffPerformance().catch(() => [])
+      ]);
+      const merged = data.map(member => ({
+        ...member,
+        performance: perfData.find(p => p.id === member.id)
+      }));
+      setStaff(merged);
     } catch (err: any) {
       toast({
         title: "Error",
@@ -215,6 +224,19 @@ const StaffManager = () => {
                   <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5 opacity-80">
                     <Phone size={12} /> {member.phone}
                   </p>
+                )}
+
+                {member.role === "waiter" && member.performance && (
+                  <div className="mt-4 pt-3 border-t border-border flex justify-between items-center text-sm">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground">Orders (Month)</span>
+                      <span className="font-bold">{member.performance.totalOrders}</span>
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-xs text-muted-foreground">Sales (Month)</span>
+                      <span className="font-bold text-emerald-600">₹{member.performance.totalSales.toFixed(2)}</span>
+                    </div>
+                  </div>
                 )}
               </motion.div>
             ))}

@@ -45,6 +45,8 @@ export interface Order {
   orderSource?: "counter" | "table";
   tableSessionId?: string | null;
   tableNumber?: string;
+  waiterId?: string | null;
+  waiterName?: string | null;
 }
 
 const ORDERS_KEY = "chinese_house_orders";

@@ -73,6 +73,7 @@ export interface OrderPageProps {
   markingDone?: boolean;
   onCancelSession?: () => void;
   cancellingSession?: boolean;
+  isTableLocked?: boolean;
 }
 
 function OrderPageContent({
@@ -84,7 +85,8 @@ function OrderPageContent({
   onSessionDone,
   markingDone,
   onCancelSession,
-  cancellingSession
+  cancellingSession,
+  isTableLocked = false
 }: OrderPageProps) {
 
 

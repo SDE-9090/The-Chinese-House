@@ -251,6 +251,25 @@ const BusinessSettingsManager = () => {
             </p>
           </div>
 
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">
+              QR Code Ordering Mode
+            </label>
+            <select
+              value={data.qrRoutingMode || "claim"}
+              onChange={(e) =>
+                setData((prev) => ({ ...prev, qrRoutingMode: e.target.value as "claim" | "waiter_unlock" }))
+              }
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="claim">Claim Method (Open Access)</option>
+              <option value="waiter_unlock">Waiter Unlock Method (Secure Access)</option>
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Choose how QR code orders are assigned to waiters.
+            </p>
+          </div>
+
 
 
           {/* GST Rate Inputs */}
