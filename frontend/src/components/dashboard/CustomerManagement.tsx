@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Users, Star, IndianRupee, Search, Award } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+
 
 interface Customer {
   id: string;
@@ -12,7 +12,7 @@ interface Customer {
   last_visit: string;
 }
 
-export function CustomerManagement() {
+export default function CustomerManagement() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");

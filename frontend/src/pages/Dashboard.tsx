@@ -533,7 +533,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
     "orders" | "tables" | "sales" | "analytics" | "content" | "management" | "system" | "staff"
   >("orders");
   const [contentSubTab, setContentSubTab] = useState<"menu" | "hero" | "gallery" | "page" | "address" | "promotions">("menu");
-  const [managementSubTab, setManagementSubTab] = useState<"coupons" | "reviews" | "qr-codes">("coupons");
+  const [managementSubTab, setManagementSubTab] = useState<"coupons" | "reviews" | "qr-codes" | "customers">("coupons");
   const [analyticsSubTab, setAnalyticsSubTab] = useState<"menu" | "table">("menu");
   const [settingsSubTab, setSettingsSubTab] = useState<"security" | "account" | "business">("security");
   const [orderSubTab, setOrderSubTab] = useState<"active" | "history" | "counter-order">("active");
