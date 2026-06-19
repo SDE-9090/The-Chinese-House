@@ -1466,8 +1466,7 @@ router.get("/staff/performance", auth, async (req, res) => {
       GROUP BY s.id, s.name
       ORDER BY total_sales DESC;
     `;
-
-    const { rows } = await pool.query(query, [req.business_id, \`\${startOfMonth} 00:00:00\`, \`\${endOfMonth} 23:59:59\`]);
+    const { rows } = await pool.query(query, [req.business_id, `${startOfMonth} 00:00:00`, `${endOfMonth} 23:59:59`]);
 
     res.json(rows.map(r => ({
       id: r.id,
