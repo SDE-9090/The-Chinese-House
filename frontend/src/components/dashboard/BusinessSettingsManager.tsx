@@ -91,6 +91,7 @@ const BusinessSettingsManager = () => {
         loyaltyEnabled: data.loyaltyEnabled,
         loyaltyPointsPer100: data.loyaltyPointsPer100,
         loyaltyDiscountPerPoint: data.loyaltyDiscountPerPoint,
+        qrRoutingMode: data.qrRoutingMode,
       });
       setData(updated);
       toast({ title: "Saved", description: "Business settings updated." });
