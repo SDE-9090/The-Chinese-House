@@ -53,6 +53,11 @@ function clearStaffToken(): void {
 }
 
 function getActiveToken(): string | null {
+  // If we are on the admin dashboard, strictly prefer the admin token.
+  // Otherwise, staff token takes precedence for POS/Kitchen areas.
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard")) {
+    return getAdminToken() || getStaffToken();
+  }
   return getStaffToken() || getAdminToken();
 }
 
@@ -96,6 +101,12 @@ async function authFetch(url: string, options: RequestInit = {}): Promise<Respon
   const res = await fetch(url, options);
 
   if (res.status === 401 && isApiMode()) {
+    // If a staff token was being used and returned 401, it is expired/invalid. 
+    // Staff tokens cannot be refreshed, so we must clear it to avoid a 401 loop.
+    if (getStaffToken()) {
+      clearStaffToken();
+    }
+
     const newToken = await refreshAccessToken();
     if (newToken) {
       // Retry with new token
