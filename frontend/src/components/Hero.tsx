@@ -110,19 +110,19 @@ const Hero = () => {
           <p className="text-base md:text-lg text-muted-foreground max-w-lg mb-5 md:mb-8 leading-relaxed">
             {description}
           </p>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 w-full">
             <motion.a
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               href="#menu"
-              className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground px-8 py-3.5 rounded-2xl font-semibold text-lg shadow-lg shadow-primary/20 animate-pulse-glow"
+              className="w-full sm:w-auto block text-center bg-gradient-to-r from-primary to-primary/90 text-primary-foreground px-8 py-3.5 rounded-2xl font-semibold text-lg shadow-lg shadow-primary/20 animate-pulse-glow"
             >
               View Menu
             </motion.a>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="w-full sm:w-auto">
               <Link
                 to={orderLink}
-                className="inline-block border-2 border-primary text-primary px-8 py-3.5 rounded-2xl font-semibold text-lg hover:bg-primary hover:text-primary-foreground transition-all"
+                className="w-full sm:w-auto block text-center border-2 border-primary text-primary px-8 py-3.5 rounded-2xl font-semibold text-lg hover:bg-primary hover:text-primary-foreground transition-all"
               >
                 {orderText}
               </Link>
