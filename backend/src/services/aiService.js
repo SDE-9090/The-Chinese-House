@@ -31,7 +31,7 @@ async function chatWithGroq(messageHistory, businessId) {
 
     // 2. Fetch Active Menu Items
     const menuRes = await pool.query(
-      `SELECT m.name, m.price, m.description, m.diet_type, c.name as category_name
+      `SELECT m.name, m.price, m.variants, m.description, m.diet_type, c.name as category_name
        FROM menu_items m
        JOIN menu_categories c ON m.category_id = c.id
        WHERE m.business_id = $1 AND m.available = true`,
@@ -52,7 +52,15 @@ CURRENT MENU:
 `;
 
     menuItems.forEach(item => {
-      systemPrompt += `- ${item.name} (${item.category_name}): ₹${item.price}. ${item.diet_type !== 'none' ? `[${item.diet_type}]` : ''} ${item.description}\n`;
+      let variantStr = "";
+      let parsedVariants = item.variants;
+      if (typeof parsedVariants === "string") {
+        try { parsedVariants = JSON.parse(parsedVariants); } catch (e) { parsedVariants = []; }
+      }
+      if (Array.isArray(parsedVariants) && parsedVariants.length > 0) {
+        variantStr = " Variants: " + parsedVariants.map(v => `${v.name} (₹${v.price})`).join(", ");
+      }
+      systemPrompt += `- ${item.name} (${item.category_name}): Base Price ₹${item.price}.${variantStr} ${item.diet_type !== 'none' ? `[${item.diet_type}]` : ''} ${item.description}\n`;
     });
 
     systemPrompt += `
