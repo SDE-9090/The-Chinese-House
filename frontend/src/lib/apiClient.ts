@@ -1408,6 +1408,24 @@ export interface CustomerAnalytics {
   oneTimeCustomers: number;
 }
 
+export async function apiCheckLoyaltyPoints(phone: string): Promise<{
+  enabled: boolean;
+  customerExists?: boolean;
+  points?: number;
+  name?: string;
+  totalSpent?: number;
+  settings?: {
+    loyalty_enabled: boolean;
+    loyalty_points_per_100: number;
+    loyalty_discount_per_point: number;
+  };
+}> {
+  if (!isApiMode()) return { enabled: false };
+  const res = await authFetch(`${API_URL}/customers/loyalty/${phone}`);
+  if (!res.ok) throw new Error("Failed to fetch loyalty points");
+  return res.json();
+}
+
 export async function apiGetCustomerAnalytics(): Promise<CustomerAnalytics> {
   const res = await authFetch(`${API_URL}/dashboard/customer-analytics`, {
     headers: dashHeaders(dashboardPassword),

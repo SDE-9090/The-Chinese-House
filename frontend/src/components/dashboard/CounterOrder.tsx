@@ -12,6 +12,7 @@ import {
   type BusinessSettings,
   type Table,
   type AuthUser,
+  apiCheckLoyaltyPoints,
 } from "@/lib/apiClient";
 import { calculateOrderPricing } from "@/lib/billing";
 import { toast } from "sonner";
@@ -75,6 +76,14 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
   const [splitUpi, setSplitUpi] = useState<string>("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const [loyaltyData, setLoyaltyData] = useState<{
+    enabled: boolean;
+    customerExists?: boolean;
+    points?: number;
+    settings?: { loyalty_points_per_100: number; loyalty_discount_per_point: number };
+  } | null>(null);
+  const [pointsToRedeem, setPointsToRedeem] = useState<number>(0);
+
   const getQuickCashOptions = (total: number) => {
     if (total <= 0) return [];
     const options = [];
@@ -97,7 +106,8 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
   }, [menuItems, category, search]);
 
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const pricing = calculateOrderPricing(cartTotal, 0, businessSettings);
+  const pointsDiscount = pointsToRedeem * (loyaltyData?.settings?.loyalty_discount_per_point || 0);
+  const pricing = calculateOrderPricing(cartTotal, pointsDiscount, businessSettings);
   const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);
 
   const addToCart = (item: (typeof menuItems)[0]) => {
@@ -238,7 +248,8 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
         undefined, // tableSessionId
         parseFloat(splitCash) || 0,
         parseFloat(splitUpi) || 0,
-        pricing.total
+        pricing.total,
+        pointsToRedeem
       );
 
       setLastOrder({
@@ -270,10 +281,30 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
     setLastOrder(null);
     setOrderType("takeaway");
     setSpecialInstructions("");
+    setLoyaltyData(null);
+    setPointsToRedeem(0);
   };
 
   const getCartQty = (id: number) =>
     cart.filter((c) => c.id === id || String(c.id).startsWith(`${id}-`)).reduce((sum, c) => sum + c.quantity, 0);
+
+  useEffect(() => {
+    if (customerPhone.length === 10 && !phoneError) {
+      apiCheckLoyaltyPoints(customerPhone)
+        .then((data) => {
+          setLoyaltyData(data);
+          if (data && data.enabled && data.customerExists) {
+            toast.success(`Customer found! ${data.points} points available.`);
+          }
+        })
+        .catch(() => {
+          setLoyaltyData(null);
+        });
+    } else {
+      setLoyaltyData(null);
+      setPointsToRedeem(0);
+    }
+  }, [customerPhone, phoneError]);
 
   useEffect(() => {
     apiGetBusinessSettings()
@@ -396,6 +427,39 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
             </div>
             {phoneError && <p className="text-red-500 text-xs">{phoneError}</p>}
 
+            {/* Loyalty Points Section */}
+            {loyaltyData?.enabled && loyaltyData.customerExists && (
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+                <p className="text-sm font-semibold mb-1 text-primary">Loyalty Points</p>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Available: <strong>{loyaltyData.points} pts</strong></span>
+                  <span className="text-muted-foreground font-semibold">Value: ₹{((loyaltyData.points || 0) * (loyaltyData.settings?.loyalty_discount_per_point || 0)).toFixed(2)}</span>
+                </div>
+                {loyaltyData.points && loyaltyData.points > 0 ? (
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      type="number"
+                      max={loyaltyData.points}
+                      min={0}
+                      value={pointsToRedeem || ""}
+                      onChange={(e) => {
+                        const val = Math.min(parseInt(e.target.value) || 0, loyaltyData.points || 0);
+                        setPointsToRedeem(val);
+                      }}
+                      className="w-24 px-3 py-1.5 rounded-lg border border-primary/30 text-sm focus:outline-none focus:ring-1 focus:ring-primary bg-background"
+                      placeholder="Pts to use"
+                    />
+                    <button
+                      onClick={() => setPointsToRedeem(loyaltyData.points || 0)}
+                      className="text-xs bg-primary text-primary-foreground px-3 rounded-lg font-semibold hover:bg-primary/90"
+                    >
+                      Use All
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            )}
+
             {/* Order Type */}
             <div>
               <p className="text-sm font-semibold mb-2">Order Type</p>
@@ -463,6 +527,12 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
               <span>Subtotal</span>
               <span>₹{pricing.subtotal.toFixed(2)}</span>
             </div>
+            {pointsDiscount > 0 && (
+              <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span>Loyalty Discount ({pointsToRedeem} pts)</span>
+                <span>-₹{pointsDiscount.toFixed(2)}</span>
+              </div>
+            )}
             {pricing.gst > 0 && (
               <>
                 <div className="flex justify-between text-sm text-muted-foreground">
