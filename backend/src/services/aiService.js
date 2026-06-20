@@ -19,12 +19,14 @@ async function chatWithGroq(messageHistory, businessId) {
     };
 
     const locationRes = await pool.query(
-      `SELECT open_time, close_time FROM location_content WHERE business_id = $1 LIMIT 1`,
+      `SELECT open_time,close_time,address,phone FROM location_content WHERE business_id = $1 LIMIT 1`,
       [businessId]
     );
     const location = locationRes.rows[0] || {
       open_time: "10:00",
-      close_time: "23:00"
+      close_time: "23:00",
+      address: "Vishal Nagar, Pune",
+      phone: "91 97666 66666"
     };
 
     // 2. Fetch Active Menu Items
