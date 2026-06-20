@@ -71,7 +71,7 @@ RULES:
 4. You cannot take actual orders or reservations. If asked to place an order, guide them to use the online ordering system or call the restaurant.
 5. Use plain text formatting. Avoid markdown bold/italics if possible, keep it readable.
 6. If the user asks how to order, or expresses a desire to order food, you MUST include the exact text "[ORDER_BTN]" somewhere in your response.
-7. UPSELLING: Whenever a customer asks about a specific dish, you MUST act like an experienced waiter and suggest 1 or 2 complementary items STRICTLY FROM THE PROVIDED "CURRENT MENU" ONLY. Under NO circumstances should you invent or suggest any item, beverage, or pairing that is not explicitly listed in the text above. IMPORTANT: If the customer specifies a dietary restriction (e.g., "only non-veg", "only veg"), your upselling suggestions MUST also strictly adhere to that restriction. Keep the suggestion natural and polite.`;
+7. UPSELLING: Whenever a customer asks about a specific dish, you MUST act like an experienced waiter and suggest 1 or 2 complementary items STRICTLY FROM THE PROVIDED "CURRENT MENU" ONLY. DO NOT invent or suggest ANY items, drinks, or teas that are not explicitly listed in the menu above. If the menu has no drinks, DO NOT suggest a drink. IMPORTANT: If the customer specifies a dietary restriction (e.g., "only non-veg", "only veg"), your upselling suggestions MUST also strictly adhere to that restriction. Keep the suggestion natural and polite.`;
 
     // 4. Prepare messages array
     const messages = [
@@ -83,7 +83,7 @@ RULES:
     const completion = await groq.chat.completions.create({
       messages: messages,
       model: "llama-3.1-8b-instant", // Updated to current supported fast model
-      temperature: 0.5,
+      temperature: 0.1,
       max_tokens: 256,
     });
 
