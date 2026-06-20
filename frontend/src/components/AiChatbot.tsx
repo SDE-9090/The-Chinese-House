@@ -230,7 +230,7 @@ const AiChatbot = () => {
                   rows={1}
                 />
                 <button
-                  onClick={handleSend}
+                  onClick={() => handleSend()}
                   disabled={!input.trim() || isLoading}
                   className="w-10 h-10 mb-0.5 mr-0.5 rounded-lg bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 hover:bg-primary/90 transition-colors flex-shrink-0"
                 >
