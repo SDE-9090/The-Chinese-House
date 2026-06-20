@@ -110,19 +110,19 @@ const Hero = () => {
           <p className="text-base md:text-lg text-muted-foreground max-w-lg mb-5 md:mb-8 leading-relaxed">
             {description}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 w-full">
+          <div className="flex flex-row gap-3 sm:gap-4 w-full">
             <motion.a
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               href="#menu"
-              className="w-full sm:w-auto block text-center bg-gradient-to-r from-primary to-primary/90 text-primary-foreground px-8 py-3.5 rounded-2xl font-semibold text-lg shadow-lg shadow-primary/20 animate-pulse-glow"
+              className="flex-1 sm:flex-none block text-center bg-gradient-to-r from-primary to-primary/90 text-primary-foreground px-2 sm:px-8 py-3 sm:py-3.5 rounded-2xl font-semibold text-sm sm:text-lg shadow-lg shadow-primary/20 animate-pulse-glow"
             >
               View Menu
             </motion.a>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="w-full sm:w-auto">
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex-1 sm:flex-none">
               <Link
                 to={orderLink}
-                className="w-full sm:w-auto block text-center border-2 border-primary text-primary px-8 py-3.5 rounded-2xl font-semibold text-lg hover:bg-primary hover:text-primary-foreground transition-all"
+                className="block text-center border-2 border-primary text-primary px-2 sm:px-8 py-3 sm:py-3.5 rounded-2xl font-semibold text-sm sm:text-lg hover:bg-primary hover:text-primary-foreground transition-all"
               >
                 {orderText}
               </Link>
