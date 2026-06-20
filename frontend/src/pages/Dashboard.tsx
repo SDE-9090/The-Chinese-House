@@ -533,9 +533,9 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
     "orders" | "tables" | "sales" | "analytics" | "content" | "management" | "system" | "staff"
   >("orders");
   const [contentSubTab, setContentSubTab] = useState<"menu" | "hero" | "gallery" | "page" | "address" | "promotions">("menu");
-  const [managementSubTab, setManagementSubTab] = useState<"coupons" | "reviews" | "qr-codes" | "customers">("coupons");
+  const [managementSubTab, setManagementSubTab] = useState<"coupons" | "reviews" | "qr-codes" | "customers">("qr-codes");
   const [analyticsSubTab, setAnalyticsSubTab] = useState<"menu" | "table">("menu");
-  const [settingsSubTab, setSettingsSubTab] = useState<"security" | "account" | "business">("security");
+  const [settingsSubTab, setSettingsSubTab] = useState<"security" | "account" | "business">("business");
   const [orderSubTab, setOrderSubTab] = useState<"active" | "history" | "counter-order">("active");
   const [statusFilter, setStatusFilter] = useState<Order["status"] | "all">(
     "all",
@@ -717,7 +717,11 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               .map((t) => (
                 <button
                   key={t.key}
-                  onClick={() => setTab(t.key as any)}
+                  onClick={() => {
+                    setTab(t.key as any);
+                    if (t.key === "management") setManagementSubTab("qr-codes");
+                    if (t.key === "system") setSettingsSubTab("business");
+                  }}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${tab === t.key
                     ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                     : "bg-card border border-border text-foreground/70 hover:bg-muted"
@@ -969,7 +973,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
 
             {settingsSubTab === "business" ? (
               <BusinessSettingsManager />
-            ) : settingsSubTab === "security" ? (
+            ) : settingsSubTab === "account" ? (
               <AccountSecurity />
             ) : (
               <SecurityLogs />
