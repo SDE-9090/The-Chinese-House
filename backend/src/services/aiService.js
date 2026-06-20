@@ -70,7 +70,7 @@ RULES:
     // 5. Call Groq
     const completion = await groq.chat.completions.create({
       messages: messages,
-      model: "llama3-8b-8192", // Fast and capable model
+      model: "llama-3.1-8b-instant", // Updated to current supported fast model
       temperature: 0.5,
       max_tokens: 256,
     });
