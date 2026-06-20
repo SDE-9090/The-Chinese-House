@@ -71,8 +71,10 @@ const BusinessSettingsManager = () => {
       return;
     }
 
-    if (data.cgstRate < 0 || data.sgstRate < 0) {
-      setError("GST rates must be non-negative");
+    const parsedCgst = Number(data.cgstRate);
+    const parsedSgst = Number(data.sgstRate);
+    if (isNaN(parsedCgst) || parsedCgst < 0 || isNaN(parsedSgst) || parsedSgst < 0) {
+      setError("GST rates must be valid non-negative numbers");
       return;
     }
 
@@ -85,8 +87,8 @@ const BusinessSettingsManager = () => {
         phone: data.phone?.trim() || "",
         email: data.email?.trim() || "",
         isGstEnabled: data.isGstEnabled,
-        cgstRate: data.cgstRate,
-        sgstRate: data.sgstRate,
+        cgstRate: parsedCgst,
+        sgstRate: parsedSgst,
         features: data.features,
         loyaltyEnabled: data.loyaltyEnabled,
         loyaltyPointsPer100: data.loyaltyPointsPer100,
@@ -125,7 +127,7 @@ const BusinessSettingsManager = () => {
     );
   }
 
-  const totalGst = Number((data.cgstRate + data.sgstRate).toFixed(2));
+  const totalGst = Number((Number(data.cgstRate) + Number(data.sgstRate)).toFixed(2)) || 0;
 
   return (
     <div className="space-y-6">
@@ -284,10 +286,9 @@ const BusinessSettingsManager = () => {
               step={0.01}
               value={data.cgstRate}
               onChange={(e) => {
-                const val = parseFloat(e.target.value);
                 setData((prev) => ({
                   ...prev,
-                  cgstRate: isNaN(val) ? 0 : Math.max(0, val),
+                  cgstRate: e.target.value as any,
                 }));
               }}
               disabled={!data.isGstEnabled}
@@ -306,10 +307,9 @@ const BusinessSettingsManager = () => {
               step={0.01}
               value={data.sgstRate}
               onChange={(e) => {
-                const val = parseFloat(e.target.value);
                 setData((prev) => ({
                   ...prev,
-                  sgstRate: isNaN(val) ? 0 : Math.max(0, val),
+                  sgstRate: e.target.value as any,
                 }));
               }}
               disabled={!data.isGstEnabled}
