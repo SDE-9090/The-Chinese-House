@@ -156,9 +156,9 @@ const AiChatbot = () => {
                     {msg.role === "user" ? (
                       <p className="whitespace-pre-wrap leading-relaxed">{msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "")}</p>
                     ) : (
-                      <ReactMarkdown 
-                        className="leading-relaxed"
-                        components={{
+                      <div className="leading-relaxed">
+                        <ReactMarkdown 
+                          components={{
                           p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
                           ul: ({node, ...props}) => <ul className="list-disc pl-4 mb-2" {...props} />,
                           ol: ({node, ...props}) => <ol className="list-decimal pl-4 mb-2" {...props} />,
@@ -168,7 +168,8 @@ const AiChatbot = () => {
                         }}
                       >
                         {msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "")}
-                      </ReactMarkdown>
+                        </ReactMarkdown>
+                      </div>
                     )}
                     {msg.role === "assistant" && msg.content.includes("[ORDER_BTN]") && (
                       <Link 
