@@ -100,6 +100,7 @@ router.put("/", adminAuth, async (req, res) => {
       opening_hours_display,
       instagram_handle,
       instagram_url,
+      map_embed_url,
     } = req.body;
 
     if (phone) {
@@ -151,6 +152,7 @@ router.put("/", adminAuth, async (req, res) => {
 
     res.json(rows[0]);
   } catch (err) {
+    console.error("Location update failed:", err);
     res.status(500).json({ error: "Update failed" });
   }
 });
