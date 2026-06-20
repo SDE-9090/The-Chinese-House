@@ -4,9 +4,6 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { API_URL } from "@/lib/apiClient";
-import { useDynamicMenu } from "@/hooks/useDynamicMenu";
-import { useCart } from "@/hooks/useCart";
-import { toast } from "sonner";
 
 interface Message {
   role: "user" | "assistant";
@@ -21,9 +18,6 @@ const AiChatbot = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const { items: menuItems } = useDynamicMenu();
-  const { addItem } = useCart();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -106,18 +100,6 @@ const AiChatbot = () => {
     }
   };
 
-  const handleAddToCart = (item: any, variant?: any) => {
-    addItem({
-      id: item.id,
-      name: item.name,
-      price: variant ? variant.price : item.price,
-      image: item.image,
-      variant: variant ? variant.name : undefined,
-      quantity: 1
-    });
-    toast.success(`Added ${item.name}${variant ? ` (${variant.name})` : ''} to cart!`);
-  };
-
   return (
     <>
       {/* Floating Button */}
@@ -183,7 +165,7 @@ const AiChatbot = () => {
                     }`}
                   >
                     {msg.role === "user" ? (
-                      <p className="whitespace-pre-wrap leading-relaxed">{msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "").replace(/\[ADD_TO_CART:.*?\]/g, "")}</p>
+                      <p className="whitespace-pre-wrap leading-relaxed">{msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "")}</p>
                     ) : (
                       <div className="leading-relaxed">
                         <ReactMarkdown 
@@ -196,7 +178,7 @@ const AiChatbot = () => {
                           em: ({node, ...props}) => <em className="italic" {...props} />
                         }}
                       >
-                        {msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "").replace(/\[ADD_TO_CART:.*?\]/g, "")}
+                        {msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "")}
                         </ReactMarkdown>
                       </div>
                     )}
@@ -222,45 +204,6 @@ const AiChatbot = () => {
                           >
                             Load Older Orders
                           </button>
-                        );
-                      }
-                      return null;
-                    })()}
-                    {msg.role === "assistant" && msg.content.includes("[ADD_TO_CART:") && (() => {
-                      const matches = [...msg.content.matchAll(/\[ADD_TO_CART:\s*(.*?)\]/g)];
-                      if (matches.length > 0) {
-                        return (
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            {matches.map((match, mIdx) => {
-                              const dishName = match[1].trim();
-                              const item = menuItems.find((i: any) => i.name.toLowerCase() === dishName.toLowerCase());
-                              if (!item) return null;
-
-                              if (item.variants && item.variants.length > 0) {
-                                return item.variants.map((v: any, vIdx: number) => (
-                                  <button 
-                                    key={`${mIdx}-${vIdx}`}
-                                    onClick={() => handleAddToCart(item, v)}
-                                    className="inline-flex items-center gap-1.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border border-border shadow-sm"
-                                  >
-                                    <ShoppingCart size={14} />
-                                    Add {v.name} - ₹{v.price}
-                                  </button>
-                                ));
-                              } else {
-                                return (
-                                  <button 
-                                    key={mIdx}
-                                    onClick={() => handleAddToCart(item)}
-                                    className="inline-flex items-center gap-1.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border border-border shadow-sm"
-                                  >
-                                    <ShoppingCart size={14} />
-                                    Add {item.name} - ₹{item.price}
-                                  </button>
-                                );
-                              }
-                            })}
-                          </div>
                         );
                       }
                       return null;
