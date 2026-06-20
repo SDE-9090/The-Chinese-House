@@ -173,7 +173,7 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req, r
   }
 
   try {
-    let query = "UPDATE staff SET name = COALESCE($1, name), role = COALESCE($2, role), is_active = COALESCE($3, is_active), phone = COALESCE($4, phone), permissions = COALESCE($5, permissions)";
+    let query = "UPDATE staff SET name = COALESCE($1, name), role = COALESCE($2, role), is_active = COALESCE($3, is_active), phone = COALESCE($4, phone), permissions = COALESCE($5::jsonb, permissions)";
     const params = [name, role, is_active, phone || null, permissions ? JSON.stringify(permissions) : null];
 
     if (pin) {

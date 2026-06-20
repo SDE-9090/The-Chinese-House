@@ -388,15 +388,15 @@ const StaffManager = () => {
                       <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Actions</p>
                       <div className="grid grid-cols-2 gap-2">
                         <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input type="checkbox" checked={permissions.canClearTable} onChange={(e) => handlePermissionChange('canClearTable', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                          <input type="checkbox" checked={permissions?.canClearTable || false} onChange={(e) => handlePermissionChange('canClearTable', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
                           Clear Table
                         </label>
                         <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input type="checkbox" checked={permissions.canTransferTable} onChange={(e) => handlePermissionChange('canTransferTable', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                          <input type="checkbox" checked={permissions?.canTransferTable || false} onChange={(e) => handlePermissionChange('canTransferTable', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
                           Transfer Table
                         </label>
                         <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input type="checkbox" checked={permissions.canViewOrderStats} onChange={(e) => handlePermissionChange('canViewOrderStats', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                          <input type="checkbox" checked={permissions?.canViewOrderStats || false} onChange={(e) => handlePermissionChange('canViewOrderStats', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
                           View Order Stats
                         </label>
                       </div>

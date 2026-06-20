@@ -238,10 +238,24 @@ router.get("/me", adminAuth, async (req, res) => {
       [req.admin.business_id]
     );
     const features = result.rows.length ? result.rows[0].features : {};
+
+    let user = req.admin;
+    if (req.admin.isStaff) {
+      const staffRes = await pool.query("SELECT * FROM staff WHERE id = $1", [req.admin.id]);
+      if (staffRes.rows.length) {
+        user = {
+          ...req.admin,
+          permissions: staffRes.rows[0].permissions || {},
+          role: staffRes.rows[0].role,
+          name: staffRes.rows[0].name,
+          phone: staffRes.rows[0].phone
+        };
+      }
+    }
     
     res.json({ 
       authenticated: true, 
-      user: req.admin,
+      user,
       features
     });
   } catch (err) {
