@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, Bot, User, Loader2, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
 import { API_URL } from "@/lib/apiClient";
 
 interface Message {
@@ -152,7 +153,23 @@ const AiChatbot = () => {
                         : "bg-background border border-border text-foreground rounded-tl-sm shadow-sm"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "")}</p>
+                    {msg.role === "user" ? (
+                      <p className="whitespace-pre-wrap leading-relaxed">{msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "")}</p>
+                    ) : (
+                      <ReactMarkdown 
+                        className="leading-relaxed"
+                        components={{
+                          p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                          ul: ({node, ...props}) => <ul className="list-disc pl-4 mb-2" {...props} />,
+                          ol: ({node, ...props}) => <ol className="list-decimal pl-4 mb-2" {...props} />,
+                          li: ({node, ...props}) => <li className="mb-1" {...props} />,
+                          strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
+                          em: ({node, ...props}) => <em className="italic" {...props} />
+                        }}
+                      >
+                        {msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "")}
+                      </ReactMarkdown>
+                    )}
                     {msg.role === "assistant" && msg.content.includes("[ORDER_BTN]") && (
                       <Link 
                         to="/order"
