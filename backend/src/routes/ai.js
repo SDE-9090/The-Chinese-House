@@ -34,7 +34,7 @@ async function generateOrderHistoryText(pool, businessId, phone, page = 1) {
     summaryText = `Welcome back! You've placed ${stats.total_orders} orders with us, spending a total of ₹${totalSpent}. Your average order is ₹${avgOrder}. `;
     
     if (favRes.rows.length > 0) {
-      summaryText += `Your absolute favorite dish seems to be **${favRes.rows[0].name}** (ordered ${favRes.rows[0].times_ordered} times)! \n\n`;
+      summaryText += `Your absolute favorite dish seems to be ${favRes.rows[0].name} (ordered ${favRes.rows[0].times_ordered} times)! \n\n`;
     }
     summaryText += `Here are your most recent orders:\n\n`;
   }
@@ -65,7 +65,7 @@ async function generateOrderHistoryText(pool, businessId, phone, page = 1) {
     
     const itemsList = itemsRes.rows.map(item => `${item.quantity}x ${item.name}`).join(", ");
     
-    ordersText += `• **${dateStr}** - ₹${Number(order.total).toFixed(0)}\n  _${itemsList}_\n\n`;
+    ordersText += `• ${dateStr} - ₹${Number(order.total).toFixed(0)}\n  ${itemsList}\n\n`;
   }
 
   let finalResponse = summaryText + ordersText.trim();
