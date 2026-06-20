@@ -409,30 +409,31 @@ const StaffManager = () => {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Dashboard Tabs</p>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-y-3 gap-x-2 items-start">
                         {['orders', 'tables', 'sales', 'analytics', 'content', 'management', 'system', 'staff'].map(tab => (
-                          <label key={tab} className="flex items-center gap-2 text-sm cursor-pointer capitalize">
-                            <input type="checkbox" checked={permissions?.tabs?.[tab] || false} onChange={(e) => handlePermissionChange(`tabs.${tab}`, e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
-                            {tab}
-                          </label>
+                          <div key={tab} className="flex flex-col gap-2">
+                            <label className="flex items-center gap-2 text-sm cursor-pointer capitalize font-medium">
+                              <input type="checkbox" checked={permissions?.tabs?.[tab] || false} onChange={(e) => handlePermissionChange(`tabs.${tab}`, e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                              {tab}
+                            </label>
+                            {tab === 'orders' && permissions?.tabs?.orders && (
+                              <div className="flex flex-col gap-2 ml-6 mt-1">
+                                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                  <input type="checkbox" checked={permissions?.orders?.active || false} onChange={(e) => handlePermissionChange('orders.active', e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
+                                  <span className="text-xs text-muted-foreground font-medium">Active Orders</span>
+                                </label>
+                                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                  <input type="checkbox" checked={permissions?.orders?.pos || false} onChange={(e) => handlePermissionChange('orders.pos', e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
+                                  <span className="text-xs text-muted-foreground font-medium">New Order (POS)</span>
+                                </label>
+                                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                  <input type="checkbox" checked={permissions?.orders?.history || false} onChange={(e) => handlePermissionChange('orders.history', e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
+                                  <span className="text-xs text-muted-foreground font-medium">History</span>
+                                </label>
+                              </div>
+                            )}
+                          </div>
                         ))}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Orders Tab Access</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input type="checkbox" checked={permissions?.orders?.active || false} onChange={(e) => handlePermissionChange('orders.active', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
-                          Active Orders
-                        </label>
-                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input type="checkbox" checked={permissions?.orders?.pos || false} onChange={(e) => handlePermissionChange('orders.pos', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
-                          New Order (POS)
-                        </label>
-                        <label className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input type="checkbox" checked={permissions?.orders?.history || false} onChange={(e) => handlePermissionChange('orders.history', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
-                          History
-                        </label>
                       </div>
                     </div>
                   </div>
