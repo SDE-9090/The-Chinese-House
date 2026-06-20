@@ -308,6 +308,7 @@ export interface StaffMember {
   role: "manager" | "waiter" | "kitchen";
   phone?: string;
   is_active: boolean;
+  permissions?: Record<string, any>;
   created_at: string;
 }
 
