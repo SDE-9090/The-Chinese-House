@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, type Table, type Order, type SessionBill } from "@/lib/apiClient";
+import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, type Table, type Order, type SessionBill, type AuthUser } from "@/lib/apiClient";
 import OrderCard from "./OrderCard";
 import BillDocument, { downloadBillPrint, downloadKOTPrint } from "@/components/BillDocument";
 import { Loader2, CheckCircle, UtensilsCrossed, Clock, QrCode, Plus, X, Printer, Download, Trash2, RefreshCw, MoreVertical, ArrowLeftRight } from "lucide-react";
@@ -28,7 +28,7 @@ import TableTransferModal from "./TableTransferModal";
 
 interface TableManagerProps {
   orders: Order[];
-  user: { name: string; role: string };
+  user: AuthUser;
   onRefresh: () => Promise<void>;
   onAdvanceStatus: (orderId: string, newStatus: Order["status"]) => Promise<void>;
   onCancelOrder: (orderId: string) => Promise<void>;

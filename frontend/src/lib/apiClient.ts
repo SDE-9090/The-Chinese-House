@@ -18,7 +18,7 @@ import {
   type ReviewSummary,
 } from "./orderStore";
 
-const API_URL = import.meta.env.VITE_API_URL as string | undefined;
+export const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 
 function isApiMode(): boolean {
   return !!API_URL;
