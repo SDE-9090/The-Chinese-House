@@ -44,13 +44,13 @@ async function chatWithGroq(messageHistory, businessId) {
 Your goal is to assist customers with questions about the menu, hours, and location.
 
 RESTAURANT INFO:
-- Address: ${settings.address}
-- Phone: ${settings.phone}
+- Address: ${settings.address || location.address}
+- Phone: ${settings.phone || location.phone}
 - Hours: ${location.open_time} to ${location.close_time}
 
 CURRENT MENU:
 `;
-    
+
     menuItems.forEach(item => {
       systemPrompt += `- ${item.name} (${item.category_name}): ₹${item.price}. ${item.diet_type !== 'none' ? `[${item.diet_type}]` : ''} ${item.description}\n`;
     });
