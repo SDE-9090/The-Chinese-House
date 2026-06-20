@@ -11,7 +11,6 @@ import {
   Loader2,
   Printer,
   FileText,
-  FileText,
   Edit3,
   UserCircle2,
 } from "lucide-react";
@@ -158,7 +157,7 @@ const OrderCard = ({
 
   const handleAdvanceStatus = async () => {
     if (isUpdating || hasDue) return;
-    
+
     if (orderWorkflow === "multi-step") {
       // Find the next logical status
       const flow: Order["status"][] = ["new", "preparing", "ready", "completed"];
@@ -398,9 +397,9 @@ const OrderCard = ({
             !hasDue && (
               <button
                 disabled={
-                  isUpdating || 
+                  isUpdating ||
                   isCustomerEditing ||
-                  (orderWorkflow === "multi-step" && user.role === "kitchen" && order.status === "ready") || 
+                  (orderWorkflow === "multi-step" && user.role === "kitchen" && order.status === "ready") ||
                   (orderWorkflow === "multi-step" && user.role === "waiter" && order.status === "preparing")
                 }
                 onClick={handleAdvanceStatus}
