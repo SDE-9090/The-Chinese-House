@@ -61,7 +61,8 @@ RULES:
 2. Be concise and conversational.
 3. If asked about allergies, rely ONLY on the item descriptions. If unsure, advise the customer to ask the staff directly upon ordering.
 4. You cannot take actual orders or reservations. If asked to place an order, guide them to use the online ordering system or call the restaurant.
-5. Use plain text formatting. Avoid markdown bold/italics if possible, keep it readable.`;
+5. Use plain text formatting. Avoid markdown bold/italics if possible, keep it readable.
+6. If the user asks how to order, or expresses a desire to order food, you MUST include the exact text "[ORDER_BTN]" somewhere in your response.`;
 
     // 4. Prepare messages array
     const messages = [

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot, User, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, Loader2, ShoppingCart } from "lucide-react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { API_URL } from "@/lib/apiClient";
 
@@ -130,7 +131,17 @@ const AiChatbot = () => {
                         : "bg-background border border-border text-foreground rounded-tl-sm shadow-sm"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content.replace("[ORDER_BTN]", "")}</p>
+                    {msg.role === "assistant" && msg.content.includes("[ORDER_BTN]") && (
+                      <Link 
+                        to="/order"
+                        className="mt-3 inline-flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-xl text-sm font-bold transition-colors w-full justify-center"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <ShoppingCart size={16} />
+                        Order Now
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}
