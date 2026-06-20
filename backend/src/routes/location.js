@@ -100,8 +100,14 @@ router.put("/", adminAuth, async (req, res) => {
       opening_hours_display,
       instagram_handle,
       instagram_url,
-      map_embed_url,
     } = req.body;
+
+    if (phone) {
+      const trimmedPhone = phone.trim();
+      if (!/^[0-9]{10}$/.test(trimmedPhone)) {
+        return res.status(400).json({ error: "Phone number must be exactly 10 digits." });
+      }
+    }
 
     if (map_embed_url && !map_embed_url.includes("output=embed")) {
       map_embed_url = await resolveToEmbedUrl(map_embed_url);

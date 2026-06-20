@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, X, Users, Phone, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { apiAdminOpenTableSession } from "@/lib/apiClient";
+import { validateName, validateMobile } from "@/lib/validators";
 
 interface TableOpenModalProps {
   isOpen: boolean;
@@ -15,14 +16,21 @@ interface TableOpenModalProps {
 export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, tableNumber }: TableOpenModalProps) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (customerPhone && customerPhone.length !== 10) {
-      toast({ title: "Invalid Phone", description: "Phone number must be exactly 10 digits.", variant: "destructive" });
+    
+    const nErr = validateName(customerName, false);
+    const pErr = validateMobile(customerPhone, false);
+    
+    if (nErr || pErr) {
+      setNameError(nErr || "");
+      setPhoneError(pErr || "");
       return;
     }
     
@@ -35,6 +43,8 @@ export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, ta
       // Reset state for next time
       setCustomerName("");
       setCustomerPhone("");
+      setNameError("");
+      setPhoneError("");
     } catch (err: any) {
       toast({ title: "Failed to open table", description: err.message, variant: "destructive" });
     } finally {
@@ -82,10 +92,15 @@ export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, ta
                     type="text"
                     placeholder="E.g. John Doe"
                     value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full bg-background border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                    onChange={(e) => {
+                      setCustomerName(e.target.value);
+                      if (nameError) setNameError("");
+                    }}
+                    onBlur={(e) => setNameError(validateName(e.target.value, false) || "")}
+                    className={`w-full bg-background border ${nameError ? 'border-red-500' : 'border-border'} rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
                   />
                 </div>
+                {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
               </div>
 
               <div className="space-y-1.5">
@@ -98,10 +113,15 @@ export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, ta
                     type="tel"
                     placeholder="10-digit mobile number"
                     value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className="w-full bg-background border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                    onChange={(e) => {
+                      setCustomerPhone(e.target.value.replace(/\D/g, '').slice(0, 10));
+                      if (phoneError) setPhoneError("");
+                    }}
+                    onBlur={(e) => setPhoneError(validateMobile(e.target.value, false) || "")}
+                    className={`w-full bg-background border ${phoneError ? 'border-red-500' : 'border-border'} rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
                   />
                 </div>
+                {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
               </div>
 
               <div className="pt-4 flex gap-3">

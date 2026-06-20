@@ -41,6 +41,18 @@ router.post("/", async (req, res) => {
 
   const phone = customerPhone?.trim() || "0000000000";
 
+  if (name !== "Guest") {
+    if (name.length < 2 || name.length > 20 || !/^[A-Za-z\s]+$/.test(name)) {
+      return res.status(400).json({ error: "Name must be 2-20 characters long and contain only alphabets." });
+    }
+  }
+
+  if (phone !== "0000000000") {
+    if (!/^[0-9]{10}$/.test(phone)) {
+      return res.status(400).json({ error: "Phone number must be exactly 10 digits." });
+    }
+  }
+
   const client = await pool.connect();
 
   let waiterId = null;

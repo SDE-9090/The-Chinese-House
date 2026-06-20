@@ -64,6 +64,18 @@ router.post("/:tableId/admin-open", adminAuth, async (req, res) => {
   const finalName = customerName?.trim() || "Guest";
   const finalPhone = customerPhone?.trim() || "0000000000";
 
+  if (finalName !== "Guest") {
+    if (finalName.length < 2 || finalName.length > 20 || !/^[A-Za-z\s]+$/.test(finalName)) {
+      return res.status(400).json({ error: "Name must be 2-20 characters long and contain only alphabets." });
+    }
+  }
+
+  if (finalPhone !== "0000000000") {
+    if (!/^[0-9]{10}$/.test(finalPhone)) {
+      return res.status(400).json({ error: "Phone number must be exactly 10 digits." });
+    }
+  }
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -200,8 +212,19 @@ router.post("/:tableId/reserve", async (req, res) => {
   const { customerName, customerPhone } = req.body;
 
   const finalPhone = customerPhone?.trim() || "0000000000";
-
   const finalName = customerName?.trim() || "Guest";
+
+  if (finalName !== "Guest") {
+    if (finalName.length < 2 || finalName.length > 20 || !/^[A-Za-z\s]+$/.test(finalName)) {
+      return res.status(400).json({ error: "Name must be 2-20 characters long and contain only alphabets." });
+    }
+  }
+
+  if (finalPhone !== "0000000000") {
+    if (!/^[0-9]{10}$/.test(finalPhone)) {
+      return res.status(400).json({ error: "Phone number must be exactly 10 digits." });
+    }
+  }
 
   const client = await pool.connect();
   try {

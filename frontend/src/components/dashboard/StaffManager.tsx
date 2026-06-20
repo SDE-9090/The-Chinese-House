@@ -20,6 +20,7 @@ import {
   type StaffMember,
   type StaffPerformance
 } from "@/lib/apiClient";
+import { validateName, validateMobile } from "@/lib/validators";
 import { toast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -34,6 +35,8 @@ const StaffManager = () => {
   const [role, setRole] = useState<"manager" | "waiter" | "kitchen">("waiter");
   const [pin, setPin] = useState("");
   const [phone, setPhone] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -72,6 +75,15 @@ const StaffManager = () => {
 
     if (pin && (pin.length !== 4 || !/^\d+$/.test(pin))) {
       toast({ title: "Validation Error", description: "PIN must be 4 digits", variant: "destructive" });
+      return;
+    }
+
+    const nErr = validateName(name, true);
+    const pErr = validateMobile(phone, false); // Phone is optional
+
+    if (nErr || pErr) {
+      setNameError(nErr || "");
+      setPhoneError(pErr || "");
       return;
     }
 
@@ -125,6 +137,8 @@ const StaffManager = () => {
     setRole("waiter");
     setPin("");
     setPhone("");
+    setNameError("");
+    setPhoneError("");
   };
 
   const openEdit = (member: StaffMember) => {
@@ -272,17 +286,31 @@ const StaffManager = () => {
                 {editingStaff ? "Edit Staff" : "Add New Staff"}
               </h2>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const nErr = validateName(name, true);
+                const pErr = validateMobile(phone, false);
+                if (nErr || pErr) {
+                  setNameError(nErr || "");
+                  setPhoneError(pErr || "");
+                  return;
+                }
+                await handleSubmit(e);
+              }} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold ml-1">Full Name</label>
                   <input
                     type="text"
-                    required
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. John Doe"
-                    className="w-full px-4 py-3 rounded-2xl border border-border bg-background focus:ring-2 focus:ring-ring transition-all outline-none"
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (nameError) setNameError("");
+                    }}
+                    onBlur={(e) => setNameError(validateName(e.target.value, true) || "")}
+                    placeholder="E.g. Rahul Sharma"
+                    className={`w-full bg-background border ${nameError ? 'border-red-500' : 'border-border'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary`}
                   />
+                  {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
                 </div>
 
                 <div className="space-y-1.5">
@@ -303,12 +331,16 @@ const StaffManager = () => {
                   <input
                     type="tel"
                     inputMode="numeric"
-                    maxLength={15}
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                    placeholder="e.g. 9876543210"
-                    className="w-full px-4 py-3 rounded-2xl border border-border bg-background focus:ring-2 focus:ring-ring transition-all outline-none"
+                    onChange={(e) => {
+                      setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                      if (phoneError) setPhoneError("");
+                    }}
+                    onBlur={(e) => setPhoneError(validateMobile(e.target.value, false) || "")}
+                    placeholder="10-digit number"
+                    className={`w-full bg-background border ${phoneError ? 'border-red-500' : 'border-border'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary`}
                   />
+                  {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
                 </div>
 
                 <div className="space-y-1.5">

@@ -591,9 +591,9 @@ router.post("/change-mobile", adminAuth, resetLimiter, async (req, res) => {
   }
 
   // Basic mobile validation
-  const cleanMobile = newMobile.replace(/\s+/g, "");
-  if (!/^\+?\d{10,15}$/.test(cleanMobile)) {
-    return res.status(400).json({ error: "Invalid mobile number format" });
+  const trimmedMobile = newMobile.trim();
+  if (!/^[0-9]{10}$/.test(trimmedMobile)) {
+    return res.status(400).json({ error: "Phone number must be exactly 10 digits." });
   }
 
   try {
@@ -620,7 +620,7 @@ router.post("/change-mobile", adminAuth, resetLimiter, async (req, res) => {
     // Update mobile
     await pool.query(
       "UPDATE admin_account SET mobile_number=$1, updated_at=NOW() WHERE id=$2",
-      [cleanMobile, admin.id]
+      [trimmedMobile, admin.id]
     );
 
     await redisClient.del(`admin:settings_otp:${admin.id}`);
@@ -628,7 +628,7 @@ router.post("/change-mobile", adminAuth, resetLimiter, async (req, res) => {
 
     res.json({
       message: "Mobile number updated successfully.",
-      mobile: cleanMobile.replace(/.(?=.{4})/g, "*"),
+      mobile: trimmedMobile.replace(/.(?=.{4})/g, "*"),
     });
   } catch (err) {
     console.error("Change mobile error:", err);

@@ -8,6 +8,7 @@ import {
   type Table, type SessionBill,
 } from "@/lib/apiClient";
 import OrderPage from "./OrderPage";
+import { validateName, validateMobile } from "@/lib/validators";
 import BillDocument, { downloadBillPrint } from "@/components/BillDocument";
 import { Loader2, QrCode, CheckCircle, CreditCard, Banknote, Download, ArrowLeft, Tag, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,8 @@ export default function TableOrderPage() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [reserving, setReserving] = useState(false);
   const [markingDone, setMarkingDone] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -118,6 +121,16 @@ export default function TableOrderPage() {
 
   const handleReserve = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const nErr = validateName(name, false);
+    const pErr = validateMobile(phone, false);
+    
+    if (nErr || pErr) {
+      setNameError(nErr || "");
+      setPhoneError(pErr || "");
+      return;
+    }
+    
     setReserving(true);
     try {
       await apiReserveTable(table!.id, name, phone);
@@ -287,11 +300,32 @@ export default function TableOrderPage() {
           <form onSubmit={handleReserve} className="space-y-4">
             <div>
               <Label>Name (Optional)  </Label>
-              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Your Name" />
+              <Input 
+                value={name} 
+                onChange={e => {
+                  setName(e.target.value);
+                  if (nameError) setNameError("");
+                }} 
+                onBlur={e => setNameError(validateName(e.target.value, false) || "")}
+                placeholder="Your Name" 
+                className={nameError ? "border-red-500" : ""}
+              />
+              {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
             </div>
             <div>
               <Label>Phone Number (Optional)</Label>
-              <Input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10-digit number" />
+              <Input 
+                type="tel" 
+                value={phone} 
+                onChange={e => {
+                  setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                  if (phoneError) setPhoneError("");
+                }} 
+                onBlur={e => setPhoneError(validateMobile(e.target.value, false) || "")}
+                placeholder="10-digit number" 
+                className={phoneError ? "border-red-500" : ""}
+              />
+              {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
             </div>
             <Button type="submit" disabled={reserving} className="w-full">
               {reserving ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}

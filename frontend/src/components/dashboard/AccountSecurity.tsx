@@ -6,6 +6,7 @@ import {
   apiAdminChangeEmail,
   apiAdminGetInfo,
 } from "@/lib/apiClient";
+import { validateMobile } from "@/lib/validators";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   KeyRound,
@@ -126,7 +127,8 @@ const AccountSecurity = () => {
     e.preventDefault();
     setError("");
 
-    if (!newMobile.trim()) { setError("Enter new mobile number"); return; }
+    const pErr = validateMobile(newMobile, true);
+    if (pErr) { setError(pErr); return; }
     if (otp.length !== 6) { setError("Enter the 6-digit OTP"); return; }
 
     setSubmitting(true);
@@ -402,14 +404,14 @@ const AccountSecurity = () => {
             <form onSubmit={handleChangeMobile} className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">New Mobile Number</label>
-                <input
-                  type="tel"
-                  value={newMobile}
-                  onChange={(e) => { setNewMobile(e.target.value); setError(""); }}
-                  placeholder="e.g. +919876543210"
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm"
-                  disabled={submitting}
-                />
+                  <input
+                    type="tel"
+                    value={newMobile}
+                    onChange={(e) => { setNewMobile(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }}
+                    placeholder="Enter 10-digit mobile number"
+                    className={`w-full px-4 py-3 rounded-xl border ${error ? 'border-destructive' : 'border-border'} bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm`}
+                    disabled={submitting}
+                  />
               </div>
 
               {/* OTP Section */}

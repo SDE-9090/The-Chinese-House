@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import VariantSelectionModal from "@/components/VariantSelectionModal";
 import ItemNoteModal from "./ItemNoteModal";
+import { validateName, validateMobile } from "@/lib/validators";
 
 interface CartItem extends OrderItem {
   // extends OrderItem which has name, price, priceLabel, quantity, image
@@ -52,6 +53,8 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
   const [category, setCategory] = useState("All");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [step, setStep] = useState<"menu" | "checkout" | "confirmation">("menu");
   const [placing, setPlacing] = useState(false);
   const [lastOrder, setLastOrder] = useState<{
@@ -206,8 +209,13 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
   const handlePlaceOrder = async () => {
     let finalName = customerName.trim() || "Guest";
     let finalPhone = customerPhone.trim();
-    if (finalPhone && finalPhone.length < 10) {
-      toast.error("If provided, phone number must be 10 digits");
+
+    const nErr = validateName(customerName, false);
+    const pErr = validateMobile(customerPhone, false);
+    
+    if (nErr || pErr) {
+      setNameError(nErr || "");
+      setPhoneError(pErr || "");
       return;
     }
 
@@ -254,6 +262,8 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
     setCart([]);
     setCustomerName("");
     setCustomerPhone("");
+    setNameError("");
+    setPhoneError("");
     setSearch("");
     setCategory("All");
     setStep("menu");
@@ -358,23 +368,33 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
                 type="text"
                 placeholder="Customer Name (Optional)"
                 value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
+                onChange={(e) => {
+                  setCustomerName(e.target.value);
+                  if (nameError) setNameError("");
+                }}
+                onBlur={(e) => setNameError(validateName(e.target.value, false) || "")}
+                className={`w-full pl-10 pr-4 py-3 rounded-xl border ${nameError ? 'border-red-500' : 'border-border'} bg-background focus:ring-2 focus:ring-ring focus:outline-none`}
                 autoFocus
               />
             </div>
+            {nameError && <p className="text-red-500 text-xs">{nameError}</p>}
             <div className="relative">
               <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="tel"
                 placeholder="Phone Number (Optional)"
                 value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
+                onChange={(e) => {
+                  setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                  if (phoneError) setPhoneError("");
+                }}
+                onBlur={(e) => setPhoneError(validateMobile(e.target.value, false) || "")}
+                className={`w-full pl-10 pr-4 py-3 rounded-xl border ${phoneError ? 'border-red-500' : 'border-border'} bg-background focus:ring-2 focus:ring-ring focus:outline-none`}
                 inputMode="numeric"
                 maxLength={10}
               />
             </div>
+            {phoneError && <p className="text-red-500 text-xs">{phoneError}</p>}
 
             {/* Order Type */}
             <div>

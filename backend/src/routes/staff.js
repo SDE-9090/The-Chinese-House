@@ -126,6 +126,18 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res
     return res.status(400).json({ error: "Invalid role" });
   }
 
+  const trimmedName = name.trim();
+  if (trimmedName.length < 2 || trimmedName.length > 20 || !/^[A-Za-z\s]+$/.test(trimmedName)) {
+    return res.status(400).json({ error: "Name must be 2-20 characters long and contain only alphabets." });
+  }
+
+  if (phone) {
+    const trimmedPhone = phone.trim();
+    if (!/^[0-9]{10}$/.test(trimmedPhone)) {
+      return res.status(400).json({ error: "Phone number must be exactly 10 digits." });
+    }
+  }
+
   try {
     const pinHash = await bcrypt.hash(pin, BCRYPT_ROUNDS);
     const result = await pool.query(
@@ -143,6 +155,20 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res
 router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
   const { id } = req.params;
   const { name, pin, role, is_active, phone } = req.body;
+
+  if (name !== undefined) {
+    const trimmedName = name.trim();
+    if (trimmedName.length < 2 || trimmedName.length > 20 || !/^[A-Za-z\s]+$/.test(trimmedName)) {
+      return res.status(400).json({ error: "Name must be 2-20 characters long and contain only alphabets." });
+    }
+  }
+
+  if (phone !== undefined && phone !== null) {
+    const trimmedPhone = phone.trim();
+    if (!/^[0-9]{10}$/.test(trimmedPhone)) {
+      return res.status(400).json({ error: "Phone number must be exactly 10 digits." });
+    }
+  }
 
   try {
     let query = "UPDATE staff SET name = COALESCE($1, name), role = COALESCE($2, role), is_active = COALESCE($3, is_active), phone = COALESCE($4, phone)";

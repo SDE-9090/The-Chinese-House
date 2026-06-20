@@ -3,9 +3,11 @@
  * - Only alphabetic characters (A-Z, a-z) and spaces
  * - Length: 2 to 20 characters
  */
-export const validateName = (name: string): string | null => {
+export const validateName = (name: string, isRequired: boolean = true): string | null => {
   const trimmedName = name.trim();
-  if (!trimmedName) return "Name is required.";
+  if (!trimmedName) {
+    return isRequired ? "Name is required." : null;
+  }
   if (trimmedName.length < 2) return "Name must be at least 2 characters long.";
   if (trimmedName.length > 20) return "Name cannot exceed 20 characters.";
   
@@ -22,9 +24,11 @@ export const validateName = (name: string): string | null => {
  * - Exactly 10 digits (0-9)
  * - No country code, spaces, or symbols
  */
-export const validateMobile = (mobile: string): string | null => {
+export const validateMobile = (mobile: string, isRequired: boolean = true): string | null => {
   const trimmedMobile = mobile.trim();
-  if (!trimmedMobile) return "Mobile number is required.";
+  if (!trimmedMobile) {
+    return isRequired ? "Mobile number is required." : null;
+  }
   
   const mobileRegex = /^[0-9]{10}$/;
   if (!mobileRegex.test(trimmedMobile)) {

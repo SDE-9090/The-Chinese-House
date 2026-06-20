@@ -5,6 +5,7 @@ import {
   apiResolveMapUrl,
   type LocationContent,
 } from "@/lib/apiClient";
+import { validateMobile } from "@/lib/validators";
 
 import { toast } from "sonner";
 
@@ -63,6 +64,7 @@ const LocationManager = () => {
   const [resolving, setResolving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
 
   /* ---------------- LOAD DATA ---------------- */
 
@@ -141,6 +143,12 @@ const LocationManager = () => {
 
   const handleSave = async () => {
     if (!data) return;
+
+    const pErr = validateMobile(data.phone || "", true);
+    if (pErr) {
+      setPhoneError(pErr);
+      return;
+    }
 
     setSaving(true);
 
@@ -236,8 +244,15 @@ const LocationManager = () => {
 
           <Input
             value={data.phone || ""}
-            onChange={(e) => setData({ ...data, phone: e.target.value })}
+            onChange={(e) => {
+              setData({ ...data, phone: e.target.value.replace(/\D/g, "").slice(0, 10) });
+              if (phoneError) setPhoneError("");
+            }}
+            onBlur={(e) => setPhoneError(validateMobile(e.target.value, true) || "")}
+            className={phoneError ? 'border-red-500' : ''}
+            maxLength={10}
           />
+          {phoneError && <p className="text-red-500 text-xs">{phoneError}</p>}
         </div>
 
         {/* OPEN TIME */}
