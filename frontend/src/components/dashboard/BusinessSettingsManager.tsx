@@ -21,6 +21,8 @@ import {
 import { Loader2, AlertTriangle } from "lucide-react";
 import { apiAdminFactoryReset } from "@/lib/apiClient";
 
+import { validateName, validateMobile, validateGST } from "@/lib/validators";
+
 const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
 const defaultState: BusinessSettings = {
@@ -45,6 +47,7 @@ const BusinessSettingsManager = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{name?: string, mobile?: string, gst?: string}>({});
 
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
@@ -60,14 +63,14 @@ const BusinessSettingsManager = () => {
   const handleSave = async () => {
     setError("");
 
-    if (!data.restaurantName.trim()) {
-      setError("Restaurant name is required");
-      return;
-    }
+    // Run validators
+    const nameErr = validateName(data.restaurantName);
+    const mobileErr = validateMobile(data.phone || "");
+    const gstErr = validateGST(data.gstin || "");
 
-    const normalizedGstin = data.gstin?.trim().toUpperCase() || "";
-    if (normalizedGstin && !GSTIN_REGEX.test(normalizedGstin)) {
-      setError("Enter a valid GSTIN");
+    if (nameErr || mobileErr || gstErr) {
+      setFieldErrors({ name: nameErr || undefined, mobile: mobileErr || undefined, gst: gstErr || undefined });
+      setError("Please fix the validation errors before saving.");
       return;
     }
 
@@ -82,7 +85,7 @@ const BusinessSettingsManager = () => {
     try {
       const updated = await apiAdminUpdateBusinessSettings({
         restaurantName: data.restaurantName.trim(),
-        gstin: normalizedGstin || null,
+        gstin: data.gstin?.trim().toUpperCase() || null,
         address: data.address.trim(),
         phone: data.phone?.trim() || "",
         email: data.email?.trim() || "",
@@ -157,12 +160,18 @@ const BusinessSettingsManager = () => {
             </label>
             <input
               value={data.restaurantName}
-              onChange={(e) =>
-                setData((prev) => ({ ...prev, restaurantName: e.target.value }))
-              }
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring"
+              onChange={(e) => {
+                setData((prev) => ({ ...prev, restaurantName: e.target.value }));
+                if (fieldErrors.name) setFieldErrors(prev => ({ ...prev, name: undefined }));
+              }}
+              onBlur={(e) => {
+                const err = validateName(e.target.value);
+                setFieldErrors(prev => ({ ...prev, name: err || undefined }));
+              }}
+              className={`w-full rounded-xl border ${fieldErrors.name ? 'border-red-500' : 'border-border'} bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring`}
               placeholder="Restaurant name"
             />
+            {fieldErrors.name && <p className="text-red-500 text-xs mt-1">{fieldErrors.name}</p>}
           </div>
 
           <div>
@@ -176,17 +185,23 @@ const BusinessSettingsManager = () => {
               />
               <input
                 value={data.gstin ?? ""}
-                onChange={(e) =>
+                onChange={(e) => {
                   setData((prev) => ({
                     ...prev,
                     gstin: e.target.value.toUpperCase(),
-                  }))
-                }
-                className="w-full rounded-xl border border-border bg-background pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring uppercase"
+                  }));
+                  if (fieldErrors.gst) setFieldErrors(prev => ({ ...prev, gst: undefined }));
+                }}
+                onBlur={(e) => {
+                  const err = validateGST(e.target.value);
+                  setFieldErrors(prev => ({ ...prev, gst: err || undefined }));
+                }}
+                className={`w-full rounded-xl border ${fieldErrors.gst ? 'border-red-500' : 'border-border'} bg-background pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring uppercase`}
                 placeholder="27ABCDE1234F1Z5"
                 maxLength={15}
               />
             </div>
+            {fieldErrors.gst && <p className="text-red-500 text-xs mt-1">{fieldErrors.gst}</p>}
             <p className="mt-1 text-xs text-muted-foreground">
               Leave empty if you don't want GSTIN printed.
             </p>
@@ -324,12 +339,19 @@ const BusinessSettingsManager = () => {
             </label>
             <input
               value={data.phone ?? ""}
-              onChange={(e) =>
-                setData((prev) => ({ ...prev, phone: e.target.value }))
-              }
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="+91 98765 43210"
+              onChange={(e) => {
+                setData((prev) => ({ ...prev, phone: e.target.value }));
+                if (fieldErrors.mobile) setFieldErrors(prev => ({ ...prev, mobile: undefined }));
+              }}
+              onBlur={(e) => {
+                const err = validateMobile(e.target.value);
+                setFieldErrors(prev => ({ ...prev, mobile: err || undefined }));
+              }}
+              className={`w-full rounded-xl border ${fieldErrors.mobile ? 'border-red-500' : 'border-border'} bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring`}
+              placeholder="9876543210"
+              maxLength={10}
             />
+            {fieldErrors.mobile && <p className="text-red-500 text-xs mt-1">{fieldErrors.mobile}</p>}
           </div>
 
           <div>

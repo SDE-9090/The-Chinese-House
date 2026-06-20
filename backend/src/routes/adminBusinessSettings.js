@@ -44,8 +44,12 @@ router.put("/", adminAuth, async (req, res) => {
   } = req.body;
 
   if (restaurantName !== undefined) {
-    if (typeof restaurantName !== "string" || !restaurantName.trim()) {
-      return res.status(400).json({ error: "Restaurant name is required" });
+    const trimmedName = typeof restaurantName === "string" ? restaurantName.trim() : "";
+    if (!trimmedName || trimmedName.length < 2 || trimmedName.length > 20) {
+      return res.status(400).json({ error: "Restaurant name must be between 2 and 20 characters" });
+    }
+    if (!/^[A-Za-z\s]+$/.test(trimmedName)) {
+      return res.status(400).json({ error: "Restaurant name can only contain alphabets and spaces" });
     }
   }
 
@@ -53,8 +57,11 @@ router.put("/", adminAuth, async (req, res) => {
     return res.status(400).json({ error: "Address must be a string" });
   }
 
-  if (phone !== undefined && typeof phone !== "string") {
-    return res.status(400).json({ error: "Phone must be a string" });
+  if (phone !== undefined) {
+    const trimmedPhone = typeof phone === "string" ? phone.trim() : "";
+    if (trimmedPhone && !/^[0-9]{10}$/.test(trimmedPhone)) {
+      return res.status(400).json({ error: "Phone number must be exactly 10 digits" });
+    }
   }
 
   if (email !== undefined && typeof email !== "string") {
