@@ -67,6 +67,26 @@ const AiChatbot = () => {
     }
   };
 
+  const handleLoadMore = async (phone: string, page: number, msgIndex: number) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/ai/orders/${phone}?page=${page}`);
+      const data = await response.json();
+      
+      if (response.ok && data.text) {
+        setMessages(prev => {
+          const newMsgs = [...prev];
+          newMsgs[msgIndex].content = newMsgs[msgIndex].content.replace(/\[LOAD_MORE_ORDERS:\s*\d{10}\s*:\s*\d+\]/, "");
+          return [...newMsgs, { role: "assistant", content: data.text }];
+        });
+      }
+    } catch (error) {
+      console.error("Load more error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       {/* Floating Button */}
@@ -131,7 +151,7 @@ const AiChatbot = () => {
                         : "bg-background border border-border text-foreground rounded-tl-sm shadow-sm"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content.replace("[ORDER_BTN]", "")}</p>
+                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "")}</p>
                     {msg.role === "assistant" && msg.content.includes("[ORDER_BTN]") && (
                       <Link 
                         to="/order"
@@ -142,6 +162,22 @@ const AiChatbot = () => {
                         Order Now
                       </Link>
                     )}
+                    {msg.role === "assistant" && msg.content.includes("[LOAD_MORE_ORDERS:") && (() => {
+                      const match = msg.content.match(/\[LOAD_MORE_ORDERS:\s*(\d{10})\s*:\s*(\d+)\]/);
+                      if (match) {
+                        const phone = match[1];
+                        const page = parseInt(match[2]);
+                        return (
+                          <button 
+                            onClick={() => handleLoadMore(phone, page, idx)}
+                            className="mt-3 inline-flex items-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4 py-2 rounded-xl text-sm font-bold transition-colors w-full justify-center border border-border"
+                          >
+                            Load Older Orders
+                          </button>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               ))}
