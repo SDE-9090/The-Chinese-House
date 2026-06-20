@@ -501,32 +501,30 @@ router.get("/sessions/:sessionId/bill", async (req, res) => {
     const couponCode = sessionRes.rows[0].coupon_code;
     const discountAmount = parseFloat(sessionRes.rows[0].discount_amount || 0);
 
-    if (couponCode) {
-      // If there is a session coupon, recalculate total from raw items
-      let rawSubtotal = 0;
-      for (const item of itemized) {
-        rawSubtotal += item.totalPrice;
-      }
-      
-      const businessSettings = await ensureBusinessSettings(pool, req.business_id);
-      const totals = calculateOrderTotals({
-        subtotal: rawSubtotal,
-        discount: discountAmount,
-        gstEnabled: businessSettings.isGstEnabled,
-        cgstRate: businessSettings.cgstRate,
-        sgstRate: businessSettings.sgstRate,
-      });
-
-      finalTotalAmount = totals.total;
-      sessionDetails = {
-        subtotal: totals.subtotal,
-        discount: totals.discount,
-        couponCode: couponCode,
-        cgst: totals.cgst,
-        sgst: totals.sgst,
-        gstTotal: totals.gstTotal,
-      };
+    // Calculate total from raw items
+    let rawSubtotal = 0;
+    for (const item of itemized) {
+      rawSubtotal += item.totalPrice;
     }
+    
+    const businessSettings = await ensureBusinessSettings(pool, req.business_id);
+    const totals = calculateOrderTotals({
+      subtotal: rawSubtotal,
+      discount: discountAmount,
+      gstEnabled: businessSettings.isGstEnabled,
+      cgstRate: businessSettings.cgstRate,
+      sgstRate: businessSettings.sgstRate,
+    });
+
+    finalTotalAmount = totals.total;
+    sessionDetails = {
+      subtotal: totals.subtotal,
+      discount: totals.discount,
+      couponCode: couponCode || undefined,
+      cgst: totals.cgst,
+      sgst: totals.sgst,
+      gstTotal: totals.gstTotal,
+    };
 
     const finalTotalPaid = roundCurrency(totalPaid);
     const finalTotalDue = roundCurrency(Math.max(0, finalTotalAmount - finalTotalPaid));

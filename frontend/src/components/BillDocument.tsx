@@ -26,6 +26,14 @@ export interface BillData {
   totalPaid: number;
   totalDue: number;
   isFullyPaid: boolean;
+  sessionDetails?: {
+    subtotal: number;
+    discount: number;
+    couponCode?: string;
+    cgst: number;
+    sgst: number;
+    gstTotal: number;
+  };
 }
 
 export interface BusinessInfo {
@@ -33,6 +41,9 @@ export interface BusinessInfo {
   gstin?: string | null;
   address?: string;
   phone?: string;
+  isGstEnabled?: boolean;
+  cgstRate?: number;
+  sgstRate?: number;
 }
 
 interface BillDocumentProps {
@@ -134,8 +145,17 @@ export function downloadBillPrint(bill: BillData, business?: BusinessInfo) {
   const printWindow = window.open("", "_blank", "width=420,height=700");
   if (!printWindow) return;
 
-  const gst = bill.totalAmount * 0.05; // 5% GST
-  const subtotal = bill.totalAmount - gst;
+  // GST logic
+  const isGstEnabled = business?.isGstEnabled;
+  const subtotal = isGstEnabled && bill.sessionDetails 
+    ? bill.sessionDetails.subtotal - bill.sessionDetails.discount 
+    : bill.totalAmount;
+  
+  const cgst = isGstEnabled && bill.sessionDetails ? bill.sessionDetails.cgst : 0;
+  const sgst = isGstEnabled && bill.sessionDetails ? bill.sessionDetails.sgst : 0;
+  const cgstRate = business?.cgstRate ?? 2.5;
+  const sgstRate = business?.sgstRate ?? 2.5;
+
   const date = new Date().toLocaleString("en-IN", {
     day: "2-digit", month: "short", year: "numeric",
     hour: "2-digit", minute: "2-digit", hour12: true,
@@ -179,8 +199,8 @@ export function downloadBillPrint(bill: BillData, business?: BusinessInfo) {
     <h1>${business?.restaurantName ?? "Restaurant"}</h1>
     ${business?.address ? `<p>${business.address}</p>` : ""}
     ${business?.phone ? `<p>📞 ${business.phone}</p>` : ""}
-    ${business?.gstin ? `<p>GSTIN: ${business.gstin}</p>` : ""}
-    <p style="margin-top:6px;font-weight:bold;">TAX INVOICE</p>
+    ${isGstEnabled && business?.gstin ? `<p>GSTIN: ${business.gstin}</p>` : ""}
+    <p style="margin-top:6px;font-weight:bold;">${isGstEnabled ? "TAX INVOICE" : "INVOICE"}</p>
   </div>
 
   <div class="meta">
@@ -204,9 +224,11 @@ export function downloadBillPrint(bill: BillData, business?: BusinessInfo) {
   </table>
 
   <div class="totals">
-    <div><span>Subtotal (excl. tax)</span><span>₹${subtotal.toFixed(2)}</span></div>
-    <div><span>CGST (2.5%)</span><span>₹${(gst / 2).toFixed(2)}</span></div>
-    <div><span>SGST (2.5%)</span><span>₹${(gst / 2).toFixed(2)}</span></div>
+    ${isGstEnabled ? `
+      <div><span>Subtotal (excl. tax)</span><span>₹${subtotal.toFixed(2)}</span></div>
+      <div><span>CGST (${cgstRate}%)</span><span>₹${cgst.toFixed(2)}</span></div>
+      <div><span>SGST (${sgstRate}%)</span><span>₹${sgst.toFixed(2)}</span></div>
+    ` : ''}
     <div class="grand"><span>GRAND TOTAL</span><span>₹${bill.totalAmount.toFixed(2)}</span></div>
     ${bill.totalPaid > 0 ? `<div class="paid"><span>Amount Paid</span><span>₹${bill.totalPaid.toFixed(2)}</span></div>` : ""}
     <div class="${bill.totalDue > 0 ? "due" : "paid"}">
@@ -241,8 +263,8 @@ export default function BillDocument({ bill, business, showDownloadButton = true
       <div className="text-center pb-3 border-b border-dashed border-border">
         <h2 className="text-lg font-black tracking-wide">{business?.restaurantName ?? "Restaurant"}</h2>
         {business?.address && <p className="text-xs text-muted-foreground">{business.address}</p>}
-        {business?.gstin && <p className="text-xs text-muted-foreground">GSTIN: {business.gstin}</p>}
-        <p className="text-xs font-bold mt-1 text-primary">TAX INVOICE</p>
+        {business?.isGstEnabled && business?.gstin && <p className="text-xs text-muted-foreground">GSTIN: {business.gstin}</p>}
+        <p className="text-xs font-bold mt-1 text-primary">{business?.isGstEnabled ? "TAX INVOICE" : "INVOICE"}</p>
       </div>
 
       {/* Meta */}
@@ -273,18 +295,22 @@ export default function BillDocument({ bill, business, showDownloadButton = true
 
       {/* Totals */}
       <div className="border-t border-dashed border-border pt-3 space-y-1">
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Subtotal (excl. GST)</span>
-          <span>₹{(bill.totalAmount * 0.95).toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>CGST (2.5%)</span>
-          <span>₹{(bill.totalAmount * 0.025).toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>SGST (2.5%)</span>
-          <span>₹{(bill.totalAmount * 0.025).toFixed(2)}</span>
-        </div>
+        {business?.isGstEnabled && bill.sessionDetails && (
+          <>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Subtotal (excl. GST)</span>
+              <span>₹{(bill.sessionDetails.subtotal - bill.sessionDetails.discount).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>CGST ({business.cgstRate ?? 2.5}%)</span>
+              <span>₹{(bill.sessionDetails.cgst).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>SGST ({business.sgstRate ?? 2.5}%)</span>
+              <span>₹{(bill.sessionDetails.sgst).toFixed(2)}</span>
+            </div>
+          </>
+        )}
         <div className="flex justify-between font-black text-base border-t border-border pt-2 mt-1">
           <span>Grand Total</span>
           <span className="text-primary">₹{bill.totalAmount.toFixed(2)}</span>
