@@ -62,7 +62,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [splitUpi, setSplitUpi] = useState<string>("");
   const [closingId, setClosingId] = useState<string | null>(null);
   const [billsMap, setBillsMap] = useState<Record<string, SessionBill>>({}); // sessionId -> bill
-  
+
   // Loyalty State
   const [loyaltyPhone, setLoyaltyPhone] = useState("");
   const [pointsRedeemed, setPointsRedeemed] = useState(0);
@@ -293,7 +293,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                               className="gap-2 text-destructive focus:text-destructive cursor-pointer xl:hidden"
                             >
                               <X size={14} />
-                              <span>Force Clear Table</span>
+                              <span>Clear Table</span>
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
@@ -400,7 +400,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                             className="w-full border border-destructive/30 text-destructive hover:bg-destructive/10 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                           >
                             {closingId === session.id ? <Loader2 className="animate-spin w-4 h-4" /> : <X size={14} />}
-                            Force Clear Table
+                            Clear Table
                           </button>
                         </div>
                       )}
@@ -632,7 +632,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
               </div>
 
               {checkingLoyalty && <p className="text-xs text-muted-foreground ml-1">Checking loyalty points...</p>}
-              
+
               {!checkingLoyalty && loyaltyPoints > 0 && loyaltySettings?.enabled && (
                 <div className="bg-orange-500/10 border border-orange-500/20 p-3 rounded-xl flex items-center justify-between">
                   <div>
