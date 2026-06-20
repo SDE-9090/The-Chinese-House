@@ -26,10 +26,11 @@ const AiChatbot = () => {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+  const handleSend = async (textOverride?: string) => {
+    const messageText = typeof textOverride === 'string' ? textOverride : input;
+    if (!messageText.trim()) return;
 
-    const userMsg: Message = { role: "user", content: input.trim() };
+    const userMsg: Message = { role: "user", content: messageText.trim() };
     const newMessages = [...messages, userMsg];
     
     setMessages(newMessages);
@@ -197,7 +198,28 @@ const AiChatbot = () => {
             </div>
 
             {/* Input Area */}
-            <div className="p-3 bg-background border-t border-border">
+            <div className="p-3 bg-background border-t border-border flex flex-col gap-2">
+              
+              {/* Suggestion Chips */}
+              {messages.length === 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  {[
+                    "What are your specials?",
+                    "Show my order history",
+                    "Do you have vegan options?",
+                    "What are your opening hours?"
+                  ].map((chip, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSend(chip)}
+                      className="whitespace-nowrap px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold rounded-full border border-primary/20 transition-colors"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="flex items-end gap-2 bg-muted rounded-xl p-1 border border-border/50 focus-within:border-primary/50 transition-colors">
                 <textarea
                   value={input}
