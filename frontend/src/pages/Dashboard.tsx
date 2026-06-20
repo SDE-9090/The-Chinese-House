@@ -712,7 +712,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               { key: "system" as const, label: "System", icon: Settings, roles: ["admin"] },
               { key: "staff" as const, label: "Staff", icon: Shield, roles: ["admin", "manager"] },
             ]
-              .filter(t => t.roles.includes(user.role))
+              .filter(t => user.role === 'admin' || (user.permissions?.tabs && user.permissions.tabs[t.key as keyof typeof user.permissions.tabs]))
               .filter(t => !t.check || t.check())
               .map((t) => (
                 <button
@@ -737,7 +737,9 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
       <Suspense fallback={<TabLoader />}>
         {tab === "orders" ? (
           <div className="container mx-auto px-4 pb-8">
-            <StatsBar orders={orders} />
+            {(user.role === 'admin' || user.permissions?.canViewOrderStats) && (
+              <StatsBar orders={orders} />
+            )}
             {/* Sub-tabs: Active Orders / History */}
             <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar" style={{ scrollbarWidth: "none" }}>
               {[

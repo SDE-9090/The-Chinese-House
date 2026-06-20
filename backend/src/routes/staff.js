@@ -63,6 +63,7 @@ router.post("/login", async (req, res) => {
         name: authenticatedStaff.name, 
         role: authenticatedStaff.role,
         phone: authenticatedStaff.phone,
+        permissions: authenticatedStaff.permissions || {},
         business_id: authenticatedStaff.business_id,
         isStaff: true 
       },
@@ -76,7 +77,8 @@ router.post("/login", async (req, res) => {
       user: { 
         name: authenticatedStaff.name, 
         role: authenticatedStaff.role,
-        phone: authenticatedStaff.phone || null
+        phone: authenticatedStaff.phone || null,
+        permissions: authenticatedStaff.permissions || {}
       },
       features
     });
@@ -104,7 +106,7 @@ router.get("/me", adminAuth, (req, res) => {
 router.get("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, name, role, phone, is_active, created_at FROM staff WHERE business_id = $1 ORDER BY created_at DESC",
+      "SELECT id, name, role, phone, is_active, created_at, permissions FROM staff WHERE business_id = $1 ORDER BY created_at DESC",
       [req.business_id]
     );
     res.json(result.rows);
@@ -116,7 +118,7 @@ router.get("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res)
 
 // Add new staff
 router.post("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
-  const { name, pin, role, phone } = req.body;
+  const { name, pin, role, phone, permissions } = req.body;
 
   if (!name || !pin || !role) {
     return res.status(400).json({ error: "Name, PIN, and role are required" });
@@ -141,8 +143,8 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res
   try {
     const pinHash = await bcrypt.hash(pin, BCRYPT_ROUNDS);
     const result = await pool.query(
-      "INSERT INTO staff (name, pin_hash, role, phone, business_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, role, phone",
-      [name, pinHash, role, phone || null, req.business_id]
+      "INSERT INTO staff (name, pin_hash, role, phone, business_id, permissions) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, role, phone, permissions",
+      [name, pinHash, role, phone || null, req.business_id, permissions || {}]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -154,7 +156,7 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res
 // Update staff
 router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
   const { id } = req.params;
-  const { name, pin, role, is_active, phone } = req.body;
+  const { name, pin, role, is_active, phone, permissions } = req.body;
 
   if (name !== undefined) {
     const trimmedName = name.trim();
@@ -171,19 +173,19 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req, r
   }
 
   try {
-    let query = "UPDATE staff SET name = COALESCE($1, name), role = COALESCE($2, role), is_active = COALESCE($3, is_active), phone = COALESCE($4, phone)";
-    const params = [name, role, is_active, phone || null];
+    let query = "UPDATE staff SET name = COALESCE($1, name), role = COALESCE($2, role), is_active = COALESCE($3, is_active), phone = COALESCE($4, phone), permissions = COALESCE($5, permissions)";
+    const params = [name, role, is_active, phone || null, permissions ? JSON.stringify(permissions) : null];
 
     if (pin) {
       const pinHash = await bcrypt.hash(pin, BCRYPT_ROUNDS);
-      query += `, pin_hash = $5 WHERE id = $6 AND business_id = $7`;
+      query += `, pin_hash = $6 WHERE id = $7 AND business_id = $8`;
       params.push(pinHash, id, req.business_id);
     } else {
-      query += ` WHERE id = $5 AND business_id = $6`;
+      query += ` WHERE id = $6 AND business_id = $7`;
       params.push(id, req.business_id);
     }
 
-    const result = await pool.query(query + " RETURNING id, name, role, phone, is_active", params);
+    const result = await pool.query(query + " RETURNING id, name, role, phone, is_active, permissions", params);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Staff not found" });

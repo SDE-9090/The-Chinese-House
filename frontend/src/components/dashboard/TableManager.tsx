@@ -277,7 +277,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                           <MoreVertical size={16} />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                          {(user.role === 'admin' || user.role === 'manager' || user.role === 'waiter') && (
+                          {(user.role === 'admin' || user.permissions?.canTransferTable) && (
                             <DropdownMenuItem
                               onClick={() => setTransferTableState({ sessionId: session.id, number: table.tableNumber })}
                               className="gap-2 cursor-pointer"
@@ -286,7 +286,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                               <span>Transfer Table</span>
                             </DropdownMenuItem>
                           )}
-                          {(user.role === 'admin' || user.role === 'manager' || user.role === 'waiter') && (
+                          {(user.role === 'admin' || user.permissions?.canClearTable) && (
                             <DropdownMenuItem
                               onClick={() => setShowPaymentModal(session.id)}
                               disabled={closingId === session.id}
@@ -362,7 +362,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                         <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-3 text-center">
                           <p className="text-sm font-bold text-purple-600 mb-2">Customer is Done</p>
                           <p className="text-xs text-muted-foreground mb-3">Please collect payment to free this table.</p>
-                          {(user.role === 'admin' || user.role === 'manager' || user.role === 'waiter') && (
+                          {(user.role === 'admin' || user.permissions?.canClearTable) && (
                             <div className="flex flex-col gap-2">
                               <button
                                 onClick={() => setShowPaymentModal(session.id)}
@@ -392,7 +392,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                         </div>
                       )}
 
-                      {(user.role === 'admin' || user.role === 'manager' || user.role === 'waiter') && (
+                      {(user.role === 'admin' || user.permissions?.canClearTable) && (
                         <div className="hidden xl:flex flex-1 flex-col justify-end mt-3">
                           <button
                             onClick={() => setShowPaymentModal(session.id)}
@@ -557,7 +557,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                       <Download size={15} /> Download Bill
                     </button>
                   )}
-                  {(user.role === 'admin' || user.role === 'manager' || user.role === 'waiter') && (
+                  {(user.role === 'admin' || user.permissions?.canClearTable) && (
                     <button
                       onClick={() => {
                         setShowPaymentModal(detailSession.id);

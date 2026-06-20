@@ -39,6 +39,16 @@ const StaffManager = () => {
   const [phoneError, setPhoneError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const defaultPermissions = {
+    canClearTable: false,
+    canTransferTable: false,
+    canViewOrderStats: false,
+    tabs: {
+      orders: true, tables: false, sales: false, analytics: false, content: false, management: false, system: false, staff: false
+    }
+  };
+  const [permissions, setPermissions] = useState<any>(defaultPermissions);
+
   useEffect(() => {
     loadStaff();
   }, []);
@@ -90,10 +100,10 @@ const StaffManager = () => {
     setSubmitting(true);
     try {
       if (editingStaff) {
-        await apiAdminUpdateStaff(editingStaff.id, { name, role, pin: pin || undefined, phone: phone || undefined });
+        await apiAdminUpdateStaff(editingStaff.id, { name, role, pin: pin || undefined, phone: phone || undefined, permissions });
         toast({ title: "Success", description: "Staff updated successfully" });
       } else {
-        await apiAdminCreateStaff(name, pin, role, phone || undefined);
+        await apiAdminCreateStaff(name, pin, role, phone || undefined, permissions);
         toast({ title: "Success", description: "Staff added successfully" });
       }
       setShowAddModal(false);
@@ -139,6 +149,7 @@ const StaffManager = () => {
     setPhone("");
     setNameError("");
     setPhoneError("");
+    setPermissions(defaultPermissions);
   };
 
   const openEdit = (member: StaffMember) => {
@@ -147,7 +158,17 @@ const StaffManager = () => {
     setRole(member.role);
     setPin("");
     setPhone(member.phone || "");
+    setPermissions(member.permissions || defaultPermissions);
     setShowAddModal(true);
+  };
+
+  const handlePermissionChange = (field: string, value: boolean) => {
+    if (field.startsWith('tabs.')) {
+      const tabName = field.split('.')[1];
+      setPermissions((prev: any) => ({ ...prev, tabs: { ...(prev?.tabs || {}), [tabName]: value } }));
+    } else {
+      setPermissions((prev: any) => ({ ...prev, [field]: value }));
+    }
   };
 
   const roleColors: Record<string, string> = {
@@ -273,7 +294,7 @@ const StaffManager = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-card border border-border p-8 rounded-[2rem] shadow-2xl"
+              className="relative w-full max-w-lg bg-card border border-border p-8 rounded-[2rem] shadow-2xl max-h-[90vh] overflow-y-auto"
             >
               <button
                 onClick={() => setShowAddModal(false)}
@@ -357,6 +378,41 @@ const StaffManager = () => {
                     placeholder="1234"
                     className="w-full px-4 py-3 rounded-2xl border border-border bg-background focus:ring-2 focus:ring-ring transition-all outline-none tracking-[0.5em] text-center font-mono text-lg"
                   />
+                </div>
+
+                {/* PERMISSIONS CHECKLIST */}
+                <div className="space-y-3 mt-4 pt-4 border-t border-border">
+                  <label className="text-sm font-semibold ml-1 block">Staff Permissions</label>
+                  <div className="bg-muted/50 p-4 rounded-xl space-y-4">
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Actions</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" checked={permissions.canClearTable} onChange={(e) => handlePermissionChange('canClearTable', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                          Clear Table
+                        </label>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" checked={permissions.canTransferTable} onChange={(e) => handlePermissionChange('canTransferTable', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                          Transfer Table
+                        </label>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" checked={permissions.canViewOrderStats} onChange={(e) => handlePermissionChange('canViewOrderStats', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                          View Order Stats
+                        </label>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Dashboard Tabs</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['orders', 'tables', 'sales', 'analytics', 'content', 'management', 'system', 'staff'].map(tab => (
+                          <label key={tab} className="flex items-center gap-2 text-sm cursor-pointer capitalize">
+                            <input type="checkbox" checked={permissions?.tabs?.[tab] || false} onChange={(e) => handlePermissionChange(`tabs.${tab}`, e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                            {tab}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <button

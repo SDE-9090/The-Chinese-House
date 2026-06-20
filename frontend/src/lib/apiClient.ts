@@ -179,6 +179,21 @@ export interface AuthUser {
   role: "admin" | "manager" | "waiter" | "kitchen";
   phone?: string;
   features?: Record<string, any>;
+  permissions?: {
+    canClearTable?: boolean;
+    canTransferTable?: boolean;
+    canViewOrderStats?: boolean;
+    tabs?: {
+      orders?: boolean;
+      tables?: boolean;
+      sales?: boolean;
+      analytics?: boolean;
+      content?: boolean;
+      management?: boolean;
+      system?: boolean;
+      staff?: boolean;
+    }
+  };
 }
 
 export async function apiAdminCheckAuth(): Promise<{ authenticated: boolean; user?: AuthUser }> {
@@ -307,22 +322,22 @@ export async function apiAdminListStaff(): Promise<StaffMember[]> {
   return data;
 }
 
-export async function apiAdminCreateStaff(name: string, pin: string, role: string, phone?: string): Promise<StaffMember> {
+export async function apiAdminCreateStaff(name: string, pin: string, role: string, phone?: string, permissions?: any): Promise<StaffMember> {
   const res = await authFetch(`${API_URL}/staff`, {
     method: "POST",
     headers: authHeaders(),
-    body: JSON.stringify({ name, pin, role, phone }),
+    body: JSON.stringify({ name, pin, role, phone, permissions }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to create staff");
   return data;
 }
 
-export async function apiAdminUpdateStaff(id: string, payload: { name?: string; pin?: string; role?: string; phone?: string; is_active?: boolean }): Promise<StaffMember> {
+export async function apiAdminUpdateStaff(id: string, updates: { name?: string; pin?: string; role?: string; phone?: string; is_active?: boolean; permissions?: any }): Promise<StaffMember> {
   const res = await authFetch(`${API_URL}/staff/${id}`, {
     method: "PUT",
     headers: authHeaders(),
-    body: JSON.stringify(payload),
+    body: JSON.stringify(updates),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to update staff");
