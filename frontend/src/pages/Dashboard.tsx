@@ -918,10 +918,10 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
           <div className="container mx-auto px-4 pb-8 py-4">
             <div className="flex gap-2 mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
               {[
+                { key: "qr-codes" as const, label: "QR Codes", icon: QrCode, check: () => user.features?.qr_digital_ordering !== false },
+                { key: "customers" as const, label: "Customers", icon: Users },
                 { key: "coupons" as const, label: "Coupons", icon: Ticket, check: () => user.features?.coupon_engine },
                 { key: "reviews" as const, label: "Reviews", icon: MessageSquare, check: () => user.features?.customer_reviews },
-                { key: "customers" as const, label: "Customers", icon: Users },
-                { key: "qr-codes" as const, label: "QR Codes", icon: QrCode, check: () => user.features?.qr_digital_ordering !== false },
               ].filter(st => !st.check || st.check()).map((st) => (
                 <button
                   key={st.key}
@@ -936,14 +936,14 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               ))}
             </div>
 
-            {managementSubTab === "coupons" ? (
-              <CouponManagement />
-            ) : managementSubTab === "reviews" ? (
-              <ReviewManagement />
+            {managementSubTab === "qr-codes" ? (
+              <TableQRCodes />
             ) : managementSubTab === "customers" ? (
               <CustomerManagement />
+            ) : managementSubTab === "coupons" ? (
+              <CouponManagement />
             ) : (
-              <TableQRCodes />
+              <ReviewManagement />
             )}
           </div>
         ) : tab === "system" ? (
@@ -967,12 +967,12 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               ))}
             </div>
 
-            {settingsSubTab === "security" ? (
-              <SecurityLogs />
-            ) : settingsSubTab === "account" ? (
+            {settingsSubTab === "business" ? (
+              <BusinessSettingsManager />
+            ) : settingsSubTab === "security" ? (
               <AccountSecurity />
             ) : (
-              <BusinessSettingsManager />
+              <SecurityLogs />
             )}
           </div>
         ) : tab === "staff" ? (
