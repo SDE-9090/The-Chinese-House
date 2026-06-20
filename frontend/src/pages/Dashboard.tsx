@@ -743,11 +743,11 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
             {/* Sub-tabs: Active Orders / History */}
             <div className={`flex gap-2 mb-4 overflow-x-auto no-scrollbar ${!(user.role === 'admin' || user.permissions?.canViewOrderStats) ? 'mt-4' : ''}`} style={{ scrollbarWidth: "none" }}>
               {[
-                { key: "active" as const, label: "Active Orders", icon: Package, roles: ["admin", "manager", "waiter", "kitchen"] },
-                { key: "counter-order" as const, label: "New Order (POS)", icon: UtensilsCrossed, roles: ["admin", "manager", "waiter"], check: () => user.features?.pos_system },
-                { key: "history" as const, label: "History", icon: History, roles: ["admin", "manager", "waiter", "kitchen"] },
+                { key: "active" as const, label: "Active Orders", icon: Package, permissionKey: "active" as const },
+                { key: "counter-order" as const, label: "New Order (POS)", icon: UtensilsCrossed, permissionKey: "pos" as const, check: () => user.features?.pos_system },
+                { key: "history" as const, label: "History", icon: History, permissionKey: "history" as const },
               ]
-                .filter(st => st.roles.includes(user.role))
+                .filter(st => user.role === 'admin' || (user.permissions?.orders && user.permissions.orders[st.permissionKey]))
                 .filter(st => !st.check || st.check())
                 .map((st) => (
                   <button
@@ -763,7 +763,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                 ))}
             </div>
 
-            {orderSubTab === "active" ? (
+            {(orderSubTab === "active" && (user.role === 'admin' || user.permissions?.orders?.active)) ? (
               <>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 w-full">
                   {/* Status filter */}
@@ -837,11 +837,11 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                   </div>
                 )}
               </>
-            ) : orderSubTab === "counter-order" ? (
+            ) : (orderSubTab === "counter-order" && (user.role === 'admin' || user.permissions?.orders?.pos)) ? (
               <CounterOrder user={user} />
-            ) : (
+            ) : (orderSubTab === "history" && (user.role === 'admin' || user.permissions?.orders?.history)) ? (
               <OrderHistory />
-            )}
+            ) : null}
           </div>
         ) : tab === "tables" ? (
           <TableManager

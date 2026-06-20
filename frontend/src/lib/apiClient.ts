@@ -192,7 +192,12 @@ export interface AuthUser {
       management?: boolean;
       system?: boolean;
       staff?: boolean;
-    }
+    };
+    orders?: {
+      active?: boolean;
+      pos?: boolean;
+      history?: boolean;
+    };
   };
 }
 

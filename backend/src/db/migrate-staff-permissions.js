@@ -21,7 +21,7 @@ async function migrateStaffPermissions() {
       // Update existing staff based on role
       console.log("Setting default permissions for existing staff...");
       
-      // Admin/Manager (just in case they are in staff table, though usually managers are)
+      // Admin/Manager
       await client.query(`
         UPDATE staff SET permissions = '{
           "canClearTable": true,
@@ -36,6 +36,11 @@ async function migrateStaffPermissions() {
             "management": true,
             "system": true,
             "staff": true
+          },
+          "orders": {
+            "active": true,
+            "pos": true,
+            "history": true
           }
         }'::jsonb
         WHERE role = 'manager'
@@ -56,6 +61,11 @@ async function migrateStaffPermissions() {
             "management": false,
             "system": false,
             "staff": false
+          },
+          "orders": {
+            "active": true,
+            "pos": true,
+            "history": true
           }
         }'::jsonb
         WHERE role = 'waiter'
@@ -76,6 +86,11 @@ async function migrateStaffPermissions() {
             "management": false,
             "system": false,
             "staff": false
+          },
+          "orders": {
+            "active": true,
+            "pos": false,
+            "history": true
           }
         }'::jsonb
         WHERE role = 'kitchen'

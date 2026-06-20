@@ -45,6 +45,9 @@ const StaffManager = () => {
     canViewOrderStats: false,
     tabs: {
       orders: true, tables: false, sales: false, analytics: false, content: false, management: false, system: false, staff: false
+    },
+    orders: {
+      active: true, pos: true, history: true
     }
   };
   const [permissions, setPermissions] = useState<any>(defaultPermissions);
@@ -166,6 +169,9 @@ const StaffManager = () => {
     if (field.startsWith('tabs.')) {
       const tabName = field.split('.')[1];
       setPermissions((prev: any) => ({ ...prev, tabs: { ...(prev?.tabs || {}), [tabName]: value } }));
+    } else if (field.startsWith('orders.')) {
+      const subTab = field.split('.')[1];
+      setPermissions((prev: any) => ({ ...prev, orders: { ...(prev?.orders || {}), [subTab]: value } }));
     } else {
       setPermissions((prev: any) => ({ ...prev, [field]: value }));
     }
@@ -410,6 +416,23 @@ const StaffManager = () => {
                             {tab}
                           </label>
                         ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Orders Tab Access</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" checked={permissions?.orders?.active || false} onChange={(e) => handlePermissionChange('orders.active', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                          Active Orders
+                        </label>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" checked={permissions?.orders?.pos || false} onChange={(e) => handlePermissionChange('orders.pos', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                          New Order (POS)
+                        </label>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" checked={permissions?.orders?.history || false} onChange={(e) => handlePermissionChange('orders.history', e.target.checked)} className="rounded text-primary focus:ring-primary w-4 h-4" />
+                          History
+                        </label>
                       </div>
                     </div>
                   </div>
