@@ -219,7 +219,7 @@ const AiChatbot = () => {
                       const matches = [...msg.content.matchAll(/\[ADD_TO_CART:\s*(.*?)\]/g)];
                       if (matches.length > 0) {
                         return (
-                          <div className="flex flex-col gap-2 mt-3">
+                          <div className="flex flex-wrap gap-2 mt-3">
                             {matches.map((match, mIdx) => {
                               const dishName = match[1].trim();
                               const item = menuItems.find((i: any) => i.name.toLowerCase() === dishName.toLowerCase());
@@ -230,10 +230,10 @@ const AiChatbot = () => {
                                   <button 
                                     key={`${mIdx}-${vIdx}`}
                                     onClick={() => handleAddToCart(item, v)}
-                                    className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4 py-2 rounded-xl text-sm font-bold transition-colors w-full justify-center border border-border"
+                                    className="inline-flex items-center gap-1.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border border-border shadow-sm"
                                   >
-                                    <ShoppingCart size={16} />
-                                    Add {item.name} ({v.name}) - ₹{v.price}
+                                    <ShoppingCart size={14} />
+                                    Add {v.name} - ₹{v.price}
                                   </button>
                                 ));
                               } else {
@@ -241,9 +241,9 @@ const AiChatbot = () => {
                                   <button 
                                     key={mIdx}
                                     onClick={() => handleAddToCart(item)}
-                                    className="inline-flex items-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4 py-2 rounded-xl text-sm font-bold transition-colors w-full justify-center border border-border"
+                                    className="inline-flex items-center gap-1.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border border-border shadow-sm"
                                   >
-                                    <ShoppingCart size={16} />
+                                    <ShoppingCart size={14} />
                                     Add {item.name} - ₹{item.price}
                                   </button>
                                 );
