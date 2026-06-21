@@ -73,7 +73,7 @@ router.get("/generate-registration-options", adminAuth, async (req, res) => {
       userName: admin.mobile_number,
       attestationType: "none",
       excludeCredentials: passkeys.rows.map((pk) => ({
-        id: Buffer.from(pk.credential_id, 'base64url'),
+        id: pk.credential_id,
         type: "public-key",
       })),
       authenticatorSelection: {
@@ -116,7 +116,7 @@ router.post("/verify-registration", adminAuth, async (req, res) => {
     const { verified, registrationInfo } = verification;
 
     if (verified && registrationInfo) {
-      const { credentialID, credentialPublicKey, counter, credentialDeviceType, credentialBackedUp } = registrationInfo;
+      const { credential, credentialDeviceType, credentialBackedUp } = registrationInfo;
       
       const admin = await pool.query("SELECT webauthn_user_id FROM admin_account WHERE id = $1", [req.admin.id]);
 
@@ -125,13 +125,13 @@ router.post("/verify-registration", adminAuth, async (req, res) => {
          (credential_id, public_key, webauthn_user_id, counter, device_type, backed_up, transports, admin_id, business_id) 
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
-          Buffer.from(credentialID).toString('base64url'),
-          credentialPublicKey,
+          credential.id,
+          credential.publicKey,
           admin.rows[0].webauthn_user_id,
-          counter,
+          credential.counter,
           credentialDeviceType,
           credentialBackedUp,
-          body.response.transports ? body.response.transports.join(",") : "",
+          credential.transports ? credential.transports.join(",") : "",
           req.admin.id,
           req.business_id
         ]
@@ -204,9 +204,9 @@ router.post("/verify-authentication", async (req, res) => {
       expectedChallenge,
       expectedOrigin,
       expectedRPID: rpID,
-      authenticator: {
-        credentialID: Buffer.from(passkey.credential_id, 'base64url'),
-        credentialPublicKey: passkey.public_key,
+      credential: {
+        id: passkey.credential_id,
+        publicKey: passkey.public_key,
         counter: Number(passkey.counter),
       },
     });
