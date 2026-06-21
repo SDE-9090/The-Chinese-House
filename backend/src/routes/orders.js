@@ -157,7 +157,7 @@ router.post("/", async (req, res) => {
           [newUsedCount, !shouldDeactivate, normalizedCode, req.business_id],
         );
 
-        await invalidateAdminListCache();
+        await invalidateAdminListCache(req.business_id);
       }
     }
 
