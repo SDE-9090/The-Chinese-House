@@ -165,7 +165,7 @@ router.post("/create-paid", async (req, res) => {
 
 // ─── Admin Create Coupon ─────────────────────────────────
 router.post("/admin-create", auth, async (req, res) => {
-  let { code, discount_type, value, expiry_date, usage_limit, active } =
+  let { code, discount_type, value, expiry_date, usage_limit, active, is_public } =
     req.body;
 
   if (!["percent", "flat"].includes(discount_type))
@@ -184,8 +184,8 @@ router.post("/admin-create", auth, async (req, res) => {
   try {
     const result = await pool.query(
       `INSERT INTO coupons 
-       (code,discount_type,value,expiry_date,usage_limit,active,created_by,business_id)
-       VALUES ($1,$2,$3,$4,$5,$6,'admin',$7)
+       (code,discount_type,value,expiry_date,usage_limit,active,is_public,created_by,business_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'admin',$8)
        RETURNING *`,
       [
         code,
@@ -194,6 +194,7 @@ router.post("/admin-create", auth, async (req, res) => {
         expiry_date || null,
         usage_limit || 1,
         active ?? true,
+        is_public ?? false,
         req.business_id
       ],
     );
@@ -241,7 +242,7 @@ router.get("/admin-list", auth, async (req, res) => {
   }
 });
 
-// ─── Toggle Coupon ───────────────────────────────────────
+// ─── Toggle Coupon Active ──────────────────────────────────
 router.patch("/admin-toggle/:code", auth, async (req, res) => {
   try {
     const result = await pool.query(
@@ -255,6 +256,24 @@ router.patch("/admin-toggle/:code", auth, async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error("Toggle error:", err);
+    res.status(500).json({ error: "Toggle failed" });
+  }
+});
+
+// ─── Toggle Coupon Public ──────────────────────────────────
+router.patch("/admin-toggle-public/:code", auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "UPDATE coupons SET is_public = NOT is_public WHERE code=$1 AND business_id=$2 RETURNING *",
+      [req.params.code.toUpperCase(), req.business_id],
+    );
+
+    if (!result.rowCount) return res.status(404).json({ error: "Not found" });
+
+    await invalidateAdminListCache(req.business_id);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Toggle public error:", err);
     res.status(500).json({ error: "Toggle failed" });
   }
 });

@@ -1059,6 +1059,7 @@ export interface AdminCoupon {
   used_count: number;
   created_by: string | null;
   created_at: string;
+  is_public: boolean;
 }
 
 export async function apiAdminCreateCoupon(data: {
@@ -1068,6 +1069,7 @@ export async function apiAdminCreateCoupon(data: {
   expiry_date?: string;
   usage_limit?: number;
   active?: boolean;
+  is_public?: boolean;
 }): Promise<AdminCoupon> {
   const res = await authFetch(`${API_URL}/coupons/admin-create`, {
     method: "POST",
@@ -1094,6 +1096,16 @@ export async function apiAdminToggleCoupon(code: string): Promise<AdminCoupon> {
   });
   const result = await res.json();
   if (!res.ok) throw new Error(result.error || "Failed to toggle coupon");
+  return result;
+}
+
+export async function apiAdminToggleCouponPublic(code: string): Promise<AdminCoupon> {
+  const res = await authFetch(`${API_URL}/coupons/admin-toggle-public/${encodeURIComponent(code)}`, {
+    method: "PATCH",
+    headers: dashHeaders(dashboardPassword),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error || "Failed to toggle public status");
   return result;
 }
 

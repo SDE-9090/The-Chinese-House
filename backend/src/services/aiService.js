@@ -87,6 +87,25 @@ async function chatWithGroq(messageHistory, businessId) {
       });
     }
 
+    // 3.6 Fetch Public Coupons
+    const publicCouponsRes = await pool.query(
+      `SELECT code, discount_type, value 
+       FROM coupons 
+       WHERE business_id = $1 AND active = true AND is_public = true 
+         AND (expiry_date IS NULL OR expiry_date >= CURRENT_DATE) 
+         AND used_count < usage_limit`,
+      [businessId]
+    );
+
+    let couponsInfo = "";
+    if (publicCouponsRes.rows.length > 0) {
+      couponsInfo = `\n- Public Promotions:\n`;
+      publicCouponsRes.rows.forEach(c => {
+        const valueText = c.discount_type === "percent" ? `${parseFloat(c.value)}% off` : `₹${parseFloat(c.value)} off`;
+        couponsInfo += `  * Code: ${c.code} (${valueText})\n`;
+      });
+    }
+
     // 4. Construct the System Prompt
     let systemPrompt = `You are the friendly, professional, and concise customer support AI for a restaurant named "${settings.restaurant_name}".
 Your goal is to assist customers with questions about the menu, hours, and location.
@@ -99,8 +118,8 @@ RESTAURANT INFO:
 CURRENT MENU:
 `;
 
-    if (bestSellerInfo) {
-      systemPrompt = systemPrompt.replace("RESTAURANT INFO:", `RESTAURANT INFO:${bestSellerInfo}`);
+    if (bestSellerInfo || couponsInfo) {
+      systemPrompt = systemPrompt.replace("RESTAURANT INFO:", `RESTAURANT INFO:${bestSellerInfo}${couponsInfo}`);
     }
 
     menuItems.forEach(item => {
@@ -127,7 +146,8 @@ RULES:
 7. UPSELLING: Whenever a customer asks about a specific dish, you MUST act like an experienced waiter and suggest 1 or 2 complementary items STRICTLY FROM THE PROVIDED "CURRENT MENU" ONLY. DO NOT invent or suggest ANY items, drinks, or teas that are not explicitly listed in the menu above. If the menu has no drinks, DO NOT suggest a drink. IMPORTANT: If the customer specifies a dietary restriction (e.g., "only non-veg", "only veg"), your upselling suggestions MUST also strictly adhere to that restriction. Keep the suggestion natural and polite.
 8. ORDER HISTORY: If the user asks about their past orders or order history, politely ask them to provide their 10-digit phone number. If they provide a 10-digit phone number in the context of checking orders, your ENTIRE response MUST be exactly the text "[FETCH_ORDERS: <their_10_digit_number>]" and absolutely nothing else. Do not add any conversational text.
 9. OUT OF STOCK ITEMS: If a customer asks for a specific dish that is marked as [OUT OF STOCK], politely inform them that the dish is currently out of stock or sold out for the day, and immediately suggest a similar alternative from the menu. DO NOT ever recommend an item that is [OUT OF STOCK]. Never say the word "Available" or "In Stock" in your response; just suggest the dish naturally.
-10. RECOMMENDATIONS: If a user asks for a general recommendation, your best dish, or what is popular, you MUST check the "Best Seller" info in the RESTAURANT INFO section and follow its exact instructions. If a user asks for the best or most popular dish in a SPECIFIC category (e.g. "best rice", "best dessert"), you MUST recommend the corresponding item from the "Category Best Sellers" list in the RESTAURANT INFO section, taking note of its stock status.`;
+10. RECOMMENDATIONS: If a user asks for a general recommendation, your best dish, or what is popular, you MUST check the "Best Seller" info in the RESTAURANT INFO section and follow its exact instructions. If a user asks for the best or most popular dish in a SPECIFIC category (e.g. "best rice", "best dessert"), you MUST recommend the corresponding item from the "Category Best Sellers" list in the RESTAURANT INFO section, taking note of its stock status.
+11. PROMOTIONS & DISCOUNTS: If a user asks for a discount code, coupon, or active promotion, you MUST check the "Public Promotions" list in the RESTAURANT INFO section. If a code is listed, excitedly share the code and the discount amount. If no "Public Promotions" list is provided or it is empty, you MUST politely inform them that there are no active public promotions running at this time. NEVER invent or suggest a fake discount code.`;
 
     // 5. Prepare messages array
     const messages = [

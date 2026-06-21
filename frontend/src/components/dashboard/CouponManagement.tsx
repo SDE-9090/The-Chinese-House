@@ -26,6 +26,7 @@ import {
   apiAdminDeleteCoupon,
   apiAdminBulkDeleteCoupons,
   apiAdminShareCouponSMS,
+  apiAdminToggleCouponPublic,
   type AdminCoupon,
 } from "@/lib/apiClient";
 import {
@@ -56,6 +57,7 @@ const CouponManagement = () => {
   const [expiryDate, setExpiryDate] = useState("");
   const [usageLimit, setUsageLimit] = useState("1");
   const [active, setActive] = useState(true);
+  const [isPublic, setIsPublic] = useState(false);
   const [search, setSearch] = useState("");
   const [creatorFilter, setCreatorFilter] = useState<
     "all" | "admin" | "customer"
@@ -97,6 +99,7 @@ const CouponManagement = () => {
     setExpiryDate("");
     setUsageLimit("1");
     setActive(true);
+    setIsPublic(false);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -115,6 +118,7 @@ const CouponManagement = () => {
         expiry_date: expiryDate || undefined,
         usage_limit: Number(usageLimit) || 1,
         active,
+        is_public: isPublic,
       });
       toast({ title: "Coupon Created ✅" });
       resetForm();
@@ -136,6 +140,20 @@ const CouponManagement = () => {
       await apiAdminToggleCoupon(couponCode);
       await fetchCoupons();
       toast({ title: "Status toggled" });
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTogglePublic = async (couponCode: string) => {
+    try {
+      await apiAdminToggleCouponPublic(couponCode);
+      await fetchCoupons();
+      toast({ title: "Public status toggled" });
     } catch (err: any) {
       toast({
         title: "Error",
@@ -421,6 +439,21 @@ const CouponManagement = () => {
                     )}
                     {active ? "Active" : "Inactive"}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsPublic(!isPublic)}
+                    className={`ml-2 flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${isPublic
+                        ? "border-blue-500/30 bg-blue-500/10 text-blue-600"
+                        : "border-border bg-muted text-muted-foreground"
+                      }`}
+                  >
+                    {isPublic ? (
+                      <ToggleRight size={18} />
+                    ) : (
+                      <ToggleLeft size={18} />
+                    )}
+                    {isPublic ? "AI Promoted" : "Private"}
+                  </button>
                 </div>
               </div>
 
@@ -588,6 +621,7 @@ const CouponManagement = () => {
                     </th>
                     <th className="px-4 py-3 font-semibold">Usage</th>
                     <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 font-semibold hidden md:table-cell">AI Distribute</th>
                     <th className="px-4 py-3 font-semibold hidden lg:table-cell">
                       Created By
                     </th>
@@ -665,6 +699,17 @@ const CouponManagement = () => {
                             </span>
                           )}
                         </td>
+                        <td className="px-4 py-3 hidden md:table-cell">
+                          {coupon.is_public ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[14px] font-semibold bg-blue-500/10 text-blue-600">
+                              <CheckCircle size={10} /> Public
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[14px] font-semibold bg-muted text-muted-foreground">
+                              <XCircle size={10} /> Private
+                            </span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">
                           <span className="font-mono text-[15px]">
                             {coupon.created_by === "admin"
@@ -686,6 +731,23 @@ const CouponManagement = () => {
                                 />
                               ) : (
                                 <ToggleLeft
+                                  size={18}
+                                  className="text-muted-foreground"
+                                />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleTogglePublic(coupon.code)}
+                              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                              title="Toggle AI Distribution"
+                            >
+                              {coupon.is_public ? (
+                                <CheckCircle
+                                  size={18}
+                                  className="text-blue-500"
+                                />
+                              ) : (
+                                <XCircle
                                   size={18}
                                   className="text-muted-foreground"
                                 />
