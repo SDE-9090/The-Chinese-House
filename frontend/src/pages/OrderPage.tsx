@@ -2131,8 +2131,6 @@ function OrderPageContent({
         isOpen={isBillOpen}
         onClose={() => setIsBillOpen(false)}
       />
-
-      <AiChatbot />
     </div>
   );
 }
@@ -2141,6 +2139,7 @@ export default function OrderPage(props: OrderPageProps) {
   return (
     <ErrorBoundary>
       <OrderPageContent {...props} />
+      <AiChatbot />
     </ErrorBoundary>
   );
 }
