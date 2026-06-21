@@ -1174,7 +1174,7 @@ const MenuManager = () => {
                           setForm(f => ({ ...f, variants: newV }));
                         }}
                         placeholder="e.g. Half"
-                        className="flex-1 px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-ring focus:outline-none"
+                        className="flex-1 min-w-0 px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-ring focus:outline-none"
                       />
                       <input
                         type="number"
@@ -1185,7 +1185,7 @@ const MenuManager = () => {
                           setForm(f => ({ ...f, variants: newV }));
                         }}
                         placeholder="Price"
-                        className="w-24 px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-ring focus:outline-none"
+                        className="w-20 sm:w-24 min-w-0 px-3 py-1.5 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-ring focus:outline-none"
                       />
                       <button
                         type="button"
@@ -1194,7 +1194,7 @@ const MenuManager = () => {
                           newV.splice(idx, 1);
                           setForm(f => ({ ...f, variants: newV }));
                         }}
-                        className="p-1.5 text-muted-foreground hover:text-destructive bg-background border border-border rounded-lg"
+                        className="p-1.5 shrink-0 text-muted-foreground hover:text-destructive bg-background border border-border rounded-lg"
                       >
                         <Trash2 size={14} />
                       </button>
