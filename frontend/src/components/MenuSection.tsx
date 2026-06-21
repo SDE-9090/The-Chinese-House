@@ -196,6 +196,7 @@ ${link}`;
                       <LazyImage
                         src={item.image}
                         alt={item.name}
+                        category={item.category}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
 

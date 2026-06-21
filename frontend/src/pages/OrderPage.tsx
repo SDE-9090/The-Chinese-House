@@ -63,30 +63,11 @@ import { toast } from "@/hooks/use-toast";
 import { downloadReceipt, printReceipt } from "@/lib/receiptGenerator";
 import { downloadInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { Skeleton } from "@/components/ui/skeleton";
+import CategoryPlaceholder from "@/components/ui/CategoryPlaceholder";
 import { Download, Printer, FileText, Receipt, Image as ImageIcon } from "lucide-react";
 import NotFound from "./NotFound";
 
-const CategoryIconPlaceholder = ({ category, className = "w-12 h-12 text-primary/40 group-hover:scale-110 transition-transform duration-500" }: { category?: string, className?: string }) => {
-  const cat = (category || "").toLowerCase();
 
-  if (cat.includes("beverage") || cat.includes("drink") || cat.includes("water")) {
-    return <GlassWater className={className} strokeWidth={1.5} />;
-  }
-  if (cat.includes("tea") || cat.includes("coffee")) {
-    return <Coffee className={className} strokeWidth={1.5} />;
-  }
-  if (cat.includes("soup")) {
-    return <Soup className={className} strokeWidth={1.5} />;
-  }
-  if (cat.includes("dessert") || cat.includes("sweet")) {
-    return <IceCream className={className} strokeWidth={1.5} />;
-  }
-  if (cat.includes("starter") || cat.includes("appetizer")) {
-    return <UtensilsCrossed className={className} strokeWidth={1.5} />;
-  }
-
-  return <ConciergeBell className={className} strokeWidth={1.5} />;
-};
 
 import VariantSelectionModal from "@/components/VariantSelectionModal";
 import SessionBillModal from "@/components/SessionBillModal";
@@ -1616,7 +1597,9 @@ function OrderPageContent({
                   >
                     <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-primary/5 flex items-center justify-center">
                       {(!item.image || item.image.includes("placeholder.svg") || item.image.includes("placeholder.jpg")) ? (
-                        <CategoryIconPlaceholder category={item.category} className="w-8 h-8 text-primary/40" />
+                        <div className="w-full h-full p-2">
+                          <CategoryPlaceholder category={item.category} />
+                        </div>
                       ) : (
                         <img
                           src={item.image}
@@ -1827,7 +1810,7 @@ function OrderPageContent({
                         >
                           <div className="relative overflow-hidden aspect-square bg-primary/5 flex items-center justify-center">
                             {(!item.image || item.image.includes("placeholder.svg") || item.image.includes("placeholder.jpg")) ? (
-                              <CategoryIconPlaceholder category={item.category} />
+                              <CategoryPlaceholder category={item.category} />
                             ) : (
                               <img
                                 src={item.image}
