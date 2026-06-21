@@ -31,10 +31,10 @@ async function chatWithGroq(messageHistory, businessId) {
 
     // 2. Fetch Active Menu Items
     const menuRes = await pool.query(
-      `SELECT m.name, m.price, m.variants, m.description, m.diet_type, c.name as category_name
+      `SELECT m.name, m.price, m.variants, m.description, m.diet_type, m.available, c.name as category_name
        FROM menu_items m
        JOIN menu_categories c ON m.category_id = c.id
-       WHERE m.business_id = $1 AND m.available = true`,
+       WHERE m.business_id = $1`,
       [businessId]
     );
     const menuItems = menuRes.rows;
@@ -60,7 +60,8 @@ CURRENT MENU:
       if (Array.isArray(parsedVariants) && parsedVariants.length > 0) {
         variantStr = " Variants: " + parsedVariants.map(v => `${v.name} (₹${v.price})`).join(", ");
       }
-      systemPrompt += `- ${item.name} (${item.category_name}): Base Price ₹${item.price}.${variantStr} ${item.diet_type !== 'none' ? `[${item.diet_type}]` : ''} ${item.description}\n`;
+      const availabilityTag = item.available ? "[AVAILABLE]" : "[OUT OF STOCK]";
+      systemPrompt += `- ${item.name} (${item.category_name}) ${availabilityTag}: Base Price ₹${item.price}.${variantStr} ${item.diet_type !== 'none' ? `[${item.diet_type}]` : ''} ${item.description}\n`;
     });
 
     systemPrompt += `
@@ -72,7 +73,8 @@ RULES:
 5. Use plain text formatting. Avoid markdown bold/italics if possible, keep it readable.
 6. If the user asks how to order, or expresses a desire to order food, you MUST include the exact text "[ORDER_BTN]" somewhere in your response.
 7. UPSELLING: Whenever a customer asks about a specific dish, you MUST act like an experienced waiter and suggest 1 or 2 complementary items STRICTLY FROM THE PROVIDED "CURRENT MENU" ONLY. DO NOT invent or suggest ANY items, drinks, or teas that are not explicitly listed in the menu above. If the menu has no drinks, DO NOT suggest a drink. IMPORTANT: If the customer specifies a dietary restriction (e.g., "only non-veg", "only veg"), your upselling suggestions MUST also strictly adhere to that restriction. Keep the suggestion natural and polite.
-8. ORDER HISTORY: If the user asks about their past orders or order history, politely ask them to provide their 10-digit phone number. If they provide a 10-digit phone number in the context of checking orders, your ENTIRE response MUST be exactly the text "[FETCH_ORDERS: <their_10_digit_number>]" and absolutely nothing else. Do not add any conversational text.`;
+8. ORDER HISTORY: If the user asks about their past orders or order history, politely ask them to provide their 10-digit phone number. If they provide a 10-digit phone number in the context of checking orders, your ENTIRE response MUST be exactly the text "[FETCH_ORDERS: <their_10_digit_number>]" and absolutely nothing else. Do not add any conversational text.
+9. OUT OF STOCK ITEMS: If a customer asks for a specific dish that is marked as [OUT OF STOCK], politely inform them that the dish is currently out of stock or sold out for the day, and immediately suggest a similar alternative from the menu that is [AVAILABLE]. DO NOT ever recommend an item that is [OUT OF STOCK].`;
 
     // 4. Prepare messages array
     const messages = [
