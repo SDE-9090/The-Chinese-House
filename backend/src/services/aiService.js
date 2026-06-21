@@ -39,7 +39,20 @@ async function chatWithGroq(messageHistory, businessId) {
     );
     const menuItems = menuRes.rows;
 
-    // 3. Construct the System Prompt
+    // 3. Fetch Best Seller
+    const bestSellerRes = await pool.query(
+      `SELECT m.name
+       FROM order_items oi
+       JOIN menu_items m ON oi.menu_item_id = m.id
+       WHERE m.business_id = $1 AND m.available = true
+       GROUP BY m.name
+       ORDER BY SUM(oi.quantity) DESC
+       LIMIT 1`,
+      [businessId]
+    );
+    const bestSeller = bestSellerRes.rows.length > 0 ? bestSellerRes.rows[0].name : null;
+
+    // 4. Construct the System Prompt
     let systemPrompt = `You are the friendly, professional, and concise customer support AI for a restaurant named "${settings.restaurant_name}".
 Your goal is to assist customers with questions about the menu, hours, and location.
 
@@ -50,6 +63,10 @@ RESTAURANT INFO:
 
 CURRENT MENU:
 `;
+
+    if (bestSeller) {
+      systemPrompt = systemPrompt.replace("RESTAURANT INFO:", `RESTAURANT INFO:\n- Best Seller: ${bestSeller} (Enthusiastically recommend this if asked for popular dishes!)`);
+    }
 
     menuItems.forEach(item => {
       let variantStr = "";
@@ -74,9 +91,10 @@ RULES:
 6. If the user asks how to order, or expresses a desire to order food, you MUST include the exact text "[ORDER_BTN]" somewhere in your response.
 7. UPSELLING: Whenever a customer asks about a specific dish, you MUST act like an experienced waiter and suggest 1 or 2 complementary items STRICTLY FROM THE PROVIDED "CURRENT MENU" ONLY. DO NOT invent or suggest ANY items, drinks, or teas that are not explicitly listed in the menu above. If the menu has no drinks, DO NOT suggest a drink. IMPORTANT: If the customer specifies a dietary restriction (e.g., "only non-veg", "only veg"), your upselling suggestions MUST also strictly adhere to that restriction. Keep the suggestion natural and polite.
 8. ORDER HISTORY: If the user asks about their past orders or order history, politely ask them to provide their 10-digit phone number. If they provide a 10-digit phone number in the context of checking orders, your ENTIRE response MUST be exactly the text "[FETCH_ORDERS: <their_10_digit_number>]" and absolutely nothing else. Do not add any conversational text.
-9. OUT OF STOCK ITEMS: If a customer asks for a specific dish that is marked as [OUT OF STOCK], politely inform them that the dish is currently out of stock or sold out for the day, and immediately suggest a similar alternative from the menu. DO NOT ever recommend an item that is [OUT OF STOCK]. Never say the word "Available" or "In Stock" in your response; just suggest the dish naturally.`;
+9. OUT OF STOCK ITEMS: If a customer asks for a specific dish that is marked as [OUT OF STOCK], politely inform them that the dish is currently out of stock or sold out for the day, and immediately suggest a similar alternative from the menu. DO NOT ever recommend an item that is [OUT OF STOCK]. Never say the word "Available" or "In Stock" in your response; just suggest the dish naturally.
+10. RECOMMENDATIONS: If a user asks for a recommendation, your best dish, or what is popular, you MUST enthusiastically suggest the "Best Seller" listed in the RESTAURANT INFO section as the absolute crowd favorite.`;
 
-    // 4. Prepare messages array
+    // 5. Prepare messages array
     const messages = [
       { role: "system", content: systemPrompt },
       ...messageHistory
