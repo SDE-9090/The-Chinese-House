@@ -13,7 +13,6 @@ import {
   apiAdminRequestReset,
   apiAdminResetPassword,
   apiStaffLogin,
-  apiStaffLogin,
   apiWebAuthnGenerateAuthentication,
   apiWebAuthnVerifyAuthentication,
   type Order,
@@ -164,13 +163,13 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
     try {
       setError("");
       setLoading(true);
-      
+
       const { options, authSessionId } = await apiWebAuthnGenerateAuthentication();
-      
+
       const response = await startAuthentication({ optionsJSON: options });
-      
+
       const res = await apiWebAuthnVerifyAuthentication(response, authSessionId);
-      
+
       onAuthenticated({ ...res.user, features: res.features });
     } catch (err: any) {
       if (err.name !== "NotAllowedError") {
@@ -432,13 +431,13 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
               >
                 {loading ? "Verifying..." : "Unlock Dashboard"}
               </button>
-              
+
               <div className="relative flex py-4 items-center">
                 <div className="flex-grow border-t border-border"></div>
                 <span className="flex-shrink-0 mx-4 text-muted-foreground text-sm">or</span>
                 <div className="flex-grow border-t border-border"></div>
               </div>
-              
+
               <button
                 type="button"
                 onClick={handleBiometricLogin}
