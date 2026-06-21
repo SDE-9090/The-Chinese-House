@@ -22,6 +22,14 @@ import {
   Edit3,
   MoreVertical,
   Star,
+  Coffee,
+  Soup,
+  IceCream,
+  ChefHat,
+  ConciergeBell,
+  GlassWater,
+  CupSoda,
+  UtensilsCrossed,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -56,8 +64,31 @@ import { toast } from "@/hooks/use-toast";
 import { downloadReceipt, printReceipt } from "@/lib/receiptGenerator";
 import { downloadInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Download, Printer, FileText, Receipt } from "lucide-react";
+import { Download, Printer, FileText, Receipt, Image as ImageIcon } from "lucide-react";
 import NotFound from "./NotFound";
+
+const CategoryIconPlaceholder = ({ category, className = "w-12 h-12 text-primary/40 group-hover:scale-110 transition-transform duration-500" }: { category?: string, className?: string }) => {
+  const cat = (category || "").toLowerCase();
+  
+  if (cat.includes("beverage") || cat.includes("drink") || cat.includes("water")) {
+    return <GlassWater className={className} strokeWidth={1.5} />;
+  }
+  if (cat.includes("tea") || cat.includes("coffee")) {
+    return <Coffee className={className} strokeWidth={1.5} />;
+  }
+  if (cat.includes("soup")) {
+    return <Soup className={className} strokeWidth={1.5} />;
+  }
+  if (cat.includes("dessert") || cat.includes("sweet")) {
+    return <IceCream className={className} strokeWidth={1.5} />;
+  }
+  if (cat.includes("starter") || cat.includes("appetizer")) {
+    return <UtensilsCrossed className={className} strokeWidth={1.5} />;
+  }
+  
+  return <ConciergeBell className={className} strokeWidth={1.5} />;
+};
+
 import VariantSelectionModal from "@/components/VariantSelectionModal";
 import SessionBillModal from "@/components/SessionBillModal";
 
@@ -1584,11 +1615,17 @@ function OrderPageContent({
                     exit={{ opacity: 0, x: 20 }}
                     className="flex items-center gap-4 bg-card border border-border/50 rounded-2xl p-4"
                   >
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-16 h-16 rounded-xl object-cover"
-                    />
+                    <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-primary/5 flex items-center justify-center">
+                      {(!item.image || item.image.includes("placeholder.svg") || item.image.includes("placeholder.jpg")) ? (
+                        <CategoryIconPlaceholder category={item.category} className="w-8 h-8 text-primary/40" />
+                      ) : (
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
 
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-sm truncate">
@@ -1789,13 +1826,17 @@ function OrderPageContent({
                           onClick={() => setSelectedItem(item)}
                           className={`bg-card rounded-2xl overflow-hidden border border-border/50 group hover:shadow-xl hover:shadow-primary/5 transition-shadow cursor-pointer flex flex-col h-full ${!item.available ? "opacity-70" : ""}`}
                         >
-                          <div className="relative overflow-hidden aspect-square">
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                              loading="lazy"
-                            />
+                          <div className="relative overflow-hidden aspect-square bg-primary/5 flex items-center justify-center">
+                            {(!item.image || item.image.includes("placeholder.svg") || item.image.includes("placeholder.jpg")) ? (
+                              <CategoryIconPlaceholder category={item.category} />
+                            ) : (
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                loading="lazy"
+                              />
+                            )}
                             <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                             <div className="absolute top-2 right-2 bg-secondary text-secondary-foreground px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm">
                               {item.priceLabel}

@@ -29,7 +29,36 @@ import {
   ArrowLeft,
   MessageSquarePlus,
   Printer,
+  Coffee,
+  Soup,
+  IceCream,
+  ChefHat,
+  ConciergeBell,
+  GlassWater,
+  CupSoda,
 } from "lucide-react";
+
+const CategoryIconPlaceholder = ({ category, className = "w-12 h-12 text-primary/40 group-hover:scale-110 transition-transform duration-500" }: { category?: string, className?: string }) => {
+  const cat = (category || "").toLowerCase();
+  
+  if (cat.includes("beverage") || cat.includes("drink") || cat.includes("water")) {
+    return <GlassWater className={className} strokeWidth={1.5} />;
+  }
+  if (cat.includes("tea") || cat.includes("coffee")) {
+    return <Coffee className={className} strokeWidth={1.5} />;
+  }
+  if (cat.includes("soup")) {
+    return <Soup className={className} strokeWidth={1.5} />;
+  }
+  if (cat.includes("dessert") || cat.includes("sweet")) {
+    return <IceCream className={className} strokeWidth={1.5} />;
+  }
+  if (cat.includes("starter") || cat.includes("appetizer")) {
+    return <UtensilsCrossed className={className} strokeWidth={1.5} />;
+  }
+  
+  return <ConciergeBell className={className} strokeWidth={1.5} />;
+};
 import VariantSelectionModal from "@/components/VariantSelectionModal";
 import ItemNoteModal from "./ItemNoteModal";
 import { validateName, validateMobile } from "@/lib/validators";
@@ -748,13 +777,17 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
                 className={`bg-card rounded-2xl overflow-hidden border group hover:shadow-xl hover:shadow-primary/5 transition-shadow ${qty > 0 ? "border-primary/50 shadow-md shadow-primary/10" : "border-border/50"
                   }`}
               >
-                <div className="relative overflow-hidden aspect-square">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    loading="lazy"
-                  />
+                <div className="relative overflow-hidden aspect-square bg-primary/5 flex items-center justify-center">
+                  {(!item.image || item.image.includes("placeholder.svg") || item.image.includes("placeholder.jpg")) ? (
+                    <CategoryIconPlaceholder category={item.category} />
+                  ) : (
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="absolute top-2 right-2 bg-secondary text-secondary-foreground px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm">
                     {item.priceLabel}

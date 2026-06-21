@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   GripVertical,
 } from "lucide-react";
+import { CategoryIconPlaceholder } from "@/components/ui/CategoryIconPlaceholder";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -164,16 +165,16 @@ const SortableDesktopRow = ({
         <Checkbox checked={selected} onCheckedChange={onToggleSelect} />
       </td>
       <td className="py-3 pr-3">
-        {item.image_url ? (
+        {(!item.image_url || item.image_url.includes("placeholder")) ? (
+          <div className="w-12 h-12 rounded-lg bg-primary/5 border flex items-center justify-center">
+            <CategoryIconPlaceholder category={item.category} className="w-6 h-6 text-primary/40" />
+          </div>
+        ) : (
           <img
             src={item.image_url}
             alt={item.name}
             className="w-12 h-12 rounded-lg object-cover"
           />
-        ) : (
-          <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-            <ImageIcon size={16} className="text-muted-foreground" />
-          </div>
         )}
       </td>
       <td className="py-3">
@@ -314,17 +315,17 @@ const SortableMobileCard = ({
         )}
 
         {/* IMAGE */}
-        {item.image_url ? (
+        {(!item.image_url || item.image_url.includes("placeholder")) ? (
+          <div className="w-20 h-20 rounded-xl bg-primary/5 border flex items-center justify-center shrink-0">
+             <CategoryIconPlaceholder category={item.category} className="w-10 h-10 text-primary/40" />
+          </div>
+        ) : (
           <img
             src={item.image_url}
             alt={item.name}
             className="w-20 h-20 rounded-xl object-cover shrink-0
             transition-transform duration-200 group-hover:scale-105"
           />
-        ) : (
-          <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center shrink-0">
-            <ImageIcon size={22} className="text-muted-foreground" />
-          </div>
         )}
 
         {/* CONTENT */}
@@ -1249,7 +1250,7 @@ const MenuManager = () => {
                   </div>
 
                   {/* Existing Image Preview when editing */}
-                  {!form.image && editingItem?.image_url && (
+                  {!form.image && editingItem?.image_url && !editingItem.image_url.includes("placeholder") && (
                     <img
                       src={editingItem.image_url}
                       alt="Existing"
