@@ -47,24 +47,24 @@ function generatePDFBuffer(restaurantName, salesData, cancelData) {
       doc.y = 140;
 
       // Helper function to draw a line
-      const drawLine = (y) => {
-        doc.strokeColor("#e2e8f0").lineWidth(1).moveTo(50, y).lineTo(doc.page.width - 50, y).stroke();
+      const drawLine = () => {
+        doc.y += 10;
+        doc.strokeColor("#e2e8f0").lineWidth(1).moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).stroke();
+        doc.y += 15;
       };
 
       // Helper function for receipt-style rows
-      const printRow = (label, value, isBold = false, color = primaryColor, paddingBottom = 10) => {
-        const y = doc.y;
+      const printRow = (label, value, isBold = false, color = primaryColor) => {
+        const startY = doc.y;
         doc.fillColor(primaryColor).fontSize(12).font(isBold ? "Helvetica-Bold" : "Helvetica");
-        doc.text(label, 50, y);
-        doc.fillColor(color).font(isBold ? "Helvetica-Bold" : "Helvetica").text(value, doc.page.width - 250, y, { width: 200, align: "right" });
-        doc.y = y + paddingBottom;
+        doc.text(label, 50, startY, { lineBreak: false });
+        doc.fillColor(color).font(isBold ? "Helvetica-Bold" : "Helvetica").text(value, doc.page.width - 250, startY, { width: 200, align: "right", lineBreak: false });
+        doc.y = startY + doc.currentLineHeight() + 8;
       };
 
       // 2. SALES SUMMARY SECTION
       doc.fillColor(primaryColor).fontSize(16).font("Helvetica-Bold").text("Sales Summary", 50, doc.y);
-      doc.moveDown(0.5);
-      drawLine(doc.y);
-      doc.moveDown(0.5);
+      drawLine();
 
       printRow("Total Completed Orders", `${salesData.total_orders}`);
       printRow("Gross Revenue", `Rs. ${Number(salesData.gross_revenue).toFixed(2)}`, true, greenColor);
@@ -75,9 +75,7 @@ function generatePDFBuffer(restaurantName, salesData, cancelData) {
 
       // 3. PAYMENT BREAKDOWN SECTION
       doc.fillColor(primaryColor).fontSize(16).font("Helvetica-Bold").text("Payment Breakdown", 50, doc.y);
-      doc.moveDown(0.5);
-      drawLine(doc.y);
-      doc.moveDown(0.5);
+      drawLine();
 
       printRow("Cash Sales", `Rs. ${Number(salesData.cash_sales).toFixed(2)}`, false, greenColor);
       printRow("Online Sales", `Rs. ${Number(salesData.online_sales).toFixed(2)}`, false, greenColor);
@@ -86,18 +84,15 @@ function generatePDFBuffer(restaurantName, salesData, cancelData) {
 
       // 4. CANCELLATIONS SECTION
       doc.fillColor(primaryColor).fontSize(16).font("Helvetica-Bold").text("Cancellations", 50, doc.y);
-      doc.moveDown(0.5);
-      drawLine(doc.y);
-      doc.moveDown(0.5);
+      drawLine();
 
       printRow("Cancelled Orders", `${cancelData.cancelled_orders}`, false, redColor);
       printRow("Lost Value", `Rs. ${Number(cancelData.cancelled_value).toFixed(2)}`, true, redColor);
 
-      doc.moveDown(2);
+      doc.moveDown(1);
 
       // 5. FOOTER
-      drawLine(doc.y);
-      doc.moveDown(1);
+      drawLine();
 
       const generatedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
       doc
