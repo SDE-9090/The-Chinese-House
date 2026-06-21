@@ -10,20 +10,25 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 function generatePDFBuffer(restaurantName, salesData, cancelData) {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ margin: 50 });
+      // Use standard A4 page size
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
       const buffers = [];
 
       doc.on("data", buffers.push.bind(buffers));
-      doc.on("end", () => {
-        resolve(Buffer.concat(buffers));
-      });
+      doc.on("end", () => resolve(Buffer.concat(buffers)));
 
-      // Header
-      doc
-        .fontSize(24)
-        .font("Helvetica-Bold")
-        .text(`${restaurantName}`, { align: "center" })
-        .moveDown(0.5);
+      const primaryColor = "#111827"; // Dark Gray/Black
+      const secondaryColor = "#4b5563"; // Medium Gray
+      const greenColor = "#16a34a";
+      const redColor = "#dc2626";
+
+      // 1. HEADER SECTION
+      // Draw a sleek background header
+      doc.rect(0, 0, doc.page.width, 110).fill("#f8fafc");
+      
+      // Header Text
+      doc.y = 40;
+      doc.fillColor(primaryColor).fontSize(28).font("Helvetica-Bold").text(restaurantName, { align: "center" });
 
       const dateStr = new Date().toLocaleDateString("en-IN", {
         timeZone: "Asia/Kolkata",
@@ -33,43 +38,75 @@ function generatePDFBuffer(restaurantName, salesData, cancelData) {
         day: "numeric",
       });
 
-      doc
-        .fontSize(14)
-        .font("Helvetica")
-        .text(`End of Day (Z-Report) - ${dateStr}`, { align: "center" })
-        .moveDown(2);
+      doc.moveDown(0.2);
+      doc.fillColor(secondaryColor).fontSize(12).font("Helvetica").text(`End of Day (Z-Report)`, { align: "center" });
+      doc.moveDown(0.1);
+      doc.fillColor(secondaryColor).fontSize(10).font("Helvetica-Oblique").text(dateStr, { align: "center" });
 
-      // Section: Sales Summary
-      doc.fontSize(16).font("Helvetica-Bold").text("Sales Summary").moveDown(0.5);
-      doc.fontSize(12).font("Helvetica");
+      // Move Y below header
+      doc.y = 140;
 
-      doc.text(`Total Completed Orders: ${salesData.total_orders}`);
-      doc.text(`Gross Revenue: Rs. ${Number(salesData.gross_revenue).toFixed(2)}`);
-      doc.text(`Total Discounts: Rs. ${Number(salesData.total_discount).toFixed(2)}`);
-      doc.text(`Total Taxes Collected (CGST+SGST): Rs. ${Number(salesData.total_tax).toFixed(2)}`);
+      // Helper function to draw a line
+      const drawLine = (y) => {
+        doc.strokeColor("#e2e8f0").lineWidth(1).moveTo(50, y).lineTo(doc.page.width - 50, y).stroke();
+      };
+
+      // Helper function for receipt-style rows
+      const printRow = (label, value, isBold = false, color = primaryColor, paddingBottom = 10) => {
+        const y = doc.y;
+        doc.fillColor(primaryColor).fontSize(12).font(isBold ? "Helvetica-Bold" : "Helvetica");
+        doc.text(label, 50, y);
+        doc.fillColor(color).font(isBold ? "Helvetica-Bold" : "Helvetica").text(value, doc.page.width - 250, y, { width: 200, align: "right" });
+        doc.y = y + paddingBottom;
+      };
+
+      // 2. SALES SUMMARY SECTION
+      doc.fillColor(primaryColor).fontSize(16).font("Helvetica-Bold").text("Sales Summary", 50, doc.y);
+      doc.moveDown(0.5);
+      drawLine(doc.y);
+      doc.moveDown(0.5);
+
+      printRow("Total Completed Orders", `${salesData.total_orders}`);
+      printRow("Gross Revenue", `Rs. ${Number(salesData.gross_revenue).toFixed(2)}`, true, greenColor);
+      printRow("Total Discounts", `- Rs. ${Number(salesData.total_discount).toFixed(2)}`, false, redColor);
+      printRow("Total Taxes (CGST+SGST)", `Rs. ${Number(salesData.total_tax).toFixed(2)}`, false, secondaryColor);
+      
       doc.moveDown(1);
 
-      // Section: Payment Splits
-      doc.fontSize(16).font("Helvetica-Bold").text("Payment Breakdown").moveDown(0.5);
-      doc.fontSize(12).font("Helvetica");
+      // 3. PAYMENT BREAKDOWN SECTION
+      doc.fillColor(primaryColor).fontSize(16).font("Helvetica-Bold").text("Payment Breakdown", 50, doc.y);
+      doc.moveDown(0.5);
+      drawLine(doc.y);
+      doc.moveDown(0.5);
 
-      doc.text(`Cash Sales: Rs. ${Number(salesData.cash_sales).toFixed(2)}`);
-      doc.text(`Online Sales: Rs. ${Number(salesData.online_sales).toFixed(2)}`);
+      printRow("Cash Sales", `Rs. ${Number(salesData.cash_sales).toFixed(2)}`, false, greenColor);
+      printRow("Online Sales", `Rs. ${Number(salesData.online_sales).toFixed(2)}`, false, greenColor);
+      
       doc.moveDown(1);
 
-      // Section: Cancellations
-      doc.fontSize(16).font("Helvetica-Bold").text("Cancellations").moveDown(0.5);
-      doc.fontSize(12).font("Helvetica");
+      // 4. CANCELLATIONS SECTION
+      doc.fillColor(primaryColor).fontSize(16).font("Helvetica-Bold").text("Cancellations", 50, doc.y);
+      doc.moveDown(0.5);
+      drawLine(doc.y);
+      doc.moveDown(0.5);
 
-      doc.text(`Cancelled Orders: ${cancelData.cancelled_orders}`);
-      doc.text(`Lost Value: Rs. ${Number(cancelData.cancelled_value).toFixed(2)}`);
+      printRow("Cancelled Orders", `${cancelData.cancelled_orders}`, false, redColor);
+      printRow("Lost Value", `Rs. ${Number(cancelData.cancelled_value).toFixed(2)}`, true, redColor);
+
       doc.moveDown(2);
 
-      // Footer
+      // 5. FOOTER
+      drawLine(doc.y);
+      doc.moveDown(1);
+
+      const generatedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
       doc
-        .fontSize(10)
-        .fillColor("gray")
-        .text("Automatically generated by The Chinese House System.", { align: "center", baseline: "bottom" });
+        .fontSize(9)
+        .fillColor("#94a3b8")
+        .font("Helvetica")
+        .text(`Generated exactly at ${generatedAt} (IST)`, 50, doc.y, { align: "center" })
+        .moveDown(0.2)
+        .text("Automatically generated by The Chinese House System.", { align: "center" });
 
       doc.end();
     } catch (err) {
