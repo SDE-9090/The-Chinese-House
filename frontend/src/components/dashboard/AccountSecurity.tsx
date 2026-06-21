@@ -5,7 +5,10 @@ import {
   apiAdminChangeMobile,
   apiAdminChangeEmail,
   apiAdminGetInfo,
+  apiWebAuthnGenerateRegistration,
+  apiWebAuthnVerifyRegistration,
 } from "@/lib/apiClient";
+import { startRegistration } from "@simplewebauthn/browser";
 import { validateMobile } from "@/lib/validators";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,6 +20,7 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
+  Fingerprint,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -167,6 +171,29 @@ const AccountSecurity = () => {
     }
   };
 
+  const handleRegisterBiometric = async () => {
+    try {
+      setError("");
+      setSuccess("");
+      toast({ title: "Connecting", description: "Generating secure passkey request..." });
+      
+      const options = await apiWebAuthnGenerateRegistration();
+      
+      const response = await startRegistration({ optionsJSON: options });
+      
+      await apiWebAuthnVerifyRegistration(response);
+      
+      setSuccess("Device successfully registered for biometric login!");
+      toast({ title: "Success", description: "You can now log in using FaceID/TouchID!" });
+    } catch (err: any) {
+      if (err.name === "NotAllowedError") {
+        setError("Registration cancelled.");
+      } else {
+        setError(err.message || "Failed to register device");
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Admin Info Card */}
@@ -242,6 +269,18 @@ const AccountSecurity = () => {
             </div>
             <h3 className="font-semibold text-foreground mb-1">Recovery Email</h3>
             <p className="text-sm text-muted-foreground">Update your email used for receiving OTPs</p>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={handleRegisterBiometric}
+            className="bg-card border border-border rounded-2xl p-6 text-left hover:border-primary/30 transition-colors"
+          >
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mb-3">
+              <Fingerprint className="text-primary" size={20} />
+            </div>
+            <h3 className="font-semibold text-foreground mb-1">Register Biometric Device</h3>
+            <p className="text-sm text-muted-foreground">Enable FaceID / TouchID / Fingerprint login on this device</p>
           </motion.button>
         </div>
       )}

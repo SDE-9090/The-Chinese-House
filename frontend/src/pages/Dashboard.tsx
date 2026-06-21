@@ -13,9 +13,13 @@ import {
   apiAdminRequestReset,
   apiAdminResetPassword,
   apiStaffLogin,
+  apiStaffLogin,
+  apiWebAuthnGenerateAuthentication,
+  apiWebAuthnVerifyAuthentication,
   type Order,
   type AuthUser,
 } from "@/lib/apiClient";
+import { startAuthentication } from "@simplewebauthn/browser";
 // localUpdateOrderStatus no longer needed - optimistic updates are in useOrders
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -38,6 +42,7 @@ import {
   Megaphone,
   QrCode,
   Users,
+  Fingerprint,
 } from "lucide-react";
 
 import { Loader2 } from "lucide-react";
@@ -150,6 +155,27 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
     } catch (err: any) {
       setError(err.message);
       if (loginMode === "staff") setPin("");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    try {
+      setError("");
+      setLoading(true);
+      
+      const { options, authSessionId } = await apiWebAuthnGenerateAuthentication();
+      
+      const response = await startAuthentication({ optionsJSON: options });
+      
+      const res = await apiWebAuthnVerifyAuthentication(response, authSessionId);
+      
+      onAuthenticated({ ...res.user, features: res.features });
+    } catch (err: any) {
+      if (err.name !== "NotAllowedError") {
+        setError(err.message || "Biometric login failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -406,6 +432,23 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
               >
                 {loading ? "Verifying..." : "Unlock Dashboard"}
               </button>
+              
+              <div className="relative flex py-4 items-center">
+                <div className="flex-grow border-t border-border"></div>
+                <span className="flex-shrink-0 mx-4 text-muted-foreground text-sm">or</span>
+                <div className="flex-grow border-t border-border"></div>
+              </div>
+              
+              <button
+                type="button"
+                onClick={handleBiometricLogin}
+                disabled={loading}
+                className="w-full bg-card border border-primary/20 text-primary py-3 rounded-xl font-bold hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
+              >
+                <Fingerprint size={20} />
+                Sign in with Passkey
+              </button>
+
               <button
                 type="button"
                 onClick={() => {

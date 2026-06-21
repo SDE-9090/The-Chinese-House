@@ -174,6 +174,47 @@ export async function apiAdminLogin(username: string, password: string): Promise
   return data;
 }
 
+// ─── WebAuthn APIs ────────────────
+export async function apiWebAuthnGenerateRegistration() {
+  const res = await fetch(`${API_URL}/webauthn/generate-registration-options`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to generate registration options");
+  return data;
+}
+
+export async function apiWebAuthnVerifyRegistration(response: any) {
+  const res = await fetch(`${API_URL}/webauthn/verify-registration`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(response),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to verify registration");
+  return data;
+}
+
+export async function apiWebAuthnGenerateAuthentication() {
+  const res = await fetch(`${API_URL}/webauthn/generate-authentication-options`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to generate auth options");
+  return data;
+}
+
+export async function apiWebAuthnVerifyAuthentication(body: any, authSessionId: string): Promise<{ message: string, user: AuthUser, features?: Record<string, any> }> {
+  const res = await fetch(`${API_URL}/webauthn/verify-authentication`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ body, authSessionId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Passkey login failed");
+  if (data.token) setAdminToken(data.token);
+  return data;
+}
+
 export interface AuthUser {
   name: string;
   role: "admin" | "manager" | "waiter" | "kitchen";
