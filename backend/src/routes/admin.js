@@ -20,7 +20,7 @@ const OTP_MAX_ATTEMPTS = 5;
 const MAX_IP_ATTEMPTS = 5;
 const IP_BLOCK_DURATION = 900; // 15 min
 
-const REFRESH_TOKEN_EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7 days
+const REFRESH_TOKEN_EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
 const isProduction = process.env.NODE_ENV === "production";
 
