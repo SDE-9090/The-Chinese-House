@@ -115,6 +115,18 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [maskedMobile, setMaskedMobile] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("admin_username");
+    const savedPass = localStorage.getItem("admin_password");
+    if (savedUser && savedPass) {
+      setUsername(savedUser);
+      setPassword(savedPass);
+      setRememberMe(true);
+      setLoginMode("owner");
+    }
+  }, []);
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -123,6 +135,13 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
     try {
       if (loginMode === "owner") {
         const res = await apiAdminLogin(username, password);
+        if (rememberMe) {
+          localStorage.setItem("admin_username", username);
+          localStorage.setItem("admin_password", password);
+        } else {
+          localStorage.removeItem("admin_username");
+          localStorage.removeItem("admin_password");
+        }
         onAuthenticated({ ...res.user, features: res.features });
       } else {
         const res = await apiStaffLogin(pin);
@@ -368,6 +387,18 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
                 autoFocus
                 disabled={loading}
               />
+              <div className="flex items-center gap-2 px-1">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary bg-background cursor-pointer"
+                />
+                <label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer select-none">
+                  Remember my password on this device
+                </label>
+              </div>
               <button
                 type="submit"
                 disabled={loading || !password || !username}
