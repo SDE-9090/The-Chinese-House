@@ -1199,37 +1199,37 @@ router.get("/customer-analytics", auth, async (req, res) => {
 
     // Top 10 customers by order count
     const topByOrders = await pool.query(`
-      SELECT customer_name, customer_phone,
+      SELECT MAX(customer_name) AS customer_name, customer_phone,
              COUNT(*)::int AS total_orders,
              COALESCE(SUM(total), 0)::numeric(10,2) AS total_spent
       FROM orders
       WHERE status != 'cancelled' AND business_id = $1
-      GROUP BY customer_name, customer_phone
+      GROUP BY customer_phone
       ORDER BY total_orders DESC
       LIMIT 10
     `, [req.business_id]);
 
     // Top 10 customers by total spend
     const topBySpend = await pool.query(`
-      SELECT customer_name, customer_phone,
+      SELECT MAX(customer_name) AS customer_name, customer_phone,
              COUNT(*)::int AS total_orders,
              COALESCE(SUM(total), 0)::numeric(10,2) AS total_spent
       FROM orders
       WHERE status != 'cancelled' AND business_id = $1
-      GROUP BY customer_name, customer_phone
+      GROUP BY customer_phone
       ORDER BY total_spent DESC
       LIMIT 10
     `, [req.business_id]);
 
     // Top 10 customers by unique items ordered
     const topByVariety = await pool.query(`
-      SELECT o.customer_name, o.customer_phone,
+      SELECT MAX(o.customer_name) AS customer_name, o.customer_phone,
              COUNT(DISTINCT oi.name)::int AS unique_items,
              COUNT(*)::int AS total_orders
       FROM orders o
       JOIN order_items oi ON oi.order_id = o.id
       WHERE o.status != 'cancelled' AND o.business_id = $1
-      GROUP BY o.customer_name, o.customer_phone
+      GROUP BY o.customer_phone
       ORDER BY unique_items DESC
       LIMIT 10
     `, [req.business_id]);
