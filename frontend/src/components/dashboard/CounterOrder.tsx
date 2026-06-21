@@ -436,25 +436,36 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
                   <span className="text-muted-foreground font-semibold">Value: ₹{((loyaltyData.points || 0) * (loyaltyData.settings?.loyalty_discount_per_point || 0)).toFixed(2)}</span>
                 </div>
                 {loyaltyData.points && loyaltyData.points > 0 ? (
-                  <div className="mt-3 flex gap-2">
-                    <input
-                      type="number"
-                      max={loyaltyData.points}
-                      min={0}
-                      value={pointsToRedeem || ""}
-                      onChange={(e) => {
-                        const val = Math.min(parseInt(e.target.value) || 0, loyaltyData.points || 0);
-                        setPointsToRedeem(val);
-                      }}
-                      className="w-24 px-3 py-1.5 rounded-lg border border-primary/30 text-sm focus:outline-none focus:ring-1 focus:ring-primary bg-background"
-                      placeholder="Pts to use"
-                    />
-                    <button
-                      onClick={() => setPointsToRedeem(loyaltyData.points || 0)}
-                      className="text-xs bg-primary text-primary-foreground px-3 rounded-lg font-semibold hover:bg-primary/90"
-                    >
-                      Use All
-                    </button>
+                  <div className="mt-3 flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          max={loyaltyData.points}
+                          min={0}
+                          step="0.01"
+                          value={pointsToRedeem || ""}
+                          onChange={(e) => {
+                            const val = Math.min(parseFloat(e.target.value) || 0, loyaltyData.points || 0);
+                            setPointsToRedeem(val);
+                          }}
+                          className="w-full pl-3 pr-10 py-2 rounded-xl border border-primary/30 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                          placeholder="Points to redeem..."
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">pts</span>
+                      </div>
+                      <button
+                        onClick={() => setPointsToRedeem(loyaltyData.points || 0)}
+                        className="text-sm bg-primary text-primary-foreground px-4 rounded-xl font-bold hover:bg-primary/90 transition-all shrink-0"
+                      >
+                        Use All
+                      </button>
+                    </div>
+                    {pointsToRedeem > 0 && (
+                      <div className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-500/20 w-fit">
+                        ✨ {pointsToRedeem} points applied!
+                      </div>
+                    )}
                   </div>
                 ) : null}
               </div>
