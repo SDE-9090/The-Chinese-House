@@ -63,7 +63,6 @@ import { toast } from "@/hooks/use-toast";
 import { downloadReceipt, printReceipt } from "@/lib/receiptGenerator";
 import { downloadInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { Skeleton } from "@/components/ui/skeleton";
-import AiChatbot from "@/components/AiChatbot";
 import { Download, Printer, FileText, Receipt, Image as ImageIcon } from "lucide-react";
 import NotFound from "./NotFound";
 
@@ -2139,7 +2138,6 @@ export default function OrderPage(props: OrderPageProps) {
   return (
     <ErrorBoundary>
       <OrderPageContent {...props} />
-      <AiChatbot />
     </ErrorBoundary>
   );
 }

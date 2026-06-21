@@ -8,6 +8,7 @@ import PageTransition from "@/components/PageTransition";
 import { lazy, Suspense, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import ThemeInjector from "@/components/ThemeInjector";
+import AiChatbot from "@/components/AiChatbot";
 
 const Index = lazy(() => import("./pages/Index"));
 const OrderPage = lazy(() => import("./pages/OrderPage"));
@@ -63,6 +64,17 @@ function AnimatedRoutes() {
   );
 }
 
+function GlobalChatbot() {
+  const location = useLocation();
+  // Hide chatbot on admin/staff pages
+  const isAdminPage = location.pathname.startsWith('/dashboard') || 
+                      location.pathname.startsWith('/kitchen') || 
+                      location.pathname.startsWith('/token-display');
+                      
+  if (isAdminPage) return null;
+  return <AiChatbot />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -71,6 +83,7 @@ const App = () => (
       <Sonner position="top-center" />
       <BrowserRouter>
         <ThemeInjector />
+        <GlobalChatbot />
         <AnimatedRoutes />
       </BrowserRouter>
     </TooltipProvider>

@@ -13,7 +13,6 @@ import ReceiptLookup from "@/components/ReceiptLookup";
 import Footer from "@/components/Footer";
 import MobileOrderButton from "@/components/MobileOrderButton";
 import NotFound from "./NotFound";
-import AiChatbot from "@/components/AiChatbot";
 import { apiGetBusinessSettings, type BusinessSettings } from "@/lib/apiClient";
 import { Ban } from "lucide-react";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
@@ -63,7 +62,6 @@ const Index = () => {
       <ReceiptLookup />
       <Footer />
       {(!businessSettings || businessSettings.features?.qr_digital_ordering) && <MobileOrderButton />}
-      <AiChatbot />
     </main>
   );
 };
