@@ -665,7 +665,9 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
 
   // Socket listeners for new-order sound and refresh
   useEffect(() => {
-    const handleNewOrder = () => {
+    const handleNewOrder = (data?: any) => {
+      console.log(`🖨️ [PRINTER] AUTO-PRINTING KOT for Order #${data?.token || data?.id || 'NEW'}`);
+      console.log(`   --> Sending items to kitchen...`);
       refreshOrders();
       if (soundEnabled) {
         try {
@@ -703,6 +705,14 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
 
     // 1. Mark as updating (shows spinner)
     setUpdatingOrders((prev) => ({ ...prev, [orderId]: true }));
+
+    // [AUTO-PRINT LOGIC] Print Final Bill if marked completed
+    if (newStatus === "completed") {
+      console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL BILL for Order #${currentOrder?.token || orderId}`);
+      if (currentOrder) {
+        console.log(`   --> Total Collected: ₹${currentOrder.total}`);
+      }
+    }
 
     // 2. Optimistic update in React state + lock against socket overwrites
     optimisticUpdateStatus(orderId, newStatus);

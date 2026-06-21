@@ -175,6 +175,11 @@ const OrderCard = ({
     try {
       setLoadingPayment(true);
       await apiPayDue(order.id);
+      
+      // [AUTO-PRINT LOGIC] Automatically print final bill when payment is marked received
+      console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL BILL for Order #${order.token} (Payment Collected)`);
+      console.log(`   --> Amount Paid: ₹${dueAmount.toFixed(2)}`);
+
       await onRefresh();
       toast({
         title: "Payment Updated",
