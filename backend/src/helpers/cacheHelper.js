@@ -160,4 +160,31 @@ async function invalidateActiveOrdersHistoryCache(phone, businessId) {
     console.error("Redis DEL failed (active orders)", err);
   }
 }
-module.exports = { invalidateDashboardCache, invalidateAdminListCache, invalidateReviewCache, invalidateOrderHistoryCache, invalidateGalleryCache, invalidateCategoryCache, invalidateHeroCache, invalidateLocationCache ,invalidateMenuItemsCache, invalidatePromotionsCache, invalidateActiveOrdersHistoryCache};
+
+async function invalidateAllBusinessCache(businessId) {
+  try {
+    if (!businessId) return;
+    const allKeys = await redisClient.keys(`*:${businessId}`);
+    if (allKeys.length) {
+      await redisClient.del(allKeys);
+      console.log(`Completely wiped ${allKeys.length} Redis cache keys for business ${businessId}`);
+    }
+  } catch (err) {
+    console.error("Redis DEL failed (all business cache)", err);
+  }
+}
+
+module.exports = { 
+  invalidateDashboardCache, 
+  invalidateAdminListCache, 
+  invalidateReviewCache, 
+  invalidateOrderHistoryCache, 
+  invalidateGalleryCache, 
+  invalidateCategoryCache, 
+  invalidateHeroCache, 
+  invalidateLocationCache,
+  invalidateMenuItemsCache, 
+  invalidatePromotionsCache, 
+  invalidateActiveOrdersHistoryCache,
+  invalidateAllBusinessCache
+};

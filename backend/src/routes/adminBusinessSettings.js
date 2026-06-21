@@ -7,6 +7,7 @@ const {
   ensureBusinessSettings,
   normalizeBusinessSettings,
 } = require("../utils/businessSettings");
+const { invalidateAllBusinessCache } = require("../helpers/cacheHelper");
 
 router.get("/", adminAuth, async (req, res) => {
   try {
@@ -250,6 +251,9 @@ router.post("/factory-reset", adminAuth, async (req, res) => {
     if (io) {
       io.emit("business-settings-updated");
     }
+
+    // Completely wipe Redis cache so old data doesn't linger
+    await invalidateAllBusinessCache(businessId);
 
     res.json({ message: "Database reset successfully." });
   } catch (err) {
