@@ -163,6 +163,13 @@ const ItemReviewsPage = () => {
 
   const [selectedItem, setSelectedItem] = useState(initialItem);
 
+  // Sync selectedItem if ITEMS_LIST loads asynchronously and selectedItem is empty
+  useEffect(() => {
+    if (!selectedItem && ITEMS_LIST.length > 0) {
+      setSelectedItem(ITEMS_LIST[0]);
+    }
+  }, [ITEMS_LIST, selectedItem]);
+
   const [allReviews, setAllReviews] = useState<Review[]>([]);
   const [total, setTotal] = useState(0);
   const [avgRating, setAvgRating] = useState(0);
