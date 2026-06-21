@@ -12,10 +12,20 @@ const {
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
-// RP Info
+// RP Info Helper
 const rpName = "The Chinese House Admin";
-const rpID = process.env.NODE_ENV === "production" ? process.env.CORS_ORIGIN.replace("https://", "") : "localhost";
-const origin = process.env.CORS_ORIGIN || `http://${rpID}:8080`;
+
+function getRPInfo(req) {
+  // Use the origin header sent by the browser, fallback to env variable or localhost
+  const clientOrigin = req.headers.origin || process.env.CORS_ORIGIN || "http://localhost:8080";
+  let rpID;
+  try {
+    rpID = new URL(clientOrigin).hostname;
+  } catch(e) {
+    rpID = "localhost";
+  }
+  return { rpID, expectedOrigin: clientOrigin };
+}
 
 // Helpers for auth
 const REFRESH_TOKEN_EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30 days
@@ -54,6 +64,8 @@ router.get("/generate-registration-options", adminAuth, async (req, res) => {
     // Get existing passkeys
     const passkeys = await pool.query("SELECT credential_id FROM admin_passkeys WHERE admin_id = $1", [req.admin.id]);
     
+    const { rpID } = getRPInfo(req);
+
     const options = await generateRegistrationOptions({
       rpName,
       rpID,
@@ -92,10 +104,12 @@ router.post("/verify-registration", adminAuth, async (req, res) => {
       return res.status(400).json({ error: "Registration session expired" });
     }
 
+    const { rpID, expectedOrigin } = getRPInfo(req);
+
     const verification = await verifyRegistrationResponse({
       response: body,
       expectedChallenge,
-      expectedOrigin: origin,
+      expectedOrigin,
       expectedRPID: rpID,
     });
 
@@ -140,6 +154,8 @@ router.post("/verify-registration", adminAuth, async (req, res) => {
 // ======================================================
 router.get("/generate-authentication-options", async (req, res) => {
   try {
+    const { rpID } = getRPInfo(req);
+
     const options = await generateAuthenticationOptions({
       rpID,
       userVerification: "preferred",
@@ -181,10 +197,12 @@ router.post("/verify-authentication", async (req, res) => {
 
     const passkey = passkeyResult.rows[0];
 
+    const { rpID, expectedOrigin } = getRPInfo(req);
+
     const verification = await verifyAuthenticationResponse({
       response: body,
       expectedChallenge,
-      expectedOrigin: origin,
+      expectedOrigin,
       expectedRPID: rpID,
       authenticator: {
         credentialID: Buffer.from(passkey.credential_id, 'base64url'),
