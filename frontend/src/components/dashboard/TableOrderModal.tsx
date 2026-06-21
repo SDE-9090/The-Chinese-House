@@ -238,17 +238,17 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
           </div>
 
           {/* RIGHT: Cart & Checkout */}
-          <div className="w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-border bg-card flex flex-col h-[50vh] md:h-auto">
-            <div className="p-4 border-b border-border bg-muted/20">
-              <h3 className="font-bold text-lg">Current Cart</h3>
+          <div className="w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-border bg-card flex flex-col shrink-0 max-h-[45vh] md:max-h-none md:h-auto">
+            <div className="p-3 md:p-4 border-b border-border bg-muted/20">
+              <h3 className="font-bold text-base md:text-lg">Current Cart</h3>
               <p className="text-xs text-muted-foreground">{cart.reduce((s, i) => s + i.quantity, 0)} items selected</p>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3">
               {cart.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                    <ShoppingCart size={24} className="text-muted-foreground/50" />
+                <div className="flex flex-col items-center justify-center text-muted-foreground space-y-2 py-6">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                    <ShoppingCart size={20} className="text-muted-foreground/50" />
                   </div>
                   <p className="text-sm font-medium">Cart is empty</p>
                 </div>
@@ -303,8 +303,8 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
             </div>
 
             {/* Footer Summary */}
-            <div className="p-4 border-t border-border bg-muted/20 space-y-4">
-              <div className="flex justify-between items-center text-lg font-black">
+            <div className="p-3 md:p-4 border-t border-border bg-muted/20 space-y-3 md:space-y-4">
+              <div className="flex justify-between items-center text-base md:text-lg font-black">
                 <span>Total</span>
                 <span className="text-primary">₹{cartTotal.toFixed(0)}</span>
               </div>
@@ -312,7 +312,7 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
               <button
                 onClick={handlePlaceOrder}
                 disabled={cart.length === 0 || placing}
-                className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold flex justify-center items-center gap-2 shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
               >
                 {placing ? <Loader2 className="animate-spin" /> : "Send to Kitchen"}
               </button>
