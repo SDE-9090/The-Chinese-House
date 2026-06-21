@@ -636,7 +636,7 @@ router.post("/sessions/:sessionId/close", adminAuth, async (req, res) => {
     const sessionTotal = parseFloat(sessionRes.rows[0]?.session_total || 0);
 
     let loyaltyDiscount = 0;
-    const requestedPoints = parseInt(pointsRedeemed, 10) || 0;
+    const requestedPoints = parseFloat(pointsRedeemed) || 0;
     const finalPhone = customerPhone && customerPhone.length === 10 ? customerPhone : null;
     let actualPointsRedeemed = 0;
 

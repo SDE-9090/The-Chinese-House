@@ -165,7 +165,7 @@ router.post("/", async (req, res) => {
     
     // Loyalty Points Redemption Logic
     let loyaltyDiscount = 0;
-    const requestedPoints = parseInt(pointsRedeemed, 10) || 0;
+    const requestedPoints = parseFloat(pointsRedeemed) || 0;
     let actualPointsRedeemed = 0;
     
     if (requestedPoints > 0 && phone !== "0000000000") {
@@ -211,7 +211,8 @@ router.post("/", async (req, res) => {
     const providedPaidAmount = req.body.paidAmount !== undefined ? Number(req.body.paidAmount) : 0;
     
     // If table order OR no explicit payment provided, it's pending.
-    const paymentStatus = (orderSource === "table" || providedPaidAmount < totals.total) ? "pending" : "paid";
+    // Adding 0.01 tolerance to prevent floating point mismatch (e.g. 0.23 < 0.23000000004)
+    const paymentStatus = (orderSource === "table" || providedPaidAmount < (totals.total - 0.01)) ? "pending" : "paid";
     const paidAmount = paymentStatus === "paid" ? totals.total : providedPaidAmount;
 
     const initialStatus = "new";
