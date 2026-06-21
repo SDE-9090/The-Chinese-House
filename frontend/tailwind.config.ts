@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["var(--font-heading)", "Noto Serif", "Playfair Display", "serif"],
-        body: ["var(--font-body)", "Inter", "sans-serif"],
+        heading: ["var(--font-heading)", "DM Sans", "sans-serif"],
+        body: ["var(--font-body)", "DM Sans", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
