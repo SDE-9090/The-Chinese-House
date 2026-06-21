@@ -47,6 +47,7 @@ import type { EditItem } from "@/components/dashboard/EditOrderModal";
 import OrderCard from "@/components/dashboard/OrderCard";
 import StatsBar from "@/components/dashboard/StatsBar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import { PullToRefresh } from "@/components/ui/PullToRefresh";
 
 // Lazy-loaded heavy sub-components
 const SalesReportUI = lazy(() => import("@/components/dashboard/SalesReportUI"));
@@ -680,7 +681,12 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <PullToRefresh onRefresh={async () => {
+      await refreshOrders();
+      // Emitting custom event to let other tabs know to refresh their data
+      window.dispatchEvent(new CustomEvent('app-refresh'));
+    }}>
+    <div className="min-h-screen bg-background flex flex-col">
       <EditOrderModal
         open={!!editOrder}
         order={editOrder}
@@ -986,6 +992,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
         ) : null}
       </Suspense>
     </div>
+    </PullToRefresh>
   );
 };
 
