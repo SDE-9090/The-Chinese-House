@@ -541,7 +541,13 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
     "all",
   );
   const [sourceFilter, setSourceFilter] = useState<string>("all");
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    return localStorage.getItem("dashboard_sound_enabled") === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("dashboard_sound_enabled", soundEnabled.toString());
+  }, [soundEnabled]);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
   const [editingOrderIds, setEditingOrderIds] = useState<Set<string>>(new Set());
   const [orderWorkflow, setOrderWorkflow] = useState<"multi-step" | "quick-complete">("quick-complete");
@@ -583,9 +589,21 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
     prevStatusesRef.current = currentStatuses;
   }, [orders, soundEnabled]);
 
-  // Socket listeners for new-order sound only (refresh handled by useOrders)
+  // Socket listeners for new-order sound and refresh
   useEffect(() => {
-    const handleNewOrder = () => refreshOrders();
+    const handleNewOrder = () => {
+      refreshOrders();
+      if (soundEnabled) {
+        try {
+          if (!audioRef.current) {
+            audioRef.current = new Audio("/alert.wav");
+            audioRef.current.volume = 1;
+          }
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(() => { });
+        } catch { }
+      }
+    };
     const handleOrderEditing = (data: { id: string; editing: boolean }) => {
       setEditingOrderIds((prev) => {
         const next = new Set(prev);
@@ -600,7 +618,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
       socket.off("new-order", handleNewOrder);
       socket.off("order-editing", handleOrderEditing);
     };
-  }, [refreshOrders]);
+  }, [refreshOrders, soundEnabled]);
 
   const handleAdvanceStatus = async (
     orderId: string,

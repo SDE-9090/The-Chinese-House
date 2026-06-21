@@ -277,7 +277,13 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
   const [markingItemId, setMarkingItemId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(() => {
+    return localStorage.getItem("kitchen_sound_muted") !== "false";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("kitchen_sound_muted", isMuted.toString());
+  }, [isMuted]);
   const { toast } = useToast();
 
   // Sound alert refs
@@ -300,6 +306,16 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
 
     const handleNewOrder = () => {
       fetchOrders();
+      if (!isMuted) {
+        try {
+          if (!audioRef.current) {
+            audioRef.current = new Audio("/alert.wav");
+            audioRef.current.volume = 0.8;
+          }
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(() => {});
+        } catch {}
+      }
     };
 
     socket.on("new-order", handleNewOrder);
@@ -309,7 +325,7 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
       socket.off("new-order", handleNewOrder);
       socket.off("order-updated", fetchOrders);
     };
-  }, [fetchOrders]);
+  }, [fetchOrders, isMuted]);
 
   useEffect(() => {
     const onConnect = () => setIsConnected(true);
@@ -322,20 +338,7 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
     };
   }, []);
 
-  // Feature 2: Sound alert when a new order arrives in kitchen
-  useEffect(() => {
-    if (orders.length > prevCountRef.current && !isMuted) {
-      try {
-        if (!audioRef.current) {
-          audioRef.current = new Audio("/alert.wav");
-          audioRef.current.volume = 0.8;
-        }
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(() => {});
-      } catch {}
-    }
-    prevCountRef.current = orders.length;
-  }, [orders.length, isMuted]);
+
 
   const handleMarkReady = async (orderId: string) => {
     setMarkingId(orderId);
