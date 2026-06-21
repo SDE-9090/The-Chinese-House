@@ -255,7 +255,7 @@ const AiChatbot = () => {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask about our menu..."
-                  className="flex-1 bg-transparent border-none focus:ring-0 resize-none max-h-32 min-h-[44px] py-3 px-3 text-base md:text-sm"
+                  className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none resize-none max-h-32 min-h-[44px] py-3 px-3 text-base md:text-sm"
                   rows={1}
                 />
                 <button
