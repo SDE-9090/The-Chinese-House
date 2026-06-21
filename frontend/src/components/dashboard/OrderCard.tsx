@@ -306,7 +306,9 @@ const OrderCard = ({
         <div className="flex items-center justify-between flex-wrap gap-y-3">
           <div className="flex flex-col">
             <span className="font-bold text-lg">₹{order.total}</span>
-            {dueAmount === 0 ? (
+            {order.status === "cancelled" ? (
+              <span className="text-xs text-destructive font-semibold">Cancelled</span>
+            ) : dueAmount === 0 ? (
               <span className="text-xs text-emerald-600">✔ Paid</span>
             ) : (
               <span className="text-xs text-destructive">
@@ -346,7 +348,7 @@ const OrderCard = ({
 
         {/* ACTION ROW */}
         <div className="flex flex-wrap gap-2">
-          {dueAmount > 0 && !isTableOrder && (
+          {dueAmount > 0 && !isTableOrder && order.status !== "cancelled" && (
             <button
               onClick={handlePayDue}
               disabled={loadingPayment}
