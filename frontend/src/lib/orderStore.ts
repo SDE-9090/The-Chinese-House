@@ -14,6 +14,7 @@ export interface OrderItem {
   quantity: number;
   image: string;
   note?: string;
+  category?: string;
 }
 
 export interface Order {

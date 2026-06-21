@@ -10,7 +10,6 @@ import {
   CheckCircle,
   Sparkles,
   Search,
-  UtensilsCrossed,
   Tag,
   Loader2,
   X,
@@ -69,7 +68,7 @@ import NotFound from "./NotFound";
 
 const CategoryIconPlaceholder = ({ category, className = "w-12 h-12 text-primary/40 group-hover:scale-110 transition-transform duration-500" }: { category?: string, className?: string }) => {
   const cat = (category || "").toLowerCase();
-  
+
   if (cat.includes("beverage") || cat.includes("drink") || cat.includes("water")) {
     return <GlassWater className={className} strokeWidth={1.5} />;
   }
@@ -85,7 +84,7 @@ const CategoryIconPlaceholder = ({ category, className = "w-12 h-12 text-primary
   if (cat.includes("starter") || cat.includes("appetizer")) {
     return <UtensilsCrossed className={className} strokeWidth={1.5} />;
   }
-  
+
   return <ConciergeBell className={className} strokeWidth={1.5} />;
 };
 
@@ -1186,8 +1185,8 @@ function OrderPageContent({
                   ) : (
                     <button
                       onClick={() => {
-                         const maxPoints = Math.floor(pricing.subtotal / loyaltySettings.discount_per_point);
-                         setPointsRedeemed(Math.min(loyaltyPoints, maxPoints || loyaltyPoints));
+                        const maxPoints = Math.floor(pricing.subtotal / loyaltySettings.discount_per_point);
+                        setPointsRedeemed(Math.min(loyaltyPoints, maxPoints || loyaltyPoints));
                       }}
                       className="text-xs font-semibold px-3 py-1.5 rounded bg-primary text-primary-foreground"
                     >

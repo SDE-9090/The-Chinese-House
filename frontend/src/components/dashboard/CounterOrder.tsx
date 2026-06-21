@@ -157,6 +157,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
           priceLabel: item.priceLabel,
           quantity: 1,
           image: item.image,
+          category: item.category,
         },
       ];
     });
