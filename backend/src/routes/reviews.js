@@ -4,6 +4,9 @@ const pool = require("../db/pool");
 const redisClient = require("../../config/redis");
 const { invalidateReviewCache } = require("../helpers/cacheHelper");
 const { adminAuth, authorizeRole } = require("../middleware/adminAuth");
+const { Resend } = require("resend");
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Get reviews for a specific item (paginated, highest rating first)
 router.get("/", async (req, res) => {
@@ -121,6 +124,40 @@ router.post("/", async (req, res) => {
       [itemName.trim(), reviewerName.trim(), rating, reviewText.trim(), menuItemId, req.business_id],
     );
     const r = result.rows[0];
+
+    // Trigger instant email alert for bad reviews (1 or 2 stars)
+    if (rating <= 2 && process.env.RESEND_API_KEY) {
+      try {
+        const adminRes = await pool.query("SELECT email FROM admin_account WHERE business_id = $1 AND email IS NOT NULL AND email != ''", [req.business_id]);
+        const businessRes = await pool.query("SELECT restaurant_name FROM business_settings WHERE business_id = $1", [req.business_id]);
+        
+        const adminEmail = adminRes.rows.length ? adminRes.rows[0].email : null;
+        const restaurantName = businessRes.rows.length ? businessRes.rows[0].restaurant_name : "Your Restaurant";
+
+        if (adminEmail) {
+          await resend.emails.send({
+            from: "The Chinese House System <onboarding@resend.dev>",
+            to: adminEmail,
+            subject: `⚠️ URGENT: Bad Review Received - ${restaurantName}`,
+            html: `
+              <h2>⚠️ Bad Review Alert</h2>
+              <p>A customer just left a low rating. Quick intervention is recommended.</p>
+              <p><strong>Customer Name:</strong> ${reviewerName.trim()}</p>
+              <p><strong>Item Reviewed:</strong> ${itemName.trim()}</p>
+              <p><strong>Rating:</strong> ${rating} / 5</p>
+              <p><strong>Comment:</strong></p>
+              <blockquote style="border-left: 4px solid #ef4444; padding-left: 10px; color: #555;">
+                ${reviewText.trim()}
+              </blockquote>
+            `,
+          });
+          console.log(`Bad review alert sent to ${adminEmail}`);
+        }
+      } catch (emailErr) {
+        console.error("Failed to send bad review alert:", emailErr);
+      }
+    }
+
     await invalidateReviewCache(req.business_id);
     res.status(201).json({
       id: r.id,

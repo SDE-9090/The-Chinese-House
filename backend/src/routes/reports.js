@@ -175,4 +175,101 @@ router.post("/eod-report", async (req, res) => {
   }
 });
 
+// POST /api/reports/weekly-menu-report
+router.post("/weekly-menu-report", async (req, res) => {
+  try {
+    const authHeader = req.headers["authorization"];
+    const expectedSecret = process.env.CRON_SECRET_KEY;
+
+    if (!expectedSecret || authHeader !== expectedSecret) {
+      return res.status(401).json({ error: "Unauthorized. Invalid CRON_SECRET_KEY." });
+    }
+
+    if (!process.env.RESEND_API_KEY) {
+      return res.status(500).json({ error: "RESEND_API_KEY is not configured." });
+    }
+
+    const businessQuery = `
+      SELECT b.id as business_id, bs.restaurant_name, a.email
+      FROM businesses b
+      JOIN business_settings bs ON bs.business_id = b.id
+      JOIN admin_account a ON a.business_id = b.id
+      WHERE b.is_active = true AND a.email IS NOT NULL AND a.email != ''
+    `;
+    const businessRes = await pool.query(businessQuery);
+    const businesses = businessRes.rows;
+
+    if (businesses.length === 0) {
+      return res.status(200).json({ message: "No active businesses with configured admin emails found." });
+    }
+
+    const results = [];
+    for (const b of businesses) {
+      // Top 3 Winners
+      const winnersQuery = `
+        SELECT oi.name, SUM(oi.quantity)::int as total_sold
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE o.business_id = $1 AND o.status = 'completed'
+          AND o.created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY oi.name
+        ORDER BY total_sold DESC
+        LIMIT 3
+      `;
+      const winnersRes = await pool.query(winnersQuery, [b.business_id]);
+      const winners = winnersRes.rows;
+
+      // Bottom 3 Losers
+      const losersQuery = `
+        SELECT oi.name, SUM(oi.quantity)::int as total_sold
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE o.business_id = $1 AND o.status = 'completed'
+          AND o.created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY oi.name
+        ORDER BY total_sold ASC
+        LIMIT 3
+      `;
+      const losersRes = await pool.query(losersQuery, [b.business_id]);
+      const losers = losersRes.rows;
+
+      if (winners.length === 0 && losers.length === 0) {
+        continue; // No sales this week
+      }
+
+      const winnersHtml = winners.map(w => `<li><strong>${w.name}</strong> - Sold ${w.total_sold} units 🏆</li>`).join('');
+      const losersHtml = losers.map(l => `<li><strong>${l.name}</strong> - Sold ${l.total_sold} units 📉</li>`).join('');
+
+      try {
+        await resend.emails.send({
+          from: "The Chinese House System <onboarding@resend.dev>",
+          to: b.email,
+          subject: `Weekly Menu Performance: ${b.restaurant_name}`,
+          html: `
+            <h2>📊 Weekly Menu Winners & Losers</h2>
+            <p>Here is your menu performance summary for the last 7 days.</p>
+            
+            <h3 style="color: #16a34a;">Top 3 Best Sellers</h3>
+            <ul>${winnersHtml || "<li>No sales data available.</li>"}</ul>
+            
+            <h3 style="color: #dc2626;">Bottom 3 Worst Sellers</h3>
+            <ul>${losersHtml || "<li>No sales data available.</li>"}</ul>
+            
+            <p><strong>Pro Tip:</strong> Consider running a promotion on your worst sellers or removing them from the menu to save inventory costs!</p>
+          `,
+        });
+        results.push({ business: b.restaurant_name, email: b.email, status: "sent" });
+      } catch (emailErr) {
+        console.error(`Failed to send weekly report to ${b.email}:`, emailErr);
+        results.push({ business: b.restaurant_name, email: b.email, status: "failed", error: emailErr.message });
+      }
+    }
+
+    res.status(200).json({ message: "Weekly menu reports processed", results });
+  } catch (error) {
+    console.error("Error in weekly menu report cron job:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+});
+
 module.exports = router;
