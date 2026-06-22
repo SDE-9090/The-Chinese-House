@@ -121,7 +121,7 @@ const ReceiptLookup = () => {
                       onKeyDown={(e) => e.key === "Enter" && handleLookup()}
                       inputMode="numeric"
                       maxLength={10}
-                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-ring focus:outline-none"
+                      className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background text-base md:text-sm focus:ring-2 focus:ring-ring focus:outline-none"
                     />
                   </div>
                   <button

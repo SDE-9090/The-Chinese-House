@@ -115,14 +115,14 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
     setPlacing(true);
     try {
       await apiPlaceOrder(
-        customerName || "Table Guest", 
-        customerPhone || "0000000000", 
-        cart, 
+        customerName || "Table Guest",
+        customerPhone || "0000000000",
+        cart,
         "counter", // Payment method 'counter' just means they pay at the counter later
-        undefined, 
-        "dine-in", 
-        "", 
-        "table", 
+        undefined,
+        "dine-in",
+        "",
+        "table",
         tableSessionId
       );
       toast.success("Items added to Table " + tableNumber);
@@ -170,7 +170,7 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
                   placeholder="Search menu items..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-sm focus:outline-none focus:border-primary transition-colors"
+                  className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-base md:text-sm focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
               <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
@@ -178,11 +178,10 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
                   <button
                     key={cat}
                     onClick={() => setCategory(cat)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
-                      category === cat
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${category === cat
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    }`}
+                      }`}
                   >
                     {cat}
                   </button>
@@ -310,7 +309,7 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
                 <span>Total</span>
                 <span className="text-primary">₹{cartTotal.toFixed(0)}</span>
               </div>
-              
+
               <button
                 onClick={handlePlaceOrder}
                 disabled={cart.length === 0 || placing}

@@ -176,13 +176,13 @@ const AccountSecurity = () => {
       setError("");
       setSuccess("");
       toast({ title: "Connecting", description: "Generating secure passkey request..." });
-      
+
       const options = await apiWebAuthnGenerateRegistration();
-      
+
       const response = await startRegistration({ optionsJSON: options });
-      
+
       await apiWebAuthnVerifyRegistration(response);
-      
+
       setSuccess("Device successfully registered for biometric login!");
       toast({ title: "Success", description: "You can now log in using FaceID/TouchID!" });
     } catch (err: any) {
@@ -328,7 +328,7 @@ const AccountSecurity = () => {
                     value={currentPassword}
                     onChange={(e) => { setCurrentPassword(e.target.value); setError(""); }}
                     placeholder="Enter current password"
-                    className="w-full px-4 py-3 pr-10 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm"
+                    className="w-full px-4 py-3 pr-10 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-base md:text-sm"
                     disabled={submitting}
                   />
                   <button type="button" onClick={() => setShowCurrentPw(!showCurrentPw)}
@@ -347,7 +347,7 @@ const AccountSecurity = () => {
                     value={newPassword}
                     onChange={(e) => { setNewPassword(e.target.value); setError(""); }}
                     placeholder="Min 8 chars, 1 letter, 1 number"
-                    className="w-full px-4 py-3 pr-10 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm"
+                    className="w-full px-4 py-3 pr-10 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-base md:te   xt-sm"
                     disabled={submitting}
                   />
                   <button type="button" onClick={() => setShowNewPw(!showNewPw)}
@@ -365,7 +365,7 @@ const AccountSecurity = () => {
                   value={confirmPassword}
                   onChange={(e) => { setConfirmPassword(e.target.value); setError(""); }}
                   placeholder="Re-enter new password"
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-base md:text-sm"
                   disabled={submitting}
                 />
               </div>
@@ -443,14 +443,14 @@ const AccountSecurity = () => {
             <form onSubmit={handleChangeMobile} className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">New Mobile Number</label>
-                  <input
-                    type="tel"
-                    value={newMobile}
-                    onChange={(e) => { setNewMobile(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }}
-                    placeholder="Enter 10-digit mobile number"
-                    className={`w-full px-4 py-3 rounded-xl border ${error ? 'border-destructive' : 'border-border'} bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm`}
-                    disabled={submitting}
-                  />
+                <input
+                  type="tel"
+                  value={newMobile}
+                  onChange={(e) => { setNewMobile(e.target.value.replace(/\D/g, "").slice(0, 10)); setError(""); }}
+                  placeholder="Enter 10-digit mobile number"
+                  className={`w-full px-4 py-3 rounded-xl border ${error ? 'border-destructive' : 'border-border'} bg-background focus:ring-2 focus:ring-ring focus:outline-none text-base md:text-sm`}
+                  disabled={submitting}
+                />
               </div>
 
               {/* OTP Section */}
@@ -532,7 +532,7 @@ const AccountSecurity = () => {
                   value={newEmail}
                   onChange={(e) => { setNewEmail(e.target.value); setError(""); }}
                   placeholder="e.g. admin@thechinesehouse.com"
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-base md:text-sm"
                   disabled={submitting}
                 />
               </div>

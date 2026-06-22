@@ -1733,7 +1733,7 @@ function OrderPageContent({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search menu…"
-                    className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none text-sm transition-shadow"
+                    className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none text-base md:text-sm transition-shadow"
                   />
                 </div>
                 <div

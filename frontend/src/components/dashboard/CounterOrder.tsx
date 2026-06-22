@@ -40,7 +40,7 @@ import {
 
 const CategoryIconPlaceholder = ({ category, className = "w-12 h-12 text-primary/40 group-hover:scale-110 transition-transform duration-500" }: { category?: string, className?: string }) => {
   const cat = (category || "").toLowerCase();
-  
+
   if (cat.includes("beverage") || cat.includes("drink") || cat.includes("water")) {
     return <GlassWater className={className} strokeWidth={1.5} />;
   }
@@ -56,7 +56,7 @@ const CategoryIconPlaceholder = ({ category, className = "w-12 h-12 text-primary
   if (cat.includes("starter") || cat.includes("appetizer")) {
     return <UtensilsCrossed className={className} strokeWidth={1.5} />;
   }
-  
+
   return <ConciergeBell className={className} strokeWidth={1.5} />;
 };
 import VariantSelectionModal from "@/components/VariantSelectionModal";
@@ -252,7 +252,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
 
     const nErr = validateName(customerName, false);
     const pErr = validateMobile(customerPhone, false);
-    
+
     if (nErr || pErr) {
       setNameError(nErr || "");
       setPhoneError(pErr || "");
@@ -630,8 +630,8 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
                 <button
                   onClick={() => setCashReceived(pricing.total)}
                   className={`flex-1 py-2.5 px-2 rounded-xl text-sm font-bold border transition-colors ${cashReceived === pricing.total
-                      ? "bg-emerald-500 text-white border-emerald-500 shadow-md"
-                      : "bg-background border-border hover:border-emerald-500/50 text-emerald-600"
+                    ? "bg-emerald-500 text-white border-emerald-500 shadow-md"
+                    : "bg-background border-border hover:border-emerald-500/50 text-emerald-600"
                     }`}
                 >
                   Exact: ₹{pricing.total.toFixed(0)}
@@ -641,8 +641,8 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
                     key={amt}
                     onClick={() => setCashReceived(amt)}
                     className={`flex-1 py-2.5 px-2 rounded-xl text-sm font-bold border transition-colors ${cashReceived === amt
-                        ? "bg-emerald-500 text-white border-emerald-500 shadow-md"
-                        : "bg-background border-border hover:border-emerald-500/50 text-emerald-600"
+                      ? "bg-emerald-500 text-white border-emerald-500 shadow-md"
+                      : "bg-background border-border hover:border-emerald-500/50 text-emerald-600"
                       }`}
                   >
                     ₹{amt}
@@ -733,7 +733,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
             placeholder="Search menu (Press '/' to focus)..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-base md:text-sm"
           />
         </div>
       </div>

@@ -371,7 +371,7 @@ const ItemReviewsPage = () => {
                     setPage(1);
                   }}
                   placeholder="Search reviews by name or text..."
-                  className="w-full bg-transparent outline-none text-sm"
+                  className="w-full bg-transparent outline-none text-base md:text-sm"
                 />
               </div>
 
@@ -475,7 +475,7 @@ const ItemReviewsPage = () => {
                 </AnimatePresence>
               )}
 
-            {!loading && filteredSortedReviews.length === 0 && (
+              {!loading && filteredSortedReviews.length === 0 && (
                 <div className="text-center py-12 bg-card rounded-2xl border border-border/50">
                   <Star size={48} className="mx-auto mb-4 text-muted-foreground/30" />
                   <p className="text-muted-foreground font-medium">No reviews yet for this item</p>

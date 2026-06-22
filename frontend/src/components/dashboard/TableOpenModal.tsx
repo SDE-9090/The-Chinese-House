@@ -24,16 +24,16 @@ export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, ta
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const nErr = validateName(customerName, false);
     const pErr = validateMobile(customerPhone, false);
-    
+
     if (nErr || pErr) {
       setNameError(nErr || "");
       setPhoneError(pErr || "");
       return;
     }
-    
+
     setLoading(true);
     try {
       await apiAdminOpenTableSession(tableId, customerName, customerPhone);
@@ -97,7 +97,7 @@ export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, ta
                       if (nameError) setNameError("");
                     }}
                     onBlur={(e) => setNameError(validateName(e.target.value, false) || "")}
-                    className={`w-full bg-background border ${nameError ? 'border-red-500' : 'border-border'} rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
+                    className={`w-full bg-background border ${nameError ? 'border-red-500' : 'border-border'} rounded-xl pl-10 pr-4 py-2.5 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
                   />
                 </div>
                 {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
@@ -118,7 +118,7 @@ export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, ta
                       if (phoneError) setPhoneError("");
                     }}
                     onBlur={(e) => setPhoneError(validateMobile(e.target.value, false) || "")}
-                    className={`w-full bg-background border ${phoneError ? 'border-red-500' : 'border-border'} rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
+                    className={`w-full bg-background border ${phoneError ? 'border-red-500' : 'border-border'} rounded-xl pl-10 pr-4 py-2.5 text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
                   />
                 </div>
                 {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
