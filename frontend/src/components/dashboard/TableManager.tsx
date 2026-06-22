@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, type Table, type Order, type SessionBill, type AuthUser } from "@/lib/apiClient";
 import OrderCard from "./OrderCard";
 import BillDocument, { downloadBillPrint, downloadKOTPrint } from "@/components/BillDocument";
-import { Loader2, CheckCircle, UtensilsCrossed, Clock, QrCode, Plus, X, Printer, Download, Trash2, RefreshCw, MoreVertical, ArrowLeftRight } from "lucide-react";
+import { Loader2, CheckCircle, UtensilsCrossed, Clock, QrCode, Plus, X, Printer, Download, Trash2, RefreshCw, MoreVertical, ArrowLeftRight, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import TableOpenModal from "./TableOpenModal";
 import TableOrderModal from "./TableOrderModal";
 import TableTransferModal from "./TableTransferModal";
+import SettledBillsModal from "./SettledBillsModal";
 
 interface TableManagerProps {
   orders: Order[];
@@ -55,6 +56,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [newTableNumber, setNewTableNumber] = useState("");
   const [addingTable, setAddingTable] = useState(false);
+  const [showSettledBills, setShowSettledBills] = useState(false);
 
   const [showPaymentModal, setShowPaymentModal] = useState<string | null>(null);
   const [splitMode, setSplitMode] = useState(false);
@@ -220,9 +222,17 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           <h2 className="text-xl font-bold flex items-center gap-2">
             <UtensilsCrossed className="text-primary" /> Live Table Status
           </h2>
-          <button onClick={handleManualRefresh} disabled={isRefreshing} className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors" title="Refresh Tables">
-            <RefreshCw className={`w-5 h-5 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowSettledBills(true)}
+              className="px-3 py-1.5 bg-muted/50 hover:bg-muted text-foreground border border-border rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+            >
+              <FileText size={14} /> Settled Bills
+            </button>
+            <button onClick={handleManualRefresh} disabled={isRefreshing} className="p-2 text-muted-foreground hover:bg-muted rounded-full transition-colors" title="Refresh Tables">
+              <RefreshCw className={`w-5 h-5 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
+            </button>
+          </div>
         </div>
         {loading ? (
           <div className="flex items-center justify-center p-12">
@@ -779,6 +789,13 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           currentTableNumber={transferTableState.number}
           availableTables={tables.filter(t => t.status === "available")}
           onSuccess={handleModalSuccess}
+        />
+      )}
+
+      {showSettledBills && (
+        <SettledBillsModal
+          isOpen={showSettledBills}
+          onClose={() => setShowSettledBills(false)}
         />
       )}
     </div>

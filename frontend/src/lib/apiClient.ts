@@ -2046,4 +2046,31 @@ export async function apiRemoveSessionCoupon(sessionId: string): Promise<{ succe
   return res.json();
 }
 
+export interface SettledSession {
+  session_id: string;
+  table_number: string;
+  customer_name: string;
+  customer_phone: string;
+  start_time: string;
+  end_time: string;
+  discount_amount: string | null;
+  raw_total: string | null;
+}
+
+export interface SettledSessionsResponse {
+  data: SettledSession[];
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+}
+
+export async function apiGetSettledSessions(page: number = 1, limit: number = 25): Promise<SettledSessionsResponse> {
+  const res = await authFetch(`${API_URL}/tables/sessions/history?page=${page}&limit=${limit}`, {
+    headers: dashHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch settled sessions");
+  return res.json();
+}
+
 export type { Order, OrderItem, Review, ReviewSummary } from "./orderStore";

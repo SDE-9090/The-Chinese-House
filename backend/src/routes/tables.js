@@ -845,6 +845,45 @@ router.post("/sessions/:sessionId/remove-coupon", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+// GET /api/tables/sessions/history (Admin)
+// Fetch past settled (completed) sessions with pagination
+router.get("/sessions/history", adminAuth, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 25;
+    const offset = (page - 1) * limit;
+
+    // Get total count
+    const countRes = await pool.query(
+      "SELECT COUNT(*) FROM table_sessions WHERE status = 'completed' AND business_id = $1",
+      [req.business_id]
+    );
+    const totalCount = parseInt(countRes.rows[0].count);
+    const totalPages = Math.ceil(totalCount / limit);
+
+    const { rows } = await pool.query(`
+      SELECT ts.id as session_id, ts.customer_name, ts.customer_phone, ts.start_time, ts.end_time, ts.discount_amount,
+             t.table_number,
+             (SELECT SUM(o.total) FROM orders o WHERE o.table_session_id = ts.id AND o.status != 'cancelled') as raw_total
+      FROM table_sessions ts
+      LEFT JOIN tables t ON ts.table_id = t.id
+      WHERE ts.status = 'completed' AND ts.business_id = $1
+      ORDER BY ts.end_time DESC
+      LIMIT $2 OFFSET $3
+    `, [req.business_id, limit, offset]);
+
+    res.json({
+      data: rows,
+      total: totalCount,
+      page,
+      totalPages,
+      limit
+    });
+  } catch (err) {
+    console.error("Fetch history error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 module.exports = router;
 
