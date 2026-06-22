@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { socket } from "@/lib/socket";
 import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, type Table, type Order, type SessionBill, type AuthUser } from "@/lib/apiClient";
 import OrderCard from "./OrderCard";
 import BillDocument, { downloadBillPrint, downloadKOTPrint } from "@/components/BillDocument";
@@ -117,7 +118,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
     }
   };
 
-  const fetchTables = async () => {
+  const fetchTables = useCallback(async () => {
     try {
       const data = await apiAdminGetTables();
       setTables(data);
@@ -139,13 +140,19 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchTables();
-    const interval = setInterval(fetchTables, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    const interval = setInterval(fetchTables, 15000); // reduced polling frequency since we have sockets
+    
+    socket.on("tables-updated", fetchTables);
+    
+    return () => {
+      clearInterval(interval);
+      socket.off("tables-updated", fetchTables);
+    };
+  }, [fetchTables]);
 
   useEffect(() => {
     apiGetBusinessSettings().then(setBusiness).catch(() => { });
