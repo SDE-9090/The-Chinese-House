@@ -90,7 +90,7 @@ export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, ta
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                   <input
                     type="text"
-                    placeholder="E.g. John Doe"
+                    placeholder="E.g. Rahul Sharma"
                     value={customerName}
                     onChange={(e) => {
                       setCustomerName(e.target.value);

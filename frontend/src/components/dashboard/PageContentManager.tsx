@@ -18,7 +18,7 @@ const PageContentManager = () => {
   const [saving, setSaving] = useState(false);
   const [content, setContent] = useState<LandingPageContent | null>(null);
   const [features, setFeatures] = useState<Record<string, any>>({});
-  
+
   useEffect(() => {
     fetchSettings();
   }, []);
@@ -117,7 +117,7 @@ const PageContentManager = () => {
             <span className="w-2 h-2 bg-primary rounded-full" />
             About Section (Our Story)
           </h3>
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">About Title</label>
@@ -189,7 +189,7 @@ const PageContentManager = () => {
             <span className="w-2 h-2 bg-secondary rounded-full" />
             Why Choose Us Section
           </h3>
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Section Title</label>
@@ -245,14 +245,14 @@ const PageContentManager = () => {
             ))}
           </div>
         </div>
-        
+
         {/* Menu Section */}
         <div className="bg-card border border-border rounded-2xl p-6 space-y-6">
           <h3 className="text-lg font-bold flex items-center gap-2 border-b border-border pb-3">
             <Utensils className="text-primary" size={18} />
             Menu Section
           </h3>
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Menu Category Label (e.g., OUR MENU)</label>
@@ -270,7 +270,7 @@ const PageContentManager = () => {
                 type="text"
                 value={content.menu_main_title || ""}
                 onChange={(e) => updateSection("menu_main_title", e.target.value)}
-                placeholder="Signature Waffles"
+                placeholder="The Best Chinese Food in Pune"
                 className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
               />
             </div>
@@ -279,7 +279,7 @@ const PageContentManager = () => {
               <textarea
                 value={content.menu_description || ""}
                 onChange={(e) => updateSection("menu_description", e.target.value)}
-                placeholder="From classic to creative, every waffle is a masterpiece..."
+                placeholder="Authentic flavors crafted with passion"
                 rows={3}
                 className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none resize-none"
               />
@@ -326,7 +326,7 @@ const PageContentManager = () => {
                   }
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Voucher Title</label>
                 <input

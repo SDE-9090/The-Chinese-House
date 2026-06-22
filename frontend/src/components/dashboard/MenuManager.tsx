@@ -317,7 +317,7 @@ const SortableMobileCard = ({
         {/* IMAGE */}
         {(!item.image_url || item.image_url.includes("placeholder")) ? (
           <div className="w-20 h-20 rounded-xl bg-primary/5 border flex items-center justify-center shrink-0">
-             <CategoryIconPlaceholder category={item.category} className="w-10 h-10 text-primary/40" />
+            <CategoryIconPlaceholder category={item.category} className="w-10 h-10 text-primary/40" />
           </div>
         ) : (
           <img
@@ -856,8 +856,8 @@ const MenuManager = () => {
               key={cat}
               onClick={() => setCatFilter(cat)}
               className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${catFilter === cat
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
             >
               {cat}
@@ -1069,7 +1069,7 @@ const MenuManager = () => {
                       setForm((f) => ({ ...f, name: e.target.value }))
                     }
                     maxLength={100}
-                    placeholder="e.g. Classic Belgian"
+                    placeholder="Hot and Sour Soup"
                     className="w-full px-3 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-sm"
                   />
                 </div>

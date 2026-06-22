@@ -154,7 +154,7 @@ const HeroManager = () => {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder='Fresh Belgian Waffles in Koregaon Park'
+              placeholder='The Best Chinese Food in Pune'
               className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
             />
             <p className="text-xs text-muted-foreground">
@@ -171,7 +171,7 @@ const HeroManager = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              placeholder="Crispy outside. Fluffy inside..."
+              placeholder="Authentic flavors crafted with passion"
               className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none resize-none"
             />
           </div>
