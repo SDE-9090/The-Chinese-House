@@ -599,7 +599,147 @@ const CouponManagement = () => {
             )}
           </AnimatePresence>
 
-          <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-4">
+            <AnimatePresence>
+              {filteredCoupons.map((coupon) => (
+                <motion.div
+                  key={coupon.code}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="bg-card border border-border rounded-2xl p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={selectedCodes.has(coupon.code)}
+                        onCheckedChange={() => toggleSelect(coupon.code)}
+                      />
+                      <div>
+                        <h3 className="font-mono font-black text-primary text-xl leading-tight">{coupon.code}</h3>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded-md text-xs font-semibold ${
+                            coupon.discount_type === "percent"
+                              ? "bg-accent/10 text-accent"
+                              : "bg-secondary/10 text-secondary-foreground"
+                          }`}
+                        >
+                          {coupon.discount_type === "percent" ? <Percent size={10} /> : <DollarSign size={10} />}
+                          {coupon.discount_type === "percent" ? `${parseFloat(coupon.value)}%` : `₹${parseFloat(coupon.value)}`}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      {coupon.active ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600">
+                          <CheckCircle size={10} /> Active
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-destructive/10 text-destructive">
+                          <XCircle size={10} /> Inactive
+                        </span>
+                      )}
+                      {coupon.is_public ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-600">
+                          <CheckCircle size={10} /> Public
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-muted text-muted-foreground">
+                          <XCircle size={10} /> Private
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-y-3 py-3 border-t border-border/50">
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground mb-0.5">Usage</p>
+                      <p className="font-mono text-sm font-semibold">{coupon.used_count}/{coupon.usage_limit}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground mb-0.5">Expiry</p>
+                      <p className="text-sm font-medium">
+                        {coupon.expiry_date
+                          ? new Date(coupon.expiry_date).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "2-digit",
+                            })
+                          : "Never"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground">
+                      {coupon.created_by === "admin" ? "By Admin" : `By ${coupon.created_by}`}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleToggle(coupon.code)}
+                        className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                      >
+                        {coupon.active ? (
+                          <ToggleRight size={18} className="text-emerald-500" />
+                        ) : (
+                          <ToggleLeft size={18} className="text-muted-foreground" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleTogglePublic(coupon.code)}
+                        className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                      >
+                        {coupon.is_public ? (
+                          <CheckCircle size={18} className="text-blue-500" />
+                        ) : (
+                          <XCircle size={18} className="text-muted-foreground" />
+                        )}
+                      </button>
+                      {coupon.created_by === "admin" && (
+                        <button
+                          onClick={() => {
+                            setShareCode(coupon.code);
+                            setSharePhone("");
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          <Send size={18} />
+                        </button>
+                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                            <Trash2 size={18} />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete coupon?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete coupon <span className="font-mono font-semibold text-primary">{coupon.code}</span>.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(coupon.code)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block bg-card border border-border rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-[16px]">
                 <thead>
