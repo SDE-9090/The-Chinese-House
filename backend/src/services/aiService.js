@@ -106,9 +106,15 @@ async function chatWithGroq(messageHistory, businessId) {
       });
     }
 
+    const now = new Date();
+    const istTime = now.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "full", timeStyle: "short" });
+
     // 4. Construct the System Prompt
     let systemPrompt = `You are the friendly, professional, and concise customer support AI for a restaurant named "${settings.restaurant_name}".
 Your goal is to assist customers with questions about the menu, hours, and location.
+
+CURRENT CONTEXT:
+- Current Date & Time: ${istTime} (IST)
 
 RESTAURANT INFO:
 - Address: ${settings.address || location.address}
