@@ -191,6 +191,15 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
     setClosingId(sessionId);
     try {
       await apiSessionClose(sessionId, method, parseFloat(splitCash) || 0, parseFloat(splitUpi) || 0, loyaltyPhone || undefined, pointsRedeemed);
+      
+      // [AUTO-PRINT LOGIC] Print Final Bill after clearing the table
+      const bill = billsMap[sessionId];
+      if (bill && bill.totalAmount > 0) {
+        console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL TABLE BILL for Ref #${sessionId.slice(0, 8)}`);
+        console.log(`   --> Table: ${bill.tableNumber || 'N/A'}`);
+        console.log(`   --> Total Paid: ₹${bill.totalAmount.toFixed(2)}`);
+      }
+
       await fetchTables();
       await onRefresh();
       toast({ title: `Table cleared (${method.toUpperCase()})` });

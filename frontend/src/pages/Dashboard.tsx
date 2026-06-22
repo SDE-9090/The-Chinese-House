@@ -705,8 +705,8 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
     // 1. Mark as updating (shows spinner)
     setUpdatingOrders((prev) => ({ ...prev, [orderId]: true }));
 
-    // [AUTO-PRINT LOGIC] Print Final Bill if marked completed
-    if (newStatus === "completed") {
+    // [AUTO-PRINT LOGIC] Print Final Bill if marked completed (Skip for dine-in, as they print when table is cleared)
+    if (newStatus === "completed" && currentOrder?.orderType !== "dine-in") {
       console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL BILL for Order #${currentOrder?.token || orderId}`);
       if (currentOrder) {
         console.log(`   --> Total Collected: ₹${currentOrder.total}`);
