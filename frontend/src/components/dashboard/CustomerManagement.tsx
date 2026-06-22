@@ -63,7 +63,55 @@ export default function CustomerManagement() {
         />
       </div>
 
-      <div className="bg-card border rounded-2xl overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {loading ? (
+          <div className="text-center py-8 text-muted-foreground">Loading customers...</div>
+        ) : customers.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground bg-card border rounded-2xl">No customers found.</div>
+        ) : (
+          customers.map((customer) => (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              key={customer.id}
+              className="bg-card border rounded-2xl p-5 shadow-sm"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xl shrink-0">
+                    {customer.name ? customer.name.charAt(0).toUpperCase() : "G"}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg leading-tight">{customer.name || "Guest"}</h3>
+                    <p className="text-muted-foreground text-sm mt-0.5">{customer.phone}</p>
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/10 text-orange-600 font-bold text-xs">
+                    <Star className="w-4 h-4 fill-current" />
+                    {customer.points_balance} pts
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Lifetime Value</p>
+                  <p className="font-black text-emerald-600 text-base">₹{parseFloat(customer.total_spent).toFixed(2)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Last Visit</p>
+                  <p className="font-medium text-sm">{new Date(customer.last_visit).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-card border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-muted/50 text-muted-foreground font-medium border-b">
