@@ -1332,7 +1332,7 @@ function OrderPageContent({
                       }}
                       placeholder="Enter coupon code"
                       maxLength={20}
-                      className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none text-sm uppercase tracking-wider"
+                      className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none text-base md:text-sm uppercase tracking-wider"
                     />
                     <motion.button
                       whileHover={{ scale: 1.02 }}

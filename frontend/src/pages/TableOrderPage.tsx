@@ -67,7 +67,7 @@ export default function TableOrderPage() {
   // Sync activeTableQr with localStorage
   useEffect(() => {
     if (!qrCode || !table) return;
-    
+
     if (table.activeSession && table.activeSession.status !== "completed") {
       localStorage.setItem("activeTableQr", qrCode);
     } else {
@@ -121,16 +121,16 @@ export default function TableOrderPage() {
 
   const handleReserve = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const nErr = validateName(name, false);
     const pErr = validateMobile(phone, false);
-    
+
     if (nErr || pErr) {
       setNameError(nErr || "");
       setPhoneError(pErr || "");
       return;
     }
-    
+
     setReserving(true);
     try {
       await apiReserveTable(table!.id, name, phone);
@@ -300,29 +300,29 @@ export default function TableOrderPage() {
           <form onSubmit={handleReserve} className="space-y-4">
             <div>
               <Label>Name (Optional)  </Label>
-              <Input 
-                value={name} 
+              <Input
+                value={name}
                 onChange={e => {
                   setName(e.target.value);
                   if (nameError) setNameError("");
-                }} 
+                }}
                 onBlur={e => setNameError(validateName(e.target.value, false) || "")}
-                placeholder="Your Name" 
+                placeholder="Your Name"
                 className={nameError ? "border-red-500" : ""}
               />
               {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
             </div>
             <div>
               <Label>Phone Number (Optional)</Label>
-              <Input 
-                type="tel" 
-                value={phone} 
+              <Input
+                type="tel"
+                value={phone}
                 onChange={e => {
                   setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
                   if (phoneError) setPhoneError("");
-                }} 
+                }}
                 onBlur={e => setPhoneError(validateMobile(e.target.value, false) || "")}
-                placeholder="10-digit number" 
+                placeholder="10-digit number"
                 className={phoneError ? "border-red-500" : ""}
               />
               {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
@@ -424,7 +424,7 @@ export default function TableOrderPage() {
                       }}
                       placeholder="Enter coupon code"
                       maxLength={20}
-                      className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none text-sm uppercase tracking-wider"
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none text-base md:text-sm uppercase tracking-wider"
                     />
                     <motion.button
                       whileHover={{ scale: 1.02 }}
