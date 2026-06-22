@@ -209,7 +209,7 @@ const ReviewManagement = () => {
               placeholder="Search by item, name, or text..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9 text-sm"
+              className="pl-9 h-9 text-base md:text-sm"
             />
           </div>
           <Button
