@@ -714,7 +714,7 @@ function OrderPageContent({
       if (due > 0) {
         toast({
           title: "Order Updated ✅",
-          description: `Updated! Pay ₹${due} online to confirm.`,
+          description: `Updated the order!.`,
         });
       } else {
         toast({
