@@ -209,6 +209,21 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
     }
   };
 
+  const handleClearTableClick = (sessionId: string, customerPhone?: string | null) => {
+    const bill = billsMap[sessionId];
+    if (bill && bill.totalAmount === 0) {
+      handleCloseSession(sessionId, 'none');
+    } else {
+      setShowPaymentModal(sessionId);
+      if (customerPhone && customerPhone !== "0000000000") {
+        setLoyaltyPhone(customerPhone);
+      } else {
+        setLoyaltyPhone("");
+      }
+    }
+  };
+
+
   const handleModalSuccess = () => {
     fetchTables();
     onRefresh();
@@ -298,7 +313,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                           )}
                           {(user.role === 'admin' || user.permissions?.canClearTable) && (
                             <DropdownMenuItem
-                              onClick={() => setShowPaymentModal(session.id)}
+                              onClick={() => handleClearTableClick(session.id, session.customerPhone)}
                               disabled={closingId === session.id}
                               className="gap-2 text-destructive focus:text-destructive cursor-pointer xl:hidden"
                             >
@@ -375,7 +390,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                           {(user.role === 'admin' || user.permissions?.canClearTable) && (
                             <div className="flex flex-col gap-2">
                               <button
-                                onClick={() => setShowPaymentModal(session.id)}
+                                onClick={() => handleClearTableClick(session.id, session.customerPhone)}
                                 disabled={closingId === session.id}
                                 className="w-full bg-purple-600 text-white py-2 flex items-center justify-center gap-2 rounded-lg text-xs font-bold shadow-md hover:bg-purple-700 transition disabled:opacity-50"
                               >
@@ -405,7 +420,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                       {(user.role === 'admin' || user.permissions?.canClearTable) && (
                         <div className="hidden xl:flex flex-1 flex-col justify-end mt-3">
                           <button
-                            onClick={() => setShowPaymentModal(session.id)}
+                            onClick={() => handleClearTableClick(session.id, session.customerPhone)}
                             disabled={closingId === session.id}
                             className="w-full border border-destructive/30 text-destructive hover:bg-destructive/10 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                           >
@@ -569,14 +584,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                   )}
                   {(user.role === 'admin' || user.permissions?.canClearTable) && (
                     <button
-                      onClick={() => {
-                        setShowPaymentModal(detailSession.id);
-                        if (detailSession.customerPhone && detailSession.customerPhone !== "0000000000") {
-                          setLoyaltyPhone(detailSession.customerPhone);
-                        } else {
-                          setLoyaltyPhone("");
-                        }
-                      }}
+                      onClick={() => handleClearTableClick(detailSession.id, detailSession.customerPhone)}
                       disabled={closingId === detailSession.id}
                       className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
                     >
