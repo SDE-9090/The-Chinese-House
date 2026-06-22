@@ -76,7 +76,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [deletingTableId, setDeletingTableId] = useState<string | null>(null);
 
   const [openTableState, setOpenTableState] = useState<{ id: string, number: string } | null>(null);
-  const [orderTableState, setOrderTableState] = useState<{ sessionId: string, number: string } | null>(null);
+  const [orderTableState, setOrderTableState] = useState<{ sessionId: string, number: string, customerName?: string, customerPhone?: string } | null>(null);
   const [transferTableState, setTransferTableState] = useState<{ sessionId: string, number: string } | null>(null);
 
   const [now, setNow] = useState(Date.now());
@@ -412,7 +412,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                       ) : (
                         <div className="flex gap-2">
                           <button
-                            onClick={() => setOrderTableState({ sessionId: session.id, number: table.tableNumber })}
+                            onClick={() => setOrderTableState({ sessionId: session.id, number: table.tableNumber, customerName: session.customerName, customerPhone: session.customerPhone })}
                             className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 py-2 px-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition shadow-sm leading-tight"
                           >
                             <Plus size={14} className="shrink-0" /> <span className="text-center">Add Items</span>
@@ -795,6 +795,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           onSuccess={handleModalSuccess}
           tableSessionId={orderTableState.sessionId}
           tableNumber={orderTableState.number}
+          customerName={orderTableState.customerName}
+          customerPhone={orderTableState.customerPhone}
         />
       )}
 

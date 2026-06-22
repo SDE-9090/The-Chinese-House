@@ -17,9 +17,11 @@ interface TableOrderModalProps {
   onSuccess: () => void;
   tableSessionId: string;
   tableNumber: string;
+  customerName?: string;
+  customerPhone?: string;
 }
 
-export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessionId, tableNumber }: TableOrderModalProps) {
+export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessionId, tableNumber, customerName, customerPhone }: TableOrderModalProps) {
   const { items: menuItems, categories, loading: menuLoading } = useDynamicMenu();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState("");
@@ -113,8 +115,8 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
     setPlacing(true);
     try {
       await apiPlaceOrder(
-        "Table Guest", 
-        "0000000000", 
+        customerName || "Table Guest", 
+        customerPhone || "0000000000", 
         cart, 
         "counter", // Payment method 'counter' just means they pay at the counter later
         undefined, 
