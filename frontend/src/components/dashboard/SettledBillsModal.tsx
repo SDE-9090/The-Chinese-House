@@ -186,15 +186,13 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
                     ) : detailBill ? (
                       <div className="scale-95 origin-top">
                         <BillDocument
-                          token={detailBill.orders?.[0]?.token || `T${selectedSession.table_number}`}
-                          orderType="dine-in"
-                          items={detailBill.itemized}
-                          tableNumber={selectedSession.table_number}
-                          sessionDetails={detailBill.sessionDetails}
-                          billDetails={{
-                            total: detailBill.totalAmount,
-                            paymentStatus: "paid"
+                          bill={{
+                            ...detailBill,
+                            customerName: selectedSession.customer_name,
+                            customerPhone: selectedSession.customer_phone,
+                            tableNumber: selectedSession.table_number
                           }}
+                          showDownloadButton={false}
                         />
                       </div>
                     ) : (
@@ -206,15 +204,10 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
                     <div className="mt-4 pt-4 border-t border-border flex gap-2">
                       <button
                         onClick={() => downloadBillPrint({
-                          token: detailBill.orders?.[0]?.token || `T${selectedSession.table_number}`,
-                          orderType: "dine-in",
-                          items: detailBill.itemized,
-                          tableNumber: selectedSession.table_number,
-                          sessionDetails: detailBill.sessionDetails,
-                          billDetails: {
-                            total: detailBill.totalAmount,
-                            paymentStatus: "paid"
-                          }
+                          ...detailBill,
+                          customerName: selectedSession.customer_name,
+                          customerPhone: selectedSession.customer_phone,
+                          tableNumber: selectedSession.table_number
                         })}
                         className="flex-1 bg-primary text-primary-foreground py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition"
                       >
