@@ -825,7 +825,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
         {/* Tabs */}
         <div className="container mx-auto px-4 mt-2">
           <div
-            className="flex gap-2 overflow-x-auto no-scrollbar"
+            className="flex gap-2 overflow-x-auto scrollbar-hide no-scrollbar"
             style={{ scrollbarWidth: "none" }}
           >
             {[
@@ -867,7 +867,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               <StatsBar orders={orders} />
             )}
             {/* Sub-tabs: Active Orders / History */}
-            <div className={`flex gap-2 mb-4 overflow-x-auto no-scrollbar ${!(user.role === 'admin' || user.permissions?.canViewOrderStats) ? 'mt-4' : ''}`} style={{ scrollbarWidth: "none" }}>
+            <div className={`flex gap-2 mb-4 overflow-x-auto scrollbar-hide no-scrollbar ${!(user.role === 'admin' || user.permissions?.canViewOrderStats) ? 'mt-4' : ''}`} style={{ scrollbarWidth: "none" }}>
               {[
                 { key: "active" as const, label: "Active Orders", icon: Package, permissionKey: "active" as const },
                 { key: "counter-order" as const, label: "New Order (POS)", icon: UtensilsCrossed, permissionKey: "pos" as const, check: () => user.features?.pos_system },
@@ -894,7 +894,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 w-full">
                   {/* Status filter */}
                   <div
-                    className="flex gap-2 overflow-x-auto max-w-full"
+                    className="flex gap-2 overflow-x-auto scrollbar-hide max-w-full"
                     style={{ scrollbarWidth: "none" }}
                   >
                     {(["all", ...allStatuses] as const).map((s) => (
@@ -984,7 +984,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
           <SalesReportUI />
         ) : tab === "content" ? (
           <div className="container mx-auto px-4 pb-8 py-4">
-            <div className="flex gap-2 mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+            <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
               {[
                 { key: "menu" as const, label: "Menu", icon: UtensilsCrossed },
                 { key: "hero" as const, label: "Hero", icon: ImageIcon, check: () => user.features?.website_cms },
@@ -1022,7 +1022,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
           </div>
         ) : tab === "analytics" ? (
           <div className="container mx-auto px-4 pb-8 py-4">
-            <div className="flex gap-2 mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+            <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
               {[
                 { key: "menu" as const, label: "Menu Analytics", icon: BarChartIcon },
                 { key: "table" as const, label: "Table Analytics", icon: UtensilsCrossed },
@@ -1048,7 +1048,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
           </div>
         ) : tab === "management" ? (
           <div className="container mx-auto px-4 pb-8 py-4">
-            <div className="flex gap-2 mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+            <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
               {[
                 { key: "qr-codes" as const, label: "QR Codes", icon: QrCode, check: () => user.features?.qr_digital_ordering !== false },
                 { key: "customers" as const, label: "Customers", icon: Users },
@@ -1080,7 +1080,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
           </div>
         ) : tab === "system" ? (
           <div className="container mx-auto px-4 pb-8 py-4">
-            <div className="flex gap-2 mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+            <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
               {[
                 { key: "business" as const, label: "Business & GST", icon: Settings },
                 { key: "account" as const, label: "Security", icon: ShieldCheck },
