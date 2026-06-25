@@ -738,5 +738,86 @@ router.get("/info", adminAuth, async (req, res) => {
   }
 });
 
+// ======================================================
+// REGISTER BIOMETRIC DEVICE
+// ======================================================
+router.post("/biometric/register", adminAuth, async (req, res) => {
+  try {
+    const biometricToken = crypto.randomBytes(64).toString("hex");
+    
+    // Store in redis with 1 year expiry
+    await redisClient.setEx(
+      `biometric_token:${biometricToken}`,
+      31536000,
+      JSON.stringify({
+        adminId: req.admin.id,
+        business_id: req.business_id
+      })
+    );
+    
+    res.json({ biometricToken });
+  } catch (err) {
+    console.error("Biometric register error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ======================================================
+// BIOMETRIC LOGIN
+// ======================================================
+router.post("/biometric/login", loginLimiter, async (req, res) => {
+  const { biometricToken } = req.body;
+  if (!biometricToken) return res.status(400).json({ error: "Biometric token is required" });
+
+  try {
+    const sessionData = await redisClient.get(`biometric_token:${biometricToken}`);
+    if (!sessionData) {
+      return res.status(401).json({ error: "Invalid or expired biometric token. Please login with password." });
+    }
+
+    const { adminId, business_id } = JSON.parse(sessionData);
+
+    const result = await pool.query(
+      `SELECT a.id, b.features, b.name as business_name
+       FROM admin_account a
+       JOIN businesses b ON a.business_id = b.id
+       WHERE a.id = $1 AND a.business_id = $2
+       LIMIT 1`,
+      [adminId, business_id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(401).json({ error: "Account no longer valid" });
+    }
+
+    const admin = result.rows[0];
+
+    const token = jwt.sign(
+      { id: adminId, role: "admin", business_id },
+      JWT_SECRET,
+      { expiresIn: "10h" }
+    );
+
+    const refreshToken = crypto.randomBytes(40).toString("hex");
+    await redisClient.setEx(
+      `refresh_token:${refreshToken}`,
+      REFRESH_TOKEN_EXPIRY_SECONDS,
+      JSON.stringify({ adminId, business_id })
+    );
+
+    res.cookie("refreshToken", refreshToken, COOKIE_OPTIONS);
+
+    res.json({ 
+      message: "Biometric login successful", 
+      token,
+      user: { name: admin.business_name, role: "admin" },
+      features: admin.features || {} 
+    });
+  } catch (err) {
+    console.error("Biometric login error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 module.exports = router;

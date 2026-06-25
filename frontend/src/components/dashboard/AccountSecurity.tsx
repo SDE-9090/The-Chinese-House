@@ -9,6 +9,8 @@ import {
   apiWebAuthnVerifyRegistration,
 } from "@/lib/apiClient";
 import { startRegistration } from "@simplewebauthn/browser";
+import { Capacitor } from "@capacitor/core";
+import { registerBiometricDevice } from "@/lib/biometrics";
 import { validateMobile } from "@/lib/validators";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -175,16 +177,25 @@ const AccountSecurity = () => {
     try {
       setError("");
       setSuccess("");
-      toast({ title: "Connecting", description: "Generating secure passkey request..." });
+      
+      if (Capacitor.isNativePlatform()) {
+        toast({ title: "Configuring", description: "Linking device hardware..." });
+        const success = await registerBiometricDevice();
+        if (success) {
+          setSuccess("Device successfully registered for biometric login!");
+          toast({ title: "Success", description: "You can now log in using FaceID/TouchID!" });
+        } else {
+          throw new Error("Failed to link biometric hardware");
+        }
+      } else {
+        toast({ title: "Connecting", description: "Generating secure passkey request..." });
+        const options = await apiWebAuthnGenerateRegistration();
+        const response = await startRegistration({ optionsJSON: options });
+        await apiWebAuthnVerifyRegistration(response);
 
-      const options = await apiWebAuthnGenerateRegistration();
-
-      const response = await startRegistration({ optionsJSON: options });
-
-      await apiWebAuthnVerifyRegistration(response);
-
-      setSuccess("Device successfully registered for biometric login!");
-      toast({ title: "Success", description: "You can now log in using FaceID/TouchID!" });
+        setSuccess("Device successfully registered for biometric login!");
+        toast({ title: "Success", description: "You can now log in using FaceID/TouchID!" });
+      }
     } catch (err: any) {
       if (err.name === "NotAllowedError") {
         setError("Registration cancelled.");

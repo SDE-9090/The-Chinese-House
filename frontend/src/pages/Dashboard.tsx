@@ -21,6 +21,7 @@ import {
   type AuthUser,
 } from "@/lib/apiClient";
 import { startAuthentication } from "@simplewebauthn/browser";
+import { authenticateWithBiometrics, hasSavedBiometricToken, isBiometricAvailable } from "@/lib/biometrics";
 // localUpdateOrderStatus no longer needed - optimistic updates are in useOrders
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -112,6 +113,18 @@ function validatePassword(pw: string): string | null {
 const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => void }) => {
   const [loginMode, setLoginMode] = useState<"owner" | "staff">("staff");
   const [mode, setMode] = useState<AuthMode>("login");
+  const [hasBiometricOption, setHasBiometricOption] = useState(false);
+
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      hasSavedBiometricToken().then(hasToken => {
+        if (hasToken) setHasBiometricOption(true);
+      });
+    } else {
+      // Browser WebAuthn is always "available" to try
+      setHasBiometricOption(true);
+    }
+  }, []);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [pin, setPin] = useState("");
@@ -166,13 +179,17 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
       setError("");
       setLoading(true);
 
-      const { options, authSessionId } = await apiWebAuthnGenerateAuthentication();
-
-      const response = await startAuthentication({ optionsJSON: options });
-
-      const res = await apiWebAuthnVerifyAuthentication(response, authSessionId);
-
-      onAuthenticated({ ...res.user, features: res.features });
+      if (Capacitor.isNativePlatform()) {
+        // Native Android Biometrics
+        const res = await authenticateWithBiometrics();
+        onAuthenticated({ ...res.user, features: res.features });
+      } else {
+        // Browser WebAuthn / Passkeys
+        const { options, authSessionId } = await apiWebAuthnGenerateAuthentication();
+        const response = await startAuthentication({ optionsJSON: options });
+        const res = await apiWebAuthnVerifyAuthentication(response, authSessionId);
+        onAuthenticated({ ...res.user, features: res.features });
+      }
     } catch (err: any) {
       if (err.name !== "NotAllowedError") {
         setError(err.message || "Biometric login failed");
@@ -434,21 +451,25 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
                 {loading ? "Verifying..." : "Unlock Dashboard"}
               </button>
 
-              <div className="relative flex py-4 items-center">
-                <div className="flex-grow border-t border-border"></div>
-                <span className="flex-shrink-0 mx-4 text-muted-foreground text-sm">or</span>
-                <div className="flex-grow border-t border-border"></div>
-              </div>
+              {hasBiometricOption && (
+                <>
+                  <div className="relative flex py-4 items-center">
+                    <div className="flex-grow border-t border-border"></div>
+                    <span className="flex-shrink-0 mx-4 text-muted-foreground text-sm">or</span>
+                    <div className="flex-grow border-t border-border"></div>
+                  </div>
 
-              <button
-                type="button"
-                onClick={handleBiometricLogin}
-                disabled={loading}
-                className="w-full bg-card border border-primary/20 text-primary py-3 rounded-xl font-bold hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
-              >
-                <Fingerprint size={20} />
-                Sign in with Passkey
-              </button>
+                  <button
+                    type="button"
+                    onClick={handleBiometricLogin}
+                    disabled={loading}
+                    className="w-full bg-card border border-primary/20 text-primary py-3 rounded-xl font-bold hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Fingerprint size={20} />
+                    {Capacitor.isNativePlatform() ? "Sign in with Biometrics" : "Sign in with Passkey"}
+                  </button>
+                </>
+              )}
 
               <button
                 type="button"
