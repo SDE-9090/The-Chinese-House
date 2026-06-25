@@ -855,7 +855,12 @@ router.get("/sessions/history", adminAuth, async (req, res) => {
 
     // Get total count
     const countRes = await pool.query(
-      "SELECT COUNT(*) FROM table_sessions WHERE status = 'completed' AND business_id = $1",
+      `SELECT COUNT(*) FROM table_sessions ts
+       WHERE ts.status = 'completed' AND ts.business_id = $1
+       AND (
+         SELECT COALESCE(SUM(o.total), 0) FROM orders o 
+         WHERE o.table_session_id = ts.id AND o.status != 'cancelled'
+       ) > 0`,
       [req.business_id]
     );
     const totalCount = parseInt(countRes.rows[0].count);
@@ -868,6 +873,10 @@ router.get("/sessions/history", adminAuth, async (req, res) => {
       FROM table_sessions ts
       LEFT JOIN tables t ON ts.table_id = t.id
       WHERE ts.status = 'completed' AND ts.business_id = $1
+        AND (
+          SELECT COALESCE(SUM(o.total), 0) FROM orders o 
+          WHERE o.table_session_id = ts.id AND o.status != 'cancelled'
+        ) > 0
       ORDER BY ts.end_time DESC
       LIMIT $2 OFFSET $3
     `, [req.business_id, limit, offset]);
