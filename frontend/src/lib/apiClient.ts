@@ -503,6 +503,7 @@ export interface BusinessSettings {
   loyaltyPointsPer100?: number;
   loyaltyDiscountPerPoint?: number;
   qrRoutingMode?: "claim" | "waiter_unlock";
+  printerWidth?: string;
 }
 
 export async function apiAdminGetBusinessSettings(): Promise<BusinessSettings> {

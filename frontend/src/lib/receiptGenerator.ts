@@ -28,6 +28,7 @@ export interface ReceiptData {
   };
   orderType?: string;
   specialInstructions?: string;
+  tableSessionId?: string | null;
 }
 
 export interface ZReportData {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { printZReport, type ZReportData } from "@/lib/receiptGenerator";
+import { printQueue } from "@/lib/printQueue";
+import { type ZReportData } from "@/lib/receiptGenerator";
 import { TrendingUp, DollarSign, BarChart3, CalendarDays, Download, Share2, Printer } from "lucide-react";
 import { apiGetSalesReport } from "@/lib/apiClient";
 import type { SalesReportData, SalesReportType } from "@/lib/apiClient";
@@ -139,7 +140,7 @@ const SalesReportUI = () => {
       paidRevenue: data.paidRevenue,
       pendingRevenue: data.pendingRevenue
     };
-    printZReport(reportData);
+    printQueue.enqueue(`manual-zreport-${Date.now()}`, "zreport", reportData);
   };
 
   const MONTHS = [

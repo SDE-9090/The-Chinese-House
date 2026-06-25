@@ -29,7 +29,8 @@ import {
   FileText,
 } from "lucide-react";
 import { apiGetAllOrders, apiDeleteOrder, type Order } from "@/lib/apiClient";
-import { downloadReceipt, printReceipt } from "@/lib/receiptGenerator";
+import { downloadReceipt, type ReceiptData } from "@/lib/receiptGenerator";
+import { printQueue } from "@/lib/printQueue";
 import { downloadInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -802,7 +803,7 @@ const OrderHistory = () => {
                     </span>
                     <button
                       onClick={() => {
-                        const rd = {
+                        const rd: ReceiptData = {
                           token: order.token,
                           customerName: order.customerName,
                           customerPhone: order.customerPhone,
@@ -821,7 +822,7 @@ const OrderHistory = () => {
                           orderType: order.orderType,
                           specialInstructions: order.specialInstructions,
                         };
-                        printReceipt(rd);
+                        printQueue.enqueue(`manual-${Date.now()}`, "receipt", rd);
                       }}
                       className="p-1.5 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
                       title="Print Receipt"

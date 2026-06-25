@@ -18,8 +18,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, Printer, Bluetooth } from "lucide-react";
 import { apiAdminFactoryReset } from "@/lib/apiClient";
+import { Capacitor } from "@capacitor/core";
+import { BluetoothPrinter } from "@candraadiw/capacitor-bluetooth-printer";
 
 import { validateName, validateMobile, validateGST } from "@/lib/validators";
 
@@ -52,6 +54,11 @@ const BusinessSettingsManager = () => {
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
   const [resetting, setResetting] = useState(false);
+
+  // Bluetooth Printer States
+  const [btDevices, setBtDevices] = useState<any[]>([]);
+  const [isScanning, setIsScanning] = useState(false);
+  const [connectedPrinter, setConnectedPrinter] = useState<string | null>(null);
 
   useEffect(() => {
     apiAdminGetBusinessSettings()
@@ -97,6 +104,7 @@ const BusinessSettingsManager = () => {
         loyaltyPointsPer100: data.loyaltyPointsPer100,
         loyaltyDiscountPerPoint: data.loyaltyDiscountPerPoint,
         qrRoutingMode: data.qrRoutingMode,
+        printerWidth: data.printerWidth,
       });
       setData(updated);
       toast({ title: "Saved", description: "Business settings updated." });
@@ -119,6 +127,36 @@ const BusinessSettingsManager = () => {
     } catch (err: any) {
       toast({ title: "Reset Failed", description: err.message, variant: "destructive" });
       setResetting(false);
+    }
+  };
+
+  const handleScanPrinters = async () => {
+    if (!Capacitor.isNativePlatform()) {
+      toast({ title: "Not Supported", description: "Bluetooth printing is only available on the Android app.", variant: "destructive" });
+      return;
+    }
+    setIsScanning(true);
+    try {
+      const res = await BluetoothPrinter.listDevices();
+      setBtDevices(res.devices || []);
+      if (res.devices && res.devices.length === 0) {
+        toast({ title: "No Printers Found", description: "Ensure the printer is turned on and paired in Android Settings." });
+      }
+    } catch (err: any) {
+      toast({ title: "Scan Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleConnectPrinter = async (address: string, name: string) => {
+    try {
+      toast({ title: "Connecting...", description: `Connecting to ${name}` });
+      await BluetoothPrinter.connect({ address });
+      setConnectedPrinter(address);
+      toast({ title: "Connected", description: `Successfully connected to ${name}` });
+    } catch (err: any) {
+      toast({ title: "Connection Failed", description: err.message, variant: "destructive" });
     }
   };
 
@@ -285,6 +323,25 @@ const BusinessSettingsManager = () => {
             </select>
             <p className="mt-1 text-xs text-muted-foreground">
               Choose how QR code orders are assigned to waiters.
+            </p>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">
+              Global Printer Width
+            </label>
+            <select
+              value={data.printerWidth || "58mm"}
+              onChange={(e) =>
+                setData((prev) => ({ ...prev, printerWidth: e.target.value }))
+              }
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="58mm">58mm (Small Thermal Printers)</option>
+              <option value="80mm">80mm (Large Thermal Printers)</option>
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Select the paper size for your receipt printer.
             </p>
           </div>
 
@@ -504,6 +561,53 @@ const BusinessSettingsManager = () => {
           </div>
         </div>
       </div>
+
+      {/* Bluetooth Printer Settings (Native Only) */}
+      {Capacitor.isNativePlatform() && (
+        <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+              <Printer className="text-blue-500" size={18} />
+            </div>
+            <div>
+              <h2 className="font-heading text-lg font-bold">Bluetooth Printer (Android OS)</h2>
+              <p className="text-sm text-muted-foreground">
+                Connect directly to your paired thermal printer.
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <Button onClick={handleScanPrinters} disabled={isScanning} variant="secondary" className="w-full md:w-auto">
+              <Bluetooth className="w-4 h-4 mr-2" /> 
+              {isScanning ? "Scanning..." : "Scan for Paired Printers"}
+            </Button>
+
+            {btDevices.length > 0 && (
+              <div className="space-y-2 mt-4">
+                <label className="text-sm font-medium text-foreground block">Paired Devices</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {btDevices.map((device, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 border border-border rounded-xl bg-background">
+                      <div className="overflow-hidden">
+                        <p className="font-medium text-sm truncate">{device.name || "Unknown Printer"}</p>
+                        <p className="text-xs text-muted-foreground truncate font-mono">{device.address}</p>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant={connectedPrinter === device.address ? "default" : "outline"}
+                        onClick={() => handleConnectPrinter(device.address, device.name)}
+                      >
+                        {connectedPrinter === device.address ? "Connected" : "Connect"}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Global Save Button */}
       <div className="flex justify-end sticky bottom-6 z-10 pt-4">

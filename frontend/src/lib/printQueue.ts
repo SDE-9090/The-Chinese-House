@@ -4,6 +4,9 @@
  */
 
 import { buildReceiptCanvas, buildKotCanvas, buildZReportCanvas, type ReceiptData, type ZReportData } from "./receiptGenerator";
+import { Capacitor } from "@capacitor/core";
+import { printReceiptNative } from "./thermalPrinter";
+import { apiGetBusinessSettings } from "./apiClient";
 
 /* ─── Types ─── */
 export interface PrintJob {
@@ -51,6 +54,7 @@ class PrintQueue {
   private failedIds: string[] = [];
   private currentJobId: string | null = null;
   private listeners = new Set<QueueListener>();
+  private cachedPrinterWidth: string | null = null;
 
   /* ─── Subscribe to queue state ─── */
   subscribe(fn: QueueListener) {
@@ -165,8 +169,40 @@ class PrintQueue {
 
     const dataUrl = canvas.toDataURL("image/png");
 
-    if (isAndroid()) {
-      console.log("[PrintQueue] Dispatching RawBT Intent for Android");
+    if (Capacitor.isNativePlatform()) {
+      console.log("[PrintQueue] Dispatching Native Bluetooth Print for Capacitor");
+      
+      let businessName = "The Chinese House";
+      if (!this.cachedPrinterWidth) {
+        try {
+          const settings = await apiGetBusinessSettings();
+          this.cachedPrinterWidth = settings.printerWidth || "58mm";
+        } catch {
+          this.cachedPrinterWidth = "58mm";
+        }
+      }
+      
+      if (job.type === "zreport") {
+        const d = job.data as ZReportData;
+        businessName = d.business?.restaurantName || "The Chinese House";
+        // ZReport uses HTML for now since thermalPrinter doesn't support ZReport natively yet.
+        // Or we can just fallback to rawbt/html for zreports if needed. 
+        // We will fallback to RawBT intent for ZReports until we add ZReport native formatting.
+        const base64Data = dataUrl.split(",")[1];
+        const intentUrl = `intent:${base64Data}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+        window.location.href = intentUrl;
+        return;
+      } else {
+        const d = job.data as ReceiptData;
+        businessName = d.business?.restaurantName || "The Chinese House";
+        const success = await printReceiptNative(d as any, businessName, this.cachedPrinterWidth, job.type === "kot");
+        if (!success) {
+           throw new Error("Native print failed");
+        }
+        return;
+      }
+    } else if (isAndroid()) {
+      console.log("[PrintQueue] Dispatching RawBT Intent for Android browser");
       const base64Data = dataUrl.split(",")[1];
       const intentUrl = `intent:${base64Data}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
       window.location.href = intentUrl;

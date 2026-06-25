@@ -3,6 +3,7 @@ import { socket } from "@/lib/socket";
 import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, type Table, type Order, type SessionBill, type AuthUser } from "@/lib/apiClient";
 import OrderCard from "./OrderCard";
 import BillDocument, { downloadBillPrint, downloadKOTPrint } from "@/components/BillDocument";
+import { printQueue } from "@/lib/printQueue";
 import { Loader2, CheckCircle, UtensilsCrossed, Clock, QrCode, Plus, X, Printer, Download, Trash2, RefreshCw, MoreVertical, ArrowLeftRight, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -542,12 +543,20 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                             <span className="capitalize font-semibold px-2 py-0.5 bg-muted rounded-full ml-1">{o.status}</span>
                           </div>
                           <button
-                            onClick={() => downloadKOTPrint({
-                              token: o.token,
-                              tableNumber: String(selectedTable.tableNumber),
-                              orderType: "dine-in",
-                              items: o.items || []
-                            })}
+                            onClick={() => {
+                              const rd = {
+                                token: o.token,
+                                customerName: detailBill?.customerName || "",
+                                customerPhone: detailBill?.customerPhone || "",
+                                items: o.items || [],
+                                total: o.total || 0,
+                                paymentMethod: "counter" as any,
+                                createdAt: new Date().toISOString(),
+                                orderType: "dine-in",
+                                tableSessionId: selectedTable.sessionId,
+                              };
+                              printQueue.enqueue(`manual-kot-${Date.now()}`, "kot", rd);
+                            }}
                             className="p-1.5 hover:bg-muted text-foreground rounded-md transition-colors flex items-center gap-1"
                             title="Print KOT"
                           >
@@ -588,14 +597,29 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                 <div className="p-4 border-t border-border space-y-2">
                   {detailBill && (
                     <button
-                      onClick={() => downloadBillPrint({
-                        ...detailBill,
-                        customerName: detailSession.customerName,
-                        customerPhone: detailSession.customerPhone,
-                      }, business)}
+                      onClick={() => {
+                        const rd = {
+                          token: 0,
+                          customerName: detailSession.customerName || "",
+                          customerPhone: detailSession.customerPhone || "",
+                          items: detailBill?.itemized || [],
+                          total: detailBill?.totalAmount || 0,
+                          paymentMethod: "counter" as any,
+                          createdAt: new Date().toISOString(),
+                          orderType: "dine-in",
+                          tableSessionId: detailSession.id,
+                          subtotal: detailBill?.sessionDetails?.subtotal || 0,
+                          discount: detailBill?.sessionDetails?.discount || 0,
+                          cgst: detailBill?.sessionDetails?.cgst || 0,
+                          sgst: detailBill?.sessionDetails?.sgst || 0,
+                          gst: detailBill?.sessionDetails?.gstTotal || 0,
+                          paidAmount: detailBill?.totalPaid || 0,
+                        };
+                        printQueue.enqueue(`manual-receipt-${Date.now()}`, "receipt", rd);
+                      }}
                       className="w-full bg-muted hover:bg-muted/80 text-foreground border border-border py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition"
                     >
-                      <Download size={15} /> Download Bill
+                      <Printer size={15} /> Print Bill
                     </button>
                   )}
                   {(user.role === 'admin' || user.permissions?.canClearTable) && (

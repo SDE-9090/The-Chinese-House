@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ErrorBoundary } from "../ErrorBoundary";
-import { downloadKOTPrint } from "@/components/BillDocument";
+import { printQueue } from "@/lib/printQueue";
 import { useDynamicMenu, type DynamicMenuItem } from "@/hooks/useDynamicMenu";
 import {
   apiPlaceOrder,
@@ -374,16 +374,21 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
 
         <div className="flex flex-col gap-3">
           <button
-            onClick={() => downloadKOTPrint({
-              token: lastOrder.token,
-              orderType: lastOrder.orderType,
-              items: lastOrder.items,
-              specialInstructions: lastOrder.specialInstructions,
-              billDetails: {
-                total: lastOrder.total,
-                paymentStatus: lastOrder.paymentStatus || "paid"
-              }
-            })}
+            onClick={() => {
+              const rd = {
+                token: lastOrder.token,
+                customerName: customerName || "Guest",
+                customerPhone: customerPhone || "",
+                items: lastOrder.items || [],
+                total: lastOrder.total || 0,
+                paymentMethod: paymentMethod as any,
+                createdAt: new Date().toISOString(),
+                orderType: lastOrder.orderType,
+                specialInstructions: lastOrder.specialInstructions,
+                paymentStatus: lastOrder.paymentStatus || "paid",
+              };
+              printQueue.enqueue(`manual-kot-${Date.now()}`, "kot", rd);
+            }}
             className="flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 text-foreground px-6 py-3 rounded-xl font-bold transition-all"
           >
             <Printer size={18} /> Print KOT (Kitchen Ticket)

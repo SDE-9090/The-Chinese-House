@@ -20,6 +20,7 @@ import type { Order } from "@/lib/apiClient";
 import { toast } from "@/hooks/use-toast";
 import { downloadReceipt, printReceipt } from "@/lib/receiptGenerator";
 import { downloadKOTPrint } from "@/components/BillDocument";
+import { printQueue } from "@/lib/printQueue";
 
 const statusConfig = {
   approval_pending: { label: "Pending Approval", color: "bg-amber-500", icon: Clock },
@@ -99,6 +100,7 @@ function buildReceiptData(order: Order) {
     business: order.business,
     orderType: order.orderType,
     specialInstructions: order.specialInstructions,
+    tableSessionId: order.tableSessionId,
   };
 }
 
@@ -212,18 +214,7 @@ const OrderCard = ({
   const receiptData = buildReceiptData(order);
 
   const handlePrintKOT = () => {
-    downloadKOTPrint({
-      token: order.token,
-      orderType: order.orderType,
-      items: order.items,
-      specialInstructions: order.specialInstructions,
-      tableNumber: order.tableNumber,
-      // Only include bill details if NOT dine-in
-      billDetails: order.orderType !== "dine-in" ? {
-        total: order.total,
-        paymentStatus: order.paymentStatus || "paid"
-      } : undefined
-    });
+    printQueue.enqueue(`manual-kot-${Date.now()}`, "kot", receiptData);
   };
 
   return (
@@ -326,7 +317,7 @@ const OrderCard = ({
           <div className="flex items-center gap-2">
             {/* Primary */}
             <button
-              onClick={() => printReceipt(receiptData)}
+              onClick={() => printQueue.enqueue(`manual-${Date.now()}`, "receipt", receiptData)}
               className="bg-primary text-primary-foreground px-3 py-2 rounded-xl text-xs flex items-center gap-2"
             >
               <Printer size={14} />

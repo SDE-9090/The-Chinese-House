@@ -42,6 +42,7 @@ router.put("/", adminAuth, async (req, res) => {
     loyaltyPointsPer100,
     loyaltyDiscountPerPoint,
     qrRoutingMode,
+    printerWidth,
   } = req.body;
 
   if (restaurantName !== undefined) {
@@ -132,12 +133,13 @@ router.put("/", adminAuth, async (req, res) => {
       loyaltyPointsPer100: typeof loyaltyPointsPer100 === "number" ? loyaltyPointsPer100 : current.loyaltyPointsPer100,
       loyaltyDiscountPerPoint: typeof loyaltyDiscountPerPoint === "number" ? loyaltyDiscountPerPoint : current.loyaltyDiscountPerPoint,
       qrRoutingMode: typeof qrRoutingMode === "string" && ["claim", "waiter_unlock"].includes(qrRoutingMode) ? qrRoutingMode : (current.qrRoutingMode || "claim"),
+      printerWidth: typeof printerWidth === "string" && ["58mm", "80mm"].includes(printerWidth) ? printerWidth : current.printerWidth,
       landingPageContent: landingPageContent !== undefined ? landingPageContent : current.landingPageContent,
     };
 
     const result = await pool.query(
-      `INSERT INTO business_settings (business_id, restaurant_name, gstin, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate, kitchen_pin, updated_at, landing_page_content, order_workflow, loyalty_enabled, loyalty_points_per_100, loyalty_discount_per_point, qr_routing_mode)
-       VALUES ($10, $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $11, $12, $13, $14, $15, $16)
+      `INSERT INTO business_settings (business_id, restaurant_name, gstin, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate, kitchen_pin, updated_at, landing_page_content, order_workflow, loyalty_enabled, loyalty_points_per_100, loyalty_discount_per_point, qr_routing_mode, printer_width)
+       VALUES ($10, $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $11, $12, $13, $14, $15, $16, $17)
        ON CONFLICT (business_id) DO UPDATE SET
          restaurant_name = EXCLUDED.restaurant_name,
          gstin = EXCLUDED.gstin,
@@ -154,8 +156,9 @@ router.put("/", adminAuth, async (req, res) => {
          loyalty_points_per_100 = EXCLUDED.loyalty_points_per_100,
          loyalty_discount_per_point = EXCLUDED.loyalty_discount_per_point,
          qr_routing_mode = EXCLUDED.qr_routing_mode,
+         printer_width = EXCLUDED.printer_width,
          updated_at = NOW()
-       RETURNING id, restaurant_name, gstin, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate, kitchen_pin, landing_page_content, order_workflow, loyalty_enabled, loyalty_points_per_100, loyalty_discount_per_point, qr_routing_mode`,
+       RETURNING id, restaurant_name, gstin, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate, kitchen_pin, landing_page_content, order_workflow, loyalty_enabled, loyalty_points_per_100, loyalty_discount_per_point, qr_routing_mode, printer_width`,
       [
         next.restaurantName,
         next.gstin,
@@ -172,7 +175,8 @@ router.put("/", adminAuth, async (req, res) => {
         next.loyaltyEnabled,
         next.loyaltyPointsPer100,
         next.loyaltyDiscountPerPoint,
-        next.qrRoutingMode
+        next.qrRoutingMode,
+        next.printerWidth
       ],
     );
 
