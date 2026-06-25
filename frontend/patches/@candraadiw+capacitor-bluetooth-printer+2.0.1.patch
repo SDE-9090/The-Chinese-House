@@ -1,0 +1,29 @@
+diff --git a/node_modules/@candraadiw/capacitor-bluetooth-printer/package.json b/node_modules/@candraadiw/capacitor-bluetooth-printer/package.json
+index 61e4a29..d2c2dd3 100644
+--- a/node_modules/@candraadiw/capacitor-bluetooth-printer/package.json
++++ b/node_modules/@candraadiw/capacitor-bluetooth-printer/package.json
+@@ -4,9 +4,9 @@
+   "description": "Bluetooth printer plugin for Capacitor v7+ with Electron and Web fallback",
+   "author": "candraadiw",
+   "license": "MIT",
+-  "main": "dist/plugin.cjs.js",
+-  "module": "dist/plugin.esm.js",
+-  "types": "dist/esm/definitions.d.ts",
++  "main": "dist/index.cjs.js",
++  "module": "dist/index.esm.js",
++  "types": "dist/esm/index.d.ts",
+   "files": [
+     "dist/",
+     "android/",
+@@ -36,6 +36,11 @@
+     "type": "git",
+     "url": "git+https://gitlab.com/CandraAdiW/capacitor-bluetooth-printer.git"
+   },
++  "capacitor": {
++    "android": {
++      "src": "android"
++    }
++  },
+   "keywords": [
+     "capacitor",
+     "plugin",

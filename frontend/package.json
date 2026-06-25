@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "postinstall": "sed -i 's/\"main\": \"dist\\/plugin.cjs.js\"/\"main\": \"dist\\/index.cjs.js\"/g' node_modules/@candraadiw/capacitor-bluetooth-printer/package.json && sed -i 's/\"module\": \"dist\\/plugin.esm.js\"/\"module\": \"dist\\/index.esm.js\"/g' node_modules/@candraadiw/capacitor-bluetooth-printer/package.json || true"
+    "postinstall": "patch-package && sed -i 's/\"main\": \"dist\\/plugin.cjs.js\"/\"main\": \"dist\\/index.cjs.js\"/g' node_modules/@candraadiw/capacitor-bluetooth-printer/package.json && sed -i 's/\"module\": \"dist\\/plugin.esm.js\"/\"module\": \"dist\\/index.esm.js\"/g' node_modules/@candraadiw/capacitor-bluetooth-printer/package.json || true"
   },
   "dependencies": {
     "@candraadiw/capacitor-bluetooth-printer": "^2.0.1",
@@ -95,6 +95,7 @@
     "globals": "^15.15.0",
     "jsdom": "^20.0.3",
     "lovable-tagger": "^1.1.13",
+    "patch-package": "^8.0.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
