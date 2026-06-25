@@ -90,7 +90,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
   const [lastOrder, setLastOrder] = useState<{
     token: number;
     total: number;
-    items: { name: string; quantity: number; note?: string }[];
+    items: { name: string; price: number; quantity: number; note?: string }[];
     orderType: string;
     specialInstructions?: string;
     paymentStatus?: string;
@@ -285,7 +285,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
       setLastOrder({
         token: order.token,
         total: order.total,
-        items: cart.map(c => ({ name: c.name, quantity: c.quantity, note: c.note })),
+        items: cart.map(c => ({ name: c.name, price: c.price, quantity: c.quantity, note: c.note })),
         orderType,
         specialInstructions: specialInstructions.trim(),
         paymentStatus: order.paymentStatus || "paid"
