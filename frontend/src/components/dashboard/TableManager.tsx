@@ -207,7 +207,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
       if (bill && bill.totalAmount > 0 && detailSession && Capacitor.isNativePlatform()) {
         console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL TABLE BILL for Ref #${sessionId.slice(0, 8)}`);
         const rd = {
-          token: detailSession.id.slice(0, 4),
+          token: parseInt(detailSession.id.slice(0, 4), 16) || 0,
           customerName: detailSession.customerName || "Table Guest",
           customerPhone: detailSession.customerPhone || "",
           items: bill.itemized?.map((i: SessionBill["itemized"][0]) => ({
@@ -572,7 +572,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                           <button
                             onClick={() => {
                               const rd = {
-                                token: o.token,
+                                token: typeof o.token === "number" ? o.token : parseInt(String(o.token), 10) || 0,
                                 customerName: detailBill?.customerName || "",
                                 customerPhone: detailBill?.customerPhone || "",
                                 items: o.items || [],
