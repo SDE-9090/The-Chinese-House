@@ -561,8 +561,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                     </div>
 
                     <h4 className="font-bold text-sm uppercase tracking-wide text-muted-foreground">Order Rounds</h4>
-                    {detailBill.orders.map((o: TableHistoryOrder & { token: string, items: any[] }, i: number) => (
-                      <div key={o.orderId} className="bg-background rounded-xl border border-border p-3">
+                    {detailBill.orders.map((o: Order & { items: any[], token?: string }, i: number) => (
+                      <div key={o.id} className="bg-background rounded-xl border border-border p-3">
                         <div className="flex justify-between items-center text-xs text-muted-foreground mb-2 pb-1 border-b border-border/30">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-foreground">Round {i + 1}</span>
