@@ -716,8 +716,25 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
     // [AUTO-PRINT LOGIC] Print Final Bill if marked completed (Skip for dine-in, as they print when table is cleared)
     if (newStatus === "completed" && currentOrder?.orderType !== "dine-in") {
       console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL BILL for Order #${currentOrder?.token || orderId}`);
-      if (currentOrder) {
-        console.log(`   --> Total Collected: ₹${currentOrder.total}`);
+      if (currentOrder && Capacitor.isNativePlatform()) {
+        const rd = {
+          token: currentOrder.token,
+          customerName: currentOrder.customerName || "Guest",
+          customerPhone: currentOrder.customerPhone || "",
+          items: currentOrder.items || [],
+          total: currentOrder.total,
+          paymentMethod: currentOrder.paymentMethod as any,
+          createdAt: currentOrder.createdAt,
+          orderType: currentOrder.orderType as any,
+          paymentStatus: currentOrder.paymentStatus as any,
+          subtotal: currentOrder.subtotal,
+          discount: currentOrder.discount,
+          cgst: currentOrder.cgst,
+          sgst: currentOrder.sgst,
+          gst: currentOrder.gst,
+          paidAmount: currentOrder.paidAmount || currentOrder.total,
+        };
+        printQueue.enqueue(`auto-receipt-${orderId}`, "receipt", rd);
       }
     }
 

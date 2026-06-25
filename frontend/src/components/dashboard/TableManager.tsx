@@ -202,10 +202,28 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
       
       // [AUTO-PRINT LOGIC] Print Final Bill after clearing the table
       const bill = billsMap[sessionId];
-      if (bill && bill.totalAmount > 0) {
+      const detailSession = tableSessions.find((s) => s.id === sessionId);
+      if (bill && bill.totalAmount > 0 && detailSession && Capacitor.isNativePlatform()) {
         console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL TABLE BILL for Ref #${sessionId.slice(0, 8)}`);
-        console.log(`   --> Table: ${bill.tableNumber || 'N/A'}`);
-        console.log(`   --> Total Paid: ₹${bill.totalAmount.toFixed(2)}`);
+        const rd = {
+          token: detailSession.id.slice(0, 4),
+          customerName: detailSession.customerName || "Table Guest",
+          customerPhone: detailSession.customerPhone || "",
+          items: detailSession.items || [],
+          total: bill.totalAmount,
+          paymentMethod: method as any,
+          createdAt: new Date().toISOString(),
+          orderType: "dine-in" as const,
+          paymentStatus: "paid" as const,
+          tableSessionId: detailSession.id,
+          subtotal: bill.sessionDetails?.subtotal || 0,
+          discount: bill.sessionDetails?.discount || 0,
+          cgst: bill.sessionDetails?.cgst || 0,
+          sgst: bill.sessionDetails?.sgst || 0,
+          gst: bill.sessionDetails?.gstTotal || 0,
+          paidAmount: bill.totalAmount,
+        };
+        printQueue.enqueue(`auto-receipt-${Date.now()}`, "receipt", rd);
       }
 
       await fetchTables();
