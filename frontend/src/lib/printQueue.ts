@@ -172,19 +172,31 @@ class PrintQueue {
     if (Capacitor.isNativePlatform()) {
       console.log("[PrintQueue] Dispatching Native Bluetooth Print for Capacitor");
       
-      let businessName = "The Chinese House";
-      if (!this.cachedPrinterWidth) {
-        try {
-          const settings = await apiGetBusinessSettings();
-          this.cachedPrinterWidth = settings.printerWidth || "58mm";
-        } catch {
-          this.cachedPrinterWidth = "58mm";
-        }
+      let businessData = { 
+        restaurantName: "The Chinese House",
+        address: undefined as string | undefined,
+        phone: undefined as string | undefined,
+        gstin: undefined as string | null | undefined
+      };
+      
+      try {
+        const settings = await apiGetBusinessSettings();
+        this.cachedPrinterWidth = settings.printerWidth || "58mm";
+        businessData = {
+          restaurantName: settings.restaurantName || "The Chinese House",
+          address: settings.address,
+          phone: settings.phone,
+          gstin: settings.gstin
+        };
+      } catch {
+        this.cachedPrinterWidth = this.cachedPrinterWidth || "58mm";
       }
       
       if (job.type === "zreport") {
         const d = job.data as ZReportData;
-        businessName = d.business?.restaurantName || "The Chinese House";
+        if (d.business?.restaurantName) {
+          businessData.restaurantName = d.business.restaurantName;
+        }
         // ZReport uses HTML for now since thermalPrinter doesn't support ZReport natively yet.
         // Or we can just fallback to rawbt/html for zreports if needed. 
         // We will fallback to RawBT intent for ZReports until we add ZReport native formatting.
@@ -194,8 +206,16 @@ class PrintQueue {
         return;
       } else {
         const d = job.data as ReceiptData;
-        businessName = d.business?.restaurantName || "The Chinese House";
-        const success = await printReceiptNative(d as any, businessName, this.cachedPrinterWidth, job.type === "kot");
+        if (d.business?.restaurantName) {
+          businessData.restaurantName = d.business.restaurantName;
+        }
+        if (d.business?.address) {
+          businessData.address = d.business.address;
+        }
+        if (d.business?.gstin) {
+          businessData.gstin = d.business.gstin;
+        }
+        const success = await printReceiptNative(d as any, businessData, this.cachedPrinterWidth, job.type === "kot");
         if (!success) {
            throw new Error("Native print failed");
         }

@@ -20,7 +20,7 @@ const CUT_PAPER = GS + "V1";
 
 export async function printReceiptNative(
   order: Order,
-  restaurantName: string,
+  business: { restaurantName: string; address?: string; phone?: string; gstin?: string | null },
   printerWidth: string = "58mm",
   isKOT: boolean = false
 ): Promise<boolean> {
@@ -71,8 +71,17 @@ export async function printReceiptNative(
     }
   } else {
     // BILL
-    receipt += ALIGN_CENTER + BOLD_ON + TEXT_DOUBLE_HEIGHT + restaurantName + "\n\n" + TEXT_NORMAL + BOLD_OFF;
-    receipt += "TAX INVOICE\n";
+    receipt += ALIGN_CENTER + BOLD_ON + TEXT_DOUBLE_HEIGHT + business.restaurantName + "\n\n" + TEXT_NORMAL + BOLD_OFF;
+    if (business.address) {
+      receipt += business.address + "\n";
+    }
+    if (business.phone) {
+      receipt += "Ph: " + business.phone + "\n";
+    }
+    if (business.gstin) {
+      receipt += "GSTIN: " + business.gstin + "\n";
+    }
+    receipt += "\nTAX INVOICE\n";
     receipt += ALIGN_LEFT;
     receipt += separator;
     receipt += `Order #: ${order.id}\n`;
