@@ -173,7 +173,7 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
                   className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-base md:text-sm focus:outline-none focus:border-primary transition-colors"
                 />
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: "none" }}>
                 {categories.map((cat) => (
                   <button
                     key={cat}

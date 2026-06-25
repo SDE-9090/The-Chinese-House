@@ -743,7 +743,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-4 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+      <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
         {categories.map((cat) => (
           <button
             key={cat}

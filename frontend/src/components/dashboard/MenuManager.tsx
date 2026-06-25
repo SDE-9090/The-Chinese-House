@@ -848,7 +848,7 @@ const MenuManager = () => {
           />
         </div>
         <div
-          className="flex gap-2 overflow-x-auto"
+          className="flex gap-2 overflow-x-auto scrollbar-hide"
           style={{ scrollbarWidth: "none" }}
         >
           {["All", ...categoryNames].map((cat) => (
