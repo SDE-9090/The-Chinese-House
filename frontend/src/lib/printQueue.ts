@@ -185,11 +185,8 @@ class PrintQueue {
     if (Capacitor.isNativePlatform()) {
       console.log("[PrintQueue] Dispatching Native Bluetooth Print for Capacitor");
       
-      let businessData = { 
-        restaurantName: "The Chinese House",
-        address: undefined as string | undefined,
-        phone: undefined as string | undefined,
-        gstin: undefined as string | null | undefined
+      let businessData: { restaurantName: string; address?: string; phone?: string; gstin?: string | null } = { 
+        restaurantName: "The Chinese House"
       };
       
       const now = Date.now();
