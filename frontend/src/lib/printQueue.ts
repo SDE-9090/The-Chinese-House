@@ -55,6 +55,19 @@ class PrintQueue {
   private currentJobId: string | null = null;
   private listeners = new Set<QueueListener>();
   private cachedPrinterWidth: string | null = null;
+  private cachedBusinessData: { restaurantName: string; address?: string; phone?: string; gstin?: string | null } | null = null;
+  private lastSettingsFetchTime = 0;
+  private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+  constructor() {
+    if (typeof window !== "undefined") {
+      window.addEventListener("business-settings-updated", () => {
+        this.cachedBusinessData = null;
+        this.lastSettingsFetchTime = 0;
+        console.log("[PrintQueue] Business settings cache invalidated");
+      });
+    }
+  }
 
   /* ─── Subscribe to queue state ─── */
   subscribe(fn: QueueListener) {
@@ -179,17 +192,25 @@ class PrintQueue {
         gstin: undefined as string | null | undefined
       };
       
-      try {
-        const settings = await apiGetBusinessSettings();
-        this.cachedPrinterWidth = settings.printerWidth || "58mm";
-        businessData = {
-          restaurantName: settings.restaurantName || "The Chinese House",
-          address: settings.address,
-          phone: settings.phone,
-          gstin: settings.gstin
-        };
-      } catch {
-        this.cachedPrinterWidth = this.cachedPrinterWidth || "58mm";
+      const now = Date.now();
+      if (!this.cachedBusinessData || (now - this.lastSettingsFetchTime) > this.CACHE_TTL) {
+        try {
+          const settings = await apiGetBusinessSettings();
+          this.cachedPrinterWidth = settings.printerWidth || "58mm";
+          this.cachedBusinessData = {
+            restaurantName: settings.restaurantName || "The Chinese House",
+            address: settings.address,
+            phone: settings.phone,
+            gstin: settings.gstin
+          };
+          this.lastSettingsFetchTime = now;
+        } catch {
+          this.cachedPrinterWidth = this.cachedPrinterWidth || "58mm";
+        }
+      }
+
+      if (this.cachedBusinessData) {
+        businessData = { ...this.cachedBusinessData };
       }
       
       if (job.type === "zreport") {
