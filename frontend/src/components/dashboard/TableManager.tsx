@@ -202,7 +202,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
       
       // [AUTO-PRINT LOGIC] Print Final Bill after clearing the table
       const bill = billsMap[sessionId];
-      const detailSession = tableSessions.find((s) => s.id === sessionId);
+      const detailSession = tables.find((t) => t.currentSession?.id === sessionId)?.currentSession;
       if (bill && bill.totalAmount > 0 && detailSession && Capacitor.isNativePlatform()) {
         console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL TABLE BILL for Ref #${sessionId.slice(0, 8)}`);
         const rd = {
