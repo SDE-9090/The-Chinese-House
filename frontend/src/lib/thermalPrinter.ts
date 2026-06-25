@@ -108,16 +108,17 @@ export async function printReceiptNative(
     receipt += ALIGN_RIGHT;
     receipt += padBetween("Subtotal:", subtotal.toFixed(2), lineLength) + "\n";
     
-    if (order.taxAmount) {
-      receipt += padBetween("Taxes:", order.taxAmount.toFixed(2), lineLength) + "\n";
+    let taxes = (order.cgst || 0) + (order.sgst || 0) + (order.gst || 0);
+    if (taxes > 0) {
+      receipt += padBetween("Taxes:", taxes.toFixed(2), lineLength) + "\n";
     }
-    if (order.discountAmount) {
-      receipt += padBetween("Discount:", "-" + order.discountAmount.toFixed(2), lineLength) + "\n";
+    if (order.discount && order.discount > 0) {
+      receipt += padBetween("Discount:", "-" + order.discount.toFixed(2), lineLength) + "\n";
     }
 
     receipt += thickSeparator;
     receipt += BOLD_ON;
-    receipt += padBetween("TOTAL:", (order.totalAmount || subtotal).toFixed(2), lineLength) + "\n";
+    receipt += padBetween("TOTAL:", (order.total || subtotal).toFixed(2), lineLength) + "\n";
     receipt += BOLD_OFF;
     receipt += thickSeparator;
     
