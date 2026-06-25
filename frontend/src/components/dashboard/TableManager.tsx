@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { socket } from "@/lib/socket";
-import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, type Table, type Order, type SessionBill, type AuthUser } from "@/lib/apiClient";
+import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, type Table, type Order, type SessionBill, type AuthUser, type TableHistoryOrder } from "@/lib/apiClient";
 import OrderCard from "./OrderCard";
 import BillDocument, { downloadBillPrint, downloadKOTPrint } from "@/components/BillDocument";
 import { printQueue } from "@/lib/printQueue";
+import { Capacitor } from "@capacitor/core";
 import { Loader2, CheckCircle, UtensilsCrossed, Clock, QrCode, Plus, X, Printer, Download, Trash2, RefreshCw, MoreVertical, ArrowLeftRight, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -209,16 +210,16 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           token: detailSession.id.slice(0, 4),
           customerName: detailSession.customerName || "Table Guest",
           customerPhone: detailSession.customerPhone || "",
-          items: bill.itemized?.map((i: any) => ({
-            id: String(i.menuItemId || i.id || Date.now()),
+          items: bill.itemized?.map((i: SessionBill["itemized"][0]) => ({
+            id: String(i.menuItemId || i.name || Date.now()),
             name: i.name,
             price: i.price,
             quantity: i.quantity,
-            priceLabel: i.priceLabel,
-            note: i.note
+            priceLabel: `₹${i.price}`,
+            note: ""
           })) || [],
           total: bill.totalAmount,
-          paymentMethod: method as any,
+          paymentMethod: (method === "cash" || method === "upi" || method === "card" || method === "split" ? "counter" : "online") as "counter" | "online",
           createdAt: new Date().toISOString(),
           orderType: "dine-in" as const,
           paymentStatus: "paid" as const,
@@ -237,8 +238,9 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
       await onRefresh();
       toast({ title: `Table cleared (${method.toUpperCase()})` });
       setSelectedTable(null);
-    } catch (err: any) {
-      toast({ title: "Failed to free table", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Failed to free table", description: errorMsg, variant: "destructive" });
     } finally {
       setClosingId(null);
       setShowPaymentModal(null);
@@ -559,8 +561,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                     </div>
 
                     <h4 className="font-bold text-sm uppercase tracking-wide text-muted-foreground">Order Rounds</h4>
-                    {detailBill.orders.map((o: any, i: number) => (
-                      <div key={o.id} className="bg-background rounded-xl border border-border p-3">
+                    {detailBill.orders.map((o: TableHistoryOrder & { token: string, items: any[] }, i: number) => (
+                      <div key={o.orderId} className="bg-background rounded-xl border border-border p-3">
                         <div className="flex justify-between items-center text-xs text-muted-foreground mb-2 pb-1 border-b border-border/30">
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-foreground">Round {i + 1}</span>
@@ -574,8 +576,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                                 customerName: detailBill?.customerName || "",
                                 customerPhone: detailBill?.customerPhone || "",
                                 items: o.items || [],
-                                total: o.total || 0,
-                                paymentMethod: "counter" as any,
+                                total: Number(o.total) || 0,
+                                paymentMethod: "counter" as "counter",
                                 createdAt: new Date().toISOString(),
                                 orderType: "dine-in" as const,
                                 tableSessionId: selectedTable.activeSession?.id || "",
