@@ -209,7 +209,14 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           token: detailSession.id.slice(0, 4),
           customerName: detailSession.customerName || "Table Guest",
           customerPhone: detailSession.customerPhone || "",
-          items: detailSession.items || [],
+          items: bill.itemized?.map((i: any) => ({
+            id: String(i.menuItemId || i.id || Date.now()),
+            name: i.name,
+            price: i.price,
+            quantity: i.quantity,
+            priceLabel: i.priceLabel,
+            note: i.note
+          })) || [],
           total: bill.totalAmount,
           paymentMethod: method as any,
           createdAt: new Date().toISOString(),
@@ -570,8 +577,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                                 total: o.total || 0,
                                 paymentMethod: "counter" as any,
                                 createdAt: new Date().toISOString(),
-                                orderType: "dine-in",
-                                tableSessionId: selectedTable.sessionId,
+                                orderType: "dine-in" as const,
+                                tableSessionId: selectedTable.activeSession?.id || "",
                               };
                               printQueue.enqueue(`manual-kot-${Date.now()}`, "kot", rd);
                             }}
