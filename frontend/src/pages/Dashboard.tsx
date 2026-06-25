@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { socket } from "@/lib/socket";
 import { useOrders } from "@/hooks/useOrders";
 import { useAutoPrint } from "@/hooks/useAutoPrint";
+import { Capacitor } from "@capacitor/core";
+import { printQueue } from "@/lib/printQueue";
 import {
   apiUpdateOrderStatus,
   apiUpdateOrderItems,
@@ -667,6 +669,12 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
     const handleNewOrder = (data?: any) => {
       console.log(`🖨️ [PRINTER] AUTO-PRINTING KOT for Order #${data?.token || data?.id || 'NEW'}`);
       console.log(`   --> Sending items to kitchen...`);
+      
+      // Auto-print KOT only on the Native Android Tablet to prevent browser pop-up spam
+      if (Capacitor.isNativePlatform() && data?.items?.length > 0) {
+        printQueue.enqueue(`auto-kot-${data.id}`, "kot", data);
+      }
+
       refreshOrders();
       if (soundEnabled) {
         try {

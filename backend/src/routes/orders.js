@@ -351,11 +351,7 @@ Thank you!`;
     };
 
     const io = req.app.get("io");
-    io.emit("new-order", {
-      id: order.id,
-      token: order.token,
-      status: order.status,
-    });
+    io.emit("new-order", responseData);
 
     res.status(201).json(responseData);
   } catch (err) {
