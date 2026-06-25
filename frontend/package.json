@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "postinstall": "sed -i 's/\"main\": \"dist\\/plugin.cjs.js\"/\"main\": \"dist\\/index.cjs.js\"/g' node_modules/@candraadiw/capacitor-bluetooth-printer/package.json && sed -i 's/\"module\": \"dist\\/plugin.esm.js\"/\"module\": \"dist\\/index.esm.js\"/g' node_modules/@candraadiw/capacitor-bluetooth-printer/package.json || true"
   },
   "dependencies": {
     "@candraadiw/capacitor-bluetooth-printer": "^2.0.1",
