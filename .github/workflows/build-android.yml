@@ -36,15 +36,25 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Build APK
+      - name: Build Release APK
         working-directory: ./frontend/android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleRelease
+
+      - name: Sign APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_app
+        with:
+          releaseDirectory: frontend/android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
 
       - name: Rename APK
-        run: mv frontend/android/app/build/outputs/apk/debug/app-debug.apk frontend/android/app/build/outputs/apk/debug/TCH.apk
+        run: mv ${{steps.sign_app.outputs.signedReleaseFile}} frontend/android/app/build/outputs/apk/release/TCH-Release.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: The-Chinese-House-POS-App
-          path: frontend/android/app/build/outputs/apk/debug/TCH.apk
+          path: frontend/android/app/build/outputs/apk/release/TCH-Release.apk
