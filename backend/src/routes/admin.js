@@ -289,7 +289,7 @@ router.post("/logout", async (req, res) => {
   } catch { /* ignore */ }
 
   res.clearCookie("admin_token", { path: "/" });
-  res.clearCookie("admin_refresh_token", { path: "/" });
+  res.clearCookie("refreshToken", { path: "/" });
   res.json({ message: "Logged out" });
 });
 
