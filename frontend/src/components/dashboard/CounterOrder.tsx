@@ -432,7 +432,9 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
               <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Customer Name (Optional)"
+                // Customer name is mandatory
+                required
+                placeholder="Customer Name"
                 value={customerName}
                 onChange={(e) => {
                   setCustomerName(e.target.value);
