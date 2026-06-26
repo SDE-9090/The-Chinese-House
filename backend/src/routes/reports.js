@@ -82,7 +82,17 @@ function generatePDFBuffer(restaurantName, salesData, cancelData) {
       
       doc.moveDown(1);
 
-      // 4. CANCELLATIONS SECTION
+      // 4. ORDER TYPE BREAKDOWN SECTION
+      doc.fillColor(primaryColor).fontSize(16).font("Helvetica-Bold").text("Order Type Breakdown", 50, doc.y);
+      drawLine();
+
+      printRow("Dine-in Sales", `Rs. ${Number(salesData.dine_in_sales).toFixed(2)}`, false, greenColor);
+      printRow("Takeaway Sales", `Rs. ${Number(salesData.takeaway_sales).toFixed(2)}`, false, greenColor);
+      printRow("Delivery Sales", `Rs. ${Number(salesData.delivery_sales).toFixed(2)}`, false, greenColor);
+      
+      doc.moveDown(1);
+
+      // 5. CANCELLATIONS SECTION
       doc.fillColor(primaryColor).fontSize(16).font("Helvetica-Bold").text("Cancellations", 50, doc.y);
       drawLine();
 
@@ -91,7 +101,7 @@ function generatePDFBuffer(restaurantName, salesData, cancelData) {
 
       doc.moveDown(1);
 
-      // 5. FOOTER
+      // 6. FOOTER
       drawLine();
 
       const generatedAt = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
@@ -151,7 +161,10 @@ router.post("/eod-report", async (req, res) => {
           COALESCE(SUM(discount), 0) as total_discount,
           COALESCE(SUM(cgst + sgst), 0) as total_tax,
           COALESCE(SUM(CASE WHEN payment_method = 'online' THEN total ELSE 0 END), 0) as online_sales,
-          COALESCE(SUM(CASE WHEN payment_method = 'cash' THEN total ELSE 0 END), 0) as cash_sales
+          COALESCE(SUM(CASE WHEN payment_method = 'counter' THEN total ELSE 0 END), 0) as cash_sales,
+          COALESCE(SUM(CASE WHEN order_type = 'dine-in' THEN total ELSE 0 END), 0) as dine_in_sales,
+          COALESCE(SUM(CASE WHEN order_type = 'takeaway' THEN total ELSE 0 END), 0) as takeaway_sales,
+          COALESCE(SUM(CASE WHEN order_type = 'delivery' THEN total ELSE 0 END), 0) as delivery_sales
         FROM orders
         WHERE business_id = $1 
           AND status = 'completed'
