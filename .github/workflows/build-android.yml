@@ -48,7 +48,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          echo $KEYSTORE_BASE64 | base64 --decode > my-release-key.jks
+          echo "$KEYSTORE_BASE64" | base64 --decode --ignore-garbage > my-release-key.jks
           
           # Find the latest build tools directory automatically
           BUILD_TOOLS_DIR=$(ls -d /usr/local/lib/android/sdk/build-tools/* | tail -1)
