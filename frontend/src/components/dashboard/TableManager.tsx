@@ -610,7 +610,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                         </div>
                         <div className="border-t border-border mt-1 pt-1 flex justify-between text-sm font-bold">
                           <span>Subtotal</span>
-                          <span>₹{(o.total || 0).toFixed(2)}</span>
+                          <span>₹{Number(o.total || 0).toFixed(2)}</span>
                         </div>
                       </div>
                     ))}
