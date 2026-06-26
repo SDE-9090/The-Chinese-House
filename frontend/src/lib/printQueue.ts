@@ -215,12 +215,16 @@ class PrintQueue {
         if (d.business?.restaurantName) {
           businessData.restaurantName = d.business.restaurantName;
         }
-        // ZReport uses HTML for now since thermalPrinter doesn't support ZReport natively yet.
-        // Or we can just fallback to rawbt/html for zreports if needed. 
-        // We will fallback to RawBT intent for ZReports until we add ZReport native formatting.
-        const base64Data = dataUrl.split(",")[1];
-        const intentUrl = `intent:${base64Data}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
-        window.location.href = intentUrl;
+        if (d.business?.address) {
+          businessData.address = d.business.address;
+        }
+        
+        // Import printZReportNative dynamically or statically
+        const { printZReportNative } = await import("./thermalPrinter");
+        const success = await printZReportNative(d, businessData, this.cachedPrinterWidth || "58mm");
+        if (!success) {
+          throw new Error("Native Z-Report print failed");
+        }
         return;
       } else {
         const d = job.data as ReceiptData;

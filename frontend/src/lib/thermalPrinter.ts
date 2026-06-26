@@ -143,3 +143,74 @@ export async function printReceiptNative(
     return false;
   }
 }
+
+export async function printZReportNative(
+  report: import("./receiptGenerator").ZReportData,
+  business: { restaurantName: string; address?: string; phone?: string; gstin?: string | null },
+  printerWidth: string = "58mm"
+): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) {
+    return false;
+  }
+
+  const lineLength = printerWidth === "80mm" ? 48 : 32;
+  let receipt = INIT;
+
+  const padRight = (str: string, len: number) => str.padEnd(len, " ").substring(0, len);
+  const padLeft = (str: string, len: number) => str.padStart(len, " ").substring(0, len);
+  const padBetween = (left: string, right: string, len: number) => {
+    const space = len - left.length - right.length;
+    if (space <= 0) return left + " " + right;
+    return left + " ".repeat(space) + right;
+  };
+
+  const separator = "-".repeat(lineLength) + "\n";
+  const thickSeparator = "=".repeat(lineLength) + "\n";
+
+  // Header
+  receipt += ALIGN_CENTER;
+  receipt += BOLD_ON + TEXT_DOUBLE_HEIGHT + business.restaurantName + BOLD_OFF + TEXT_NORMAL + "\n";
+  
+  if (business.address) {
+    receipt += business.address + "\n";
+  }
+  if (business.phone) {
+    receipt += "Phone: " + business.phone + "\n";
+  }
+  if (business.gstin) {
+    receipt += "GSTIN: " + business.gstin + "\n";
+  }
+  
+  receipt += separator;
+  receipt += BOLD_ON + TEXT_DOUBLE_WIDTH + "Z-REPORT" + TEXT_NORMAL + BOLD_OFF + "\n";
+  receipt += report.label + "\n";
+  receipt += separator;
+
+  // Body
+  receipt += ALIGN_LEFT;
+  receipt += padBetween("Total Orders:", `${report.totalOrders}`, lineLength) + "\n";
+  receipt += padBetween("Total Revenue:", `Rs.${(report.totalRevenue || 0).toFixed(2)}`, lineLength) + "\n";
+  
+  if (report.paidRevenue !== undefined) {
+    receipt += padBetween("Paid:", `Rs.${report.paidRevenue.toFixed(2)}`, lineLength) + "\n";
+  }
+  if (report.pendingRevenue !== undefined) {
+    receipt += padBetween("Pending:", `Rs.${report.pendingRevenue.toFixed(2)}`, lineLength) + "\n";
+  }
+  
+  receipt += thickSeparator;
+  receipt += ALIGN_CENTER;
+  receipt += "End of Report\n";
+
+  // Feed & Cut
+  receipt += "\n\n\n\n\n";
+  receipt += CUT_PAPER;
+
+  try {
+    await BluetoothPrinter.print({ data: receipt });
+    return true;
+  } catch (err) {
+    console.error("Bluetooth Z-Report print failed:", err);
+    return false;
+  }
+}

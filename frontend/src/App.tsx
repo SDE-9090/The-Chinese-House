@@ -9,6 +9,8 @@ import { lazy, Suspense, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import ThemeInjector from "@/components/ThemeInjector";
 import AiChatbot from "@/components/AiChatbot";
+import { KeepAwake } from '@capacitor-community/keep-awake';
+import { Capacitor } from '@capacitor/core';
 
 const Index = lazy(() => import("./pages/Index"));
 const OrderPage = lazy(() => import("./pages/OrderPage"));
@@ -32,6 +34,11 @@ function ThemeInit() {
   useEffect(() => {
     if (localStorage.getItem("theme") === "dark") {
       document.documentElement.classList.add("dark");
+    }
+    
+    // Keep tablet screen awake indefinitely
+    if (Capacitor.isNativePlatform()) {
+      KeepAwake.keepAwake().catch(err => console.error("KeepAwake failed:", err));
     }
   }, []);
   return null;
