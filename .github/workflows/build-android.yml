@@ -41,18 +41,23 @@ jobs:
         run: ./gradlew assembleRelease
 
       - name: Sign APK
-        uses: r0adkll/sign-android-release@v1
-        id: sign_app
-        with:
-          releaseDirectory: frontend/android/app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
-          alias: ${{ secrets.KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-          buildToolsVersion: 34.0.0
-
-      - name: Rename APK
-        run: mv ${{steps.sign_app.outputs.signedReleaseFile}} frontend/android/app/build/outputs/apk/release/TCH-Release.apk
+        working-directory: ./frontend/android/app/build/outputs/apk/release
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          echo $KEYSTORE_BASE64 | base64 --decode > my-release-key.jks
+          
+          # Find the latest build tools directory automatically
+          BUILD_TOOLS_DIR=$(ls -d /usr/local/lib/android/sdk/build-tools/* | tail -1)
+          
+          # Align the APK (Android requires this before signing)
+          $BUILD_TOOLS_DIR/zipalign -v -p 4 app-release-unsigned.apk app-release-aligned.apk
+          
+          # Sign the APK securely
+          $BUILD_TOOLS_DIR/apksigner sign --ks my-release-key.jks --ks-key-alias $KEY_ALIAS --ks-pass pass:$KEYSTORE_PASSWORD --key-pass pass:$KEY_PASSWORD --out TCH-Release.apk app-release-aligned.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
