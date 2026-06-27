@@ -180,7 +180,7 @@ router.post("/eod-report", async (req, res) => {
         FROM orders
         WHERE business_id = $1 
           AND status = 'completed'
-          AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date
+          AND (created_at AT TIME ZONE 'Asia/Kolkata')::date = (NOW() AT TIME ZONE 'Asia/Kolkata')::date
       `;
       const salesRes = await pool.query(salesQuery, [b.business_id]);
       const salesData = salesRes.rows[0];
@@ -193,7 +193,7 @@ router.post("/eod-report", async (req, res) => {
         FROM orders
         WHERE business_id = $1 
           AND status = 'cancelled'
-          AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date
+          AND (created_at AT TIME ZONE 'Asia/Kolkata')::date = (NOW() AT TIME ZONE 'Asia/Kolkata')::date
       `;
       const cancelRes = await pool.query(cancelQuery, [b.business_id]);
       const cancelData = cancelRes.rows[0];
