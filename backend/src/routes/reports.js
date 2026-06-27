@@ -160,8 +160,20 @@ router.post("/eod-report", async (req, res) => {
           COALESCE(SUM(total), 0) as gross_revenue,
           COALESCE(SUM(discount), 0) as total_discount,
           COALESCE(SUM(cgst + sgst), 0) as total_tax,
-          COALESCE(SUM(CASE WHEN payment_method = 'online' THEN total ELSE 0 END), 0) as online_sales,
-          COALESCE(SUM(CASE WHEN payment_method = 'counter' THEN total ELSE 0 END), 0) as cash_sales,
+          COALESCE(SUM(
+            CASE 
+              WHEN payment_method IN ('online', 'upi', 'card') THEN total 
+              WHEN payment_method = 'split' THEN split_upi 
+              ELSE 0 
+            END
+          ), 0) as online_sales,
+          COALESCE(SUM(
+            CASE 
+              WHEN payment_method = 'cash' THEN total 
+              WHEN payment_method = 'split' THEN split_cash 
+              ELSE 0 
+            END
+          ), 0) as cash_sales,
           COALESCE(SUM(CASE WHEN order_type = 'dine-in' THEN total ELSE 0 END), 0) as dine_in_sales,
           COALESCE(SUM(CASE WHEN order_type = 'takeaway' THEN total ELSE 0 END), 0) as takeaway_sales,
           COALESCE(SUM(CASE WHEN order_type = 'delivery' THEN total ELSE 0 END), 0) as delivery_sales
