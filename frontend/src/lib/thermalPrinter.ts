@@ -84,7 +84,13 @@ export async function printReceiptNative(
     if (business.gstin) {
       receipt += "GSTIN: " + business.gstin + "\n";
     }
-    receipt += "\nTAX INVOICE\n";
+    let taxes = (order.cgst || 0) + (order.sgst || 0) + (order.gst || 0);
+    if (taxes > 0) {
+      receipt += "\nTAX INVOICE\n";
+    } else {
+      receipt += "\nINVOICE\n";
+    }
+    
     receipt += ALIGN_LEFT;
     receipt += separator;
     const orderRef = order.token ? String(order.token).toUpperCase() : (order.id ? String(order.id).split('-')[0] : "NEW");
@@ -114,7 +120,6 @@ export async function printReceiptNative(
     receipt += ALIGN_RIGHT;
     receipt += padBetween("Subtotal:", subtotal.toFixed(2), lineLength) + "\n";
     
-    let taxes = (order.cgst || 0) + (order.sgst || 0) + (order.gst || 0);
     if (taxes > 0) {
       receipt += padBetween("Taxes:", taxes.toFixed(2), lineLength) + "\n";
     }
