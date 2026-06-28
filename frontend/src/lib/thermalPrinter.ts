@@ -12,10 +12,10 @@ const ALIGN_CENTER = ESC + "a1";
 const ALIGN_RIGHT = ESC + "a2";
 const BOLD_ON = ESC + "E1";
 const BOLD_OFF = ESC + "E0";
-const TEXT_NORMAL = ESC + "!0";
-const TEXT_DOUBLE_HEIGHT = ESC + "!16";
-const TEXT_DOUBLE_WIDTH = ESC + "!32";
-const TEXT_DOUBLE_BOTH = ESC + "!48";
+const TEXT_NORMAL = ESC + "!\x00";
+const TEXT_DOUBLE_HEIGHT = ESC + "!\x10";
+const TEXT_DOUBLE_WIDTH = ESC + "!\x20";
+const TEXT_DOUBLE_BOTH = ESC + "!\x30";
 const CUT_PAPER = GS + "V1";
 
 export async function printReceiptNative(
@@ -47,10 +47,13 @@ export async function printReceiptNative(
   if (isKOT) {
     receipt += ALIGN_CENTER + BOLD_ON + TEXT_DOUBLE_BOTH + "K.O.T\n\n" + TEXT_NORMAL + BOLD_OFF;
     receipt += ALIGN_LEFT;
-    receipt += `Order #: ${order.id}\n`;
+    const orderRef = order.token ? String(order.token).toUpperCase() : (order.id ? String(order.id).split('-')[0] : "NEW");
+    receipt += `Order #: ${orderRef}\n`;
     receipt += `Time: ${new Date(order.createdAt).toLocaleTimeString()}\n`;
     receipt += `Type: ${order.orderType?.toUpperCase() || "DINE-IN"}\n`;
-    if (order.tableSessionId) {
+    if ((order as any).tableNumber) {
+      receipt += `Table: ${(order as any).tableNumber}\n`;
+    } else if (order.tableSessionId) {
       receipt += `Table: ${order.tableSessionId.split("-")[0]}\n`;
     }
     receipt += thickSeparator;
@@ -61,7 +64,7 @@ export async function printReceiptNative(
     receipt += separator;
 
     order.items.forEach(item => {
-      let itemName = item.name.substring(0, lineLength - 6);
+      let itemName = item.name.substring(0, lineLength - 8);
       receipt += padBetween(itemName, item.quantity.toString(), lineLength) + "\n";
     });
 

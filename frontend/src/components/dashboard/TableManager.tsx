@@ -581,6 +581,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                                 createdAt: new Date().toISOString(),
                                 orderType: "dine-in" as const,
                                 tableSessionId: selectedTable.activeSession?.id || "",
+                                tableNumber: selectedTable.tableNumber || "",
                               };
                               printQueue.enqueue(`manual-kot-${Date.now()}`, "kot", rd);
                             }}

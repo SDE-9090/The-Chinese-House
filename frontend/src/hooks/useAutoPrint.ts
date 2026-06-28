@@ -29,7 +29,8 @@ function orderToReceiptData(order: Order): ReceiptData {
     paidAmount: order.paidAmount,
     createdAt: order.createdAt,
     business: order.business,
-  };
+    tableNumber: order.tableNumber,
+  } as any;
 }
 
 /**
