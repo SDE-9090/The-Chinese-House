@@ -87,10 +87,13 @@ export async function printReceiptNative(
     receipt += "\nTAX INVOICE\n";
     receipt += ALIGN_LEFT;
     receipt += separator;
-    receipt += `Order #: ${order.id}\n`;
+    const orderRef = order.token ? String(order.token).toUpperCase() : (order.id ? String(order.id).split('-')[0] : "NEW");
+    receipt += `Order #: ${orderRef}\n`;
     receipt += `Date: ${new Date(order.createdAt).toLocaleString()}\n`;
     receipt += `Customer: ${order.customerName || "Walk-in"}\n`;
-    if (order.customerPhone) receipt += `Phone: ${order.customerPhone}\n`;
+    if (order.customerPhone && order.customerPhone !== "0000000000") {
+      receipt += `Phone: ${order.customerPhone}\n`;
+    }
     receipt += separator;
 
     receipt += BOLD_ON;
