@@ -3,6 +3,7 @@ import { apiAdminGetTables, apiAdminCreateTable, apiDeleteTable, type Table } fr
 import { Printer, QrCode, Loader2, Plus, X, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Capacitor } from "@capacitor/core";
+import { printQRCodeNative } from "@/lib/thermalPrinter";
 
 export default function TableQRCodes() {
   const [tables, setTables] = useState<Table[]>([]);
@@ -58,7 +59,15 @@ export default function TableQRCodes() {
     }
   };
 
-  const printSingleQR = (table: Table) => {
+  const printSingleQR = async (table: Table) => {
+    const url = window.location.origin + '/table/' + table.qrCode;
+    
+    if (Capacitor.isNativePlatform()) {
+      const success = await printQRCodeNative(url, `Table ${table.tableNumber}`);
+      if (!success) toast({ title: "Printer Error", description: "Failed to connect to Bluetooth printer.", variant: "destructive" });
+      return;
+    }
+
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`
@@ -67,7 +76,7 @@ export default function TableQRCodes() {
           <body style="text-align: center; font-family: system-ui, sans-serif; padding-top: 50px;">
             <h1 style="font-size: 48px; margin-bottom: 5px;">Table ${table.tableNumber}</h1>
             <p style="font-size: 24px; color: #666; margin-top: 0; font-weight: bold;">Scan to view menu & order!</p>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(window.location.origin + '/table/' + table.qrCode)}" style="width: 400px; height: 400px; margin-top: 30px;" />
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(url)}" style="width: 400px; height: 400px; margin-top: 30px;" />
             <script>
               window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); }
             </script>
@@ -78,12 +87,26 @@ export default function TableQRCodes() {
     }
   };
 
-  const printAllQRs = () => {
+  const printAllQRs = async () => {
     if (tables.length === 0) {
       toast({ title: "No tables available to print" });
       return;
     }
     
+    if (Capacitor.isNativePlatform()) {
+      let failed = 0;
+      for (const table of tables) {
+        const url = window.location.origin + '/table/' + table.qrCode;
+        const success = await printQRCodeNative(url, `Table ${table.tableNumber}`);
+        if (!success) failed++;
+        // Give printer a tiny break between prints
+        await new Promise(r => setTimeout(r, 1000));
+      }
+      if (failed > 0) toast({ title: "Printer Error", description: `Failed to print ${failed} QR codes.`, variant: "destructive" });
+      else toast({ title: "Successfully printed all QRs!" });
+      return;
+    }
+
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       let htmlContent = `
@@ -135,14 +158,12 @@ export default function TableQRCodes() {
           <p className="text-muted-foreground text-sm">Create, delete, and print QR codes for tables</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          {!Capacitor.isNativePlatform() && (
-            <button
-              onClick={printAllQRs}
-              className="flex-1 sm:flex-none bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition whitespace-nowrap"
-            >
-              <Printer size={16} /> Print All QRs
-            </button>
-          )}
+          <button
+            onClick={printAllQRs}
+            className="flex-1 sm:flex-none bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition whitespace-nowrap"
+          >
+            <Printer size={16} /> Print All QRs
+          </button>
           <button
             onClick={() => setShowAddTableModal(true)}
             className="flex-1 sm:flex-none bg-secondary text-secondary-foreground hover:bg-secondary/90 px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition whitespace-nowrap"
@@ -171,14 +192,12 @@ export default function TableQRCodes() {
                 className="w-32 h-32 rounded-lg mix-blend-multiply"
               />
             </div>
-            {!Capacitor.isNativePlatform() && (
-              <button
-                onClick={() => printSingleQR(table)}
-                className="w-full bg-secondary/10 text-secondary-foreground hover:bg-secondary/20 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition"
-              >
-                <Printer size={16} /> Print QR
-              </button>
-            )}
+            <button
+              onClick={() => printSingleQR(table)}
+              className="w-full bg-secondary/10 text-secondary-foreground hover:bg-secondary/20 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition"
+            >
+              <Printer size={16} /> Print QR
+            </button>
           </div>
         ))}
 

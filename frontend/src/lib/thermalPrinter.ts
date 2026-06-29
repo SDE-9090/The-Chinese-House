@@ -225,3 +225,39 @@ export async function printZReportNative(
     return false;
   }
 }
+
+export async function printQRCodeNative(
+  url: string,
+  label: string
+): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) {
+    return false;
+  }
+
+  const dataLen = url.length + 3;
+  const pL = String.fromCharCode(dataLen % 256);
+  const pH = String.fromCharCode(Math.floor(dataLen / 256));
+  
+  let receipt = INIT;
+  receipt += ALIGN_CENTER;
+  
+  receipt += BOLD_ON + TEXT_DOUBLE_HEIGHT + label + BOLD_OFF + TEXT_NORMAL + "\n\n";
+  receipt += "Scan to view menu & order!\n\n";
+
+  receipt += '\x1d\x28\x6b\x04\x00\x31\x41\x32\x00'; 
+  receipt += '\x1d\x28\x6b\x03\x00\x31\x43\x08'; 
+  receipt += '\x1d\x28\x6b\x03\x00\x31\x45\x30'; 
+  receipt += '\x1d\x28\x6b' + pL + pH + '\x31\x50\x30' + url; 
+  receipt += '\x1d\x28\x6b\x03\x00\x31\x51\x30'; 
+  
+  receipt += "\n\n\n\n";
+  receipt += CUT_PAPER;
+
+  try {
+    await BluetoothPrinter.print({ data: receipt });
+    return true;
+  } catch (err) {
+    console.error("Bluetooth QR print failed:", err);
+    return false;
+  }
+}
