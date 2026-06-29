@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { apiAdminGetTables, apiAdminCreateTable, apiDeleteTable, type Table } from "@/lib/apiClient";
 import { Printer, QrCode, Loader2, Plus, X, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { Capacitor } from "@capacitor/core";
 
 export default function TableQRCodes() {
   const [tables, setTables] = useState<Table[]>([]);
@@ -134,12 +135,14 @@ export default function TableQRCodes() {
           <p className="text-muted-foreground text-sm">Create, delete, and print QR codes for tables</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <button
-            onClick={printAllQRs}
-            className="flex-1 sm:flex-none bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition whitespace-nowrap"
-          >
-            <Printer size={16} /> Print All QRs
-          </button>
+          {!Capacitor.isNativePlatform() && (
+            <button
+              onClick={printAllQRs}
+              className="flex-1 sm:flex-none bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition whitespace-nowrap"
+            >
+              <Printer size={16} /> Print All QRs
+            </button>
+          )}
           <button
             onClick={() => setShowAddTableModal(true)}
             className="flex-1 sm:flex-none bg-secondary text-secondary-foreground hover:bg-secondary/90 px-4 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition whitespace-nowrap"
@@ -168,12 +171,14 @@ export default function TableQRCodes() {
                 className="w-32 h-32 rounded-lg mix-blend-multiply"
               />
             </div>
-            <button
-              onClick={() => printSingleQR(table)}
-              className="w-full bg-secondary/10 text-secondary-foreground hover:bg-secondary/20 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition"
-            >
-              <Printer size={16} /> Print QR
-            </button>
+            {!Capacitor.isNativePlatform() && (
+              <button
+                onClick={() => printSingleQR(table)}
+                className="w-full bg-secondary/10 text-secondary-foreground hover:bg-secondary/20 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition"
+              >
+                <Printer size={16} /> Print QR
+              </button>
+            )}
           </div>
         ))}
 
