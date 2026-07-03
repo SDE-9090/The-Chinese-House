@@ -236,7 +236,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
 
       await fetchTables();
       await onRefresh();
-      toast({ title: `Table cleared (${method.toUpperCase()})` });
+      toast({ title: method === 'none' ? "Table cleared (No Bill)" : `Table cleared (${method.toUpperCase()})` });
       setSelectedTable(null);
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : "Unknown error";

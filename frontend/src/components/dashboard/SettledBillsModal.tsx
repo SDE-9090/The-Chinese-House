@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, FileText, ChevronLeft, ChevronRight, Clock, User } from "lucide-react";
+import { X, Loader2, FileText, ChevronLeft, ChevronRight, Clock, User, Printer } from "lucide-react";
 import { apiGetSettledSessions, apiGetSessionBill, type SettledSession, type SessionBill } from "@/lib/apiClient";
 import BillDocument, { downloadBillPrint } from "@/components/BillDocument";
+import { printQueue } from "@/lib/printQueue";
+import { toast } from "sonner";
 
 interface SettledBillsModalProps {
   isOpen: boolean;
@@ -55,6 +57,39 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
     } finally {
       setLoadingBill(false);
     }
+  };
+
+  const handleThermalPrint = () => {
+    if (!detailBill || !selectedSession) return;
+    
+    const rd = {
+      token: parseInt(selectedSession.session_id.slice(0, 4), 16) || 0,
+      customerName: selectedSession.customer_name || "Guest",
+      customerPhone: selectedSession.customer_phone || "",
+      items: detailBill.itemized?.map((i) => ({
+        id: String(i.menuItemId || i.name || Date.now()),
+        name: i.name,
+        price: i.price,
+        quantity: i.quantity,
+        priceLabel: `₹${i.price}`,
+        note: ""
+      })) || [],
+      total: detailBill.totalAmount,
+      paymentMethod: "counter" as const,
+      createdAt: selectedSession.end_time || new Date().toISOString(),
+      orderType: "dine-in" as const,
+      paymentStatus: "paid" as const,
+      tableSessionId: selectedSession.session_id,
+      subtotal: detailBill.sessionDetails?.subtotal || 0,
+      discount: detailBill.sessionDetails?.discount || 0,
+      cgst: detailBill.sessionDetails?.cgst || 0,
+      sgst: detailBill.sessionDetails?.sgst || 0,
+      gst: detailBill.sessionDetails?.gstTotal || 0,
+      paidAmount: detailBill.totalAmount,
+    };
+    
+    printQueue.enqueue(`reprint-${Date.now()}`, "receipt", rd);
+    toast.success("Receipt sent to thermal printer");
   };
 
   if (!isOpen) return null;
@@ -203,15 +238,10 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
                   {detailBill && (
                     <div className="mt-4 pt-4 border-t border-border flex gap-2">
                       <button
-                        onClick={() => downloadBillPrint({
-                          ...detailBill,
-                          customerName: selectedSession.customer_name,
-                          customerPhone: selectedSession.customer_phone,
-                          tableNumber: selectedSession.table_number
-                        })}
+                        onClick={handleThermalPrint}
                         className="flex-1 bg-primary text-primary-foreground py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition"
                       >
-                        <FileText size={16} /> Print Receipt
+                        <Printer size={16} /> Print Receipt
                       </button>
                     </div>
                   )}
