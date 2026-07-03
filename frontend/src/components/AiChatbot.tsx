@@ -165,7 +165,7 @@ const AiChatbot = () => {
                     }`}
                   >
                     {msg.role === "user" ? (
-                      <p className="whitespace-pre-wrap leading-relaxed">{msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "")}</p>
+                      <p className="whitespace-pre-wrap leading-relaxed">{msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "").replace(/\[LOAD_MORE_MENU:.*?\]/g, "")}</p>
                     ) : (
                       <div className="leading-relaxed">
                         <ReactMarkdown 
@@ -178,7 +178,7 @@ const AiChatbot = () => {
                           em: ({node, ...props}) => <em className="italic" {...props} />
                         }}
                       >
-                        {msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "")}
+                        {msg.content.replace("[ORDER_BTN]", "").replace(/\[LOAD_MORE_ORDERS:.*?\]/g, "").replace(/\[LOAD_MORE_MENU:.*?\]/g, "")}
                         </ReactMarkdown>
                       </div>
                     )}
@@ -203,6 +203,21 @@ const AiChatbot = () => {
                             className="mt-3 inline-flex items-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4 py-2 rounded-xl text-sm font-bold transition-colors w-full justify-center border border-border"
                           >
                             Load Older Orders
+                          </button>
+                        );
+                      }
+                      return null;
+                    })()}
+                    {msg.role === "assistant" && msg.content.includes("[LOAD_MORE_MENU:") && (() => {
+                      const match = msg.content.match(/\[LOAD_MORE_MENU:\s*([^\]]+)\]/);
+                      if (match) {
+                        const category = match[1].trim();
+                        return (
+                          <button 
+                            onClick={() => handleSend(`Show me more items from ${category}`)}
+                            className="mt-3 inline-flex items-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4 py-2 rounded-xl text-sm font-bold transition-colors w-full justify-center border border-border"
+                          >
+                            Load More {category}
                           </button>
                         );
                       }
