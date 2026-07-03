@@ -106,6 +106,14 @@ async function chatWithGroq(messageHistory, businessId) {
       });
     }
 
+    const categories = [...new Set(menuItems.map(m => m.category_name))];
+    let categoryInstruction = "";
+    if (categories.length > 6) {
+       categoryInstruction = `\n12. CATEGORIES: We have ${categories.length} categories. If asked what categories we have, DO NOT list all of them. Only list the first 5 (${categories.slice(0, 5).join(", ")}) and then say something like "...and more! Let me know what you're in the mood for!"`;
+    } else {
+       categoryInstruction = `\n12. CATEGORIES: If asked what categories we have, list them: ${categories.join(", ")}.`;
+    }
+
     const now = new Date();
     const istTime = now.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "full", timeStyle: "short" });
 
@@ -153,7 +161,7 @@ RULES:
 8. ORDER HISTORY: If the user asks about their past orders or order history, politely ask them to provide their 10-digit phone number. If they provide a 10-digit phone number in the context of checking orders, your ENTIRE response MUST be exactly the text "[FETCH_ORDERS: <their_10_digit_number>]" and absolutely nothing else. Do not add any conversational text.
 9. OUT OF STOCK ITEMS: If a customer asks for a specific dish that is marked as [OUT OF STOCK], politely inform them that the dish is currently out of stock or sold out for the day, and immediately suggest a similar alternative from the menu. DO NOT ever recommend an item that is [OUT OF STOCK]. Never say the word "Available" or "In Stock" in your response; just suggest the dish naturally.
 10. RECOMMENDATIONS: If a user asks for a general recommendation, your best dish, or what is popular, you MUST check the "Best Seller" info in the RESTAURANT INFO section and follow its exact instructions. If a user asks for the best or most popular dish in a SPECIFIC category (e.g. "best rice", "best dessert"), you MUST recommend the corresponding item from the "Category Best Sellers" list in the RESTAURANT INFO section, taking note of its stock status.
-11. PROMOTIONS & DISCOUNTS: If a user asks for a discount code, coupon, or active promotion, you MUST check the "Public Promotions" list in the RESTAURANT INFO section. If a code is listed, excitedly share the code and the discount amount. If no "Public Promotions" list is provided or it is empty, you MUST politely inform them that there are no active public promotions running at this time. NEVER invent or suggest a fake discount code.`;
+11. PROMOTIONS & DISCOUNTS: If a user asks for a discount code, coupon, or active promotion, you MUST check the "Public Promotions" list in the RESTAURANT INFO section. If a code is listed, excitedly share the code and the discount amount. If no "Public Promotions" list is provided or it is empty, you MUST politely inform them that there are no active public promotions running at this time. NEVER invent or suggest a fake discount code.${categoryInstruction}`;
 
     // 5. Prepare messages array
     const messages = [
