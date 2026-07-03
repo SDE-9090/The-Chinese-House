@@ -36,6 +36,8 @@ import {
   ConciergeBell,
   GlassWater,
   CupSoda,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 
 const CategoryIconPlaceholder = ({ category, className = "w-12 h-12 text-primary/40 group-hover:scale-110 transition-transform duration-500" }: { category?: string, className?: string }) => {
@@ -81,6 +83,14 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
+
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    return (localStorage.getItem("pos_view_mode") as "grid" | "list") || "grid";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("pos_view_mode", viewMode);
+  }, [viewMode]);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [nameError, setNameError] = useState("");
@@ -732,16 +742,25 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
     <div className={cartCount > 0 ? "pb-28" : "pb-6"}>
       {/* Search + Categories */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search menu (Press '/' to focus)..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-base md:text-sm"
-          />
+        <div className="flex gap-2 flex-1">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search menu (Press '/' to focus)..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-base md:text-sm"
+            />
+          </div>
+          <button
+            onClick={() => setViewMode(v => v === "grid" ? "list" : "grid")}
+            className="px-3.5 rounded-xl border border-border bg-card text-foreground flex items-center justify-center hover:bg-muted transition shadow-sm"
+            title={viewMode === "grid" ? "Switch to List View" : "Switch to Grid View"}
+          >
+            {viewMode === "grid" ? <List size={18} /> : <LayoutGrid size={18} />}
+          </button>
         </div>
       </div>
 
