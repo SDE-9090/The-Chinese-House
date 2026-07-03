@@ -45,6 +45,7 @@ import {
   QrCode,
   Users,
   Fingerprint,
+  RefreshCw,
 } from "lucide-react";
 
 import { Loader2 } from "lucide-react";
@@ -930,17 +931,26 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                   </div>
 
                   {/* Source filter dropdown */}
-                  <select
-                    value={sourceFilter}
-                    onChange={(e) => setSourceFilter(e.target.value)}
-                    className="bg-card border border-border text-foreground rounded-lg px-3 py-1.5 text-xs font-bold focus:ring-2 focus:ring-primary outline-none min-w-[140px] cursor-pointer"
-                  >
-                    <option value="all">🌐 All Sources</option>
-                    <option value="counter">🛍️ Counter Orders</option>
-                    {activeTableNumbers.map(t => (
-                      <option key={t} value={t}>🪑 Table {t}</option>
-                    ))}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => refreshOrders()}
+                      className="p-1.5 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition shadow-sm"
+                      title="Refresh Orders"
+                    >
+                      <RefreshCw size={16} />
+                    </button>
+                    <select
+                      value={sourceFilter}
+                      onChange={(e) => setSourceFilter(e.target.value)}
+                      className="bg-card border border-border text-foreground rounded-lg px-3 py-1.5 text-xs font-bold focus:ring-2 focus:ring-primary outline-none min-w-[140px] cursor-pointer"
+                    >
+                      <option value="all">🌐 All Sources</option>
+                      <option value="counter">🛍️ Counter Orders</option>
+                      {activeTableNumbers.map(t => (
+                        <option key={t} value={t}>🪑 Table {t}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 {/* Order cards */}

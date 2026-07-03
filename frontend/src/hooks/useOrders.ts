@@ -55,12 +55,14 @@ export function useOrders(todayOnly = true) {
   useEffect(() => {
     refreshOrders();
 
+    socket.on("connect", refreshOrders);
     socket.on("new-order", refreshOrders);
     socket.on("order-updated", refreshOrders);
     socket.on("orders-updated", refreshOrders);
     socket.on("payment-updated", refreshOrders);
 
     return () => {
+      socket.off("connect", refreshOrders);
       socket.off("new-order", refreshOrders);
       socket.off("order-updated", refreshOrders);
       socket.off("orders-updated", refreshOrders);
