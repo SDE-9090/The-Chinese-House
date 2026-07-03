@@ -296,9 +296,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
         {loading ? (
           <div className="flex items-center justify-center p-12">
             <Loader2 className="animate-spin w-8 h-8 text-primary" />
-          </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
             {tables.map(table => {
               const session = table.activeSession;
               const isTableEditing = session && orders.some(o =>
@@ -359,7 +358,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                             <DropdownMenuItem
                               onClick={() => handleClearTableClick(session.id, session.customerPhone)}
                               disabled={closingId === session.id}
-                              className="gap-2 text-destructive focus:text-destructive cursor-pointer xl:hidden"
+                              className="gap-2 text-destructive focus:text-destructive cursor-pointer md:hidden"
                             >
                               <X size={14} />
                               <span>Clear Table</span>
@@ -462,7 +461,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                       )}
 
                       {(user.role === 'admin' || user.permissions?.canClearTable) && (
-                        <div className="hidden xl:flex flex-1 flex-col justify-end mt-3">
+                        <div className="hidden md:flex flex-1 flex-col justify-end mt-3">
                           <button
                             onClick={() => handleClearTableClick(session.id, session.customerPhone)}
                             disabled={closingId === session.id}
