@@ -275,13 +275,13 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm"
       >
-        <div className="bg-card border border-border rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+        <div className="bg-card border border-border rounded-3xl p-6 shadow-2xl relative overflow-hidden">
           {/* Background decoration */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-16 translate-x-16 blur-3xl pointer-events-none" />
 
           {/* Mode Switcher */}
           {mode === "login" && (
-            <div className="flex bg-muted p-1 rounded-xl mb-8 relative z-10">
+            <div className="flex bg-muted p-1 rounded-xl mb-4 md:mb-6 relative z-10">
               <button
                 onClick={() => { setLoginMode("staff"); setError(""); }}
                 className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${loginMode === "staff" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
@@ -300,7 +300,7 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
           )}
 
           {/* Icon */}
-          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 relative z-10">
+          <div className="w-14 h-14 md:w-16 md:h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4 relative z-10">
             {mode === "login" ? (
               loginMode === "staff" ? <Shield className="text-primary" size={28} /> : <Lock className="text-primary" size={28} />
             ) : mode === "request-reset" ? (
@@ -311,14 +311,14 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
           </div>
 
           {/* Title */}
-          <h1 className="font-heading text-2xl font-bold text-center mb-2 relative z-10">
+          <h1 className="font-heading text-xl md:text-2xl font-bold text-center mb-1 relative z-10">
             {mode === "login"
               ? (loginMode === "staff" ? "Staff Auth" : "Owner Login")
               : mode === "request-reset"
                 ? "Forgot Password"
                 : "Reset Password"}
           </h1>
-          <p className="text-muted-foreground text-center text-sm mb-8 relative z-10">
+          <p className="text-muted-foreground text-center text-xs md:text-sm mb-4 md:mb-6 relative z-10">
             {mode === "login"
               ? (loginMode === "staff" ? "Enter your 4-digit PIN" : "Enter your master login details")
               : mode === "request-reset"
@@ -333,9 +333,9 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-6"
+                className="mb-4"
               >
-                <p className="text-destructive text-sm text-center bg-destructive/10 p-3 rounded-xl">
+                <p className="text-destructive text-sm text-center bg-destructive/10 p-2.5 rounded-xl">
                   {error}
                 </p>
               </motion.div>
@@ -345,9 +345,9 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-6"
+                className="mb-4"
               >
-                <p className="text-green-600 dark:text-green-400 text-sm text-center bg-green-500/10 p-3 rounded-xl">
+                <p className="text-green-600 dark:text-green-400 text-sm text-center bg-green-500/10 p-2.5 rounded-xl">
                   {success}
                 </p>
               </motion.div>
@@ -356,10 +356,10 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
 
           {/* PIN PAD FOR STAFF */}
           {mode === "login" && loginMode === "staff" && (
-            <div className="space-y-6 relative z-10">
-              <div className="text-center text-xs text-muted-foreground uppercase tracking-widest mt-2 mb-4">Enter PIN</div>
+            <div className="space-y-4 relative z-10">
+              <div className="text-center text-xs text-muted-foreground uppercase tracking-widest mt-1 mb-3">Enter PIN</div>
               {/* PIN Display */}
-              <div className="flex justify-center gap-4 mb-8">
+              <div className="flex justify-center gap-4 mb-5">
                 {[0, 1, 2, 3].map((i) => (
                   <div
                     key={i}
@@ -376,7 +376,7 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
                     key={num}
                     onClick={() => handlePinClick(num.toString())}
                     disabled={loading || pin.length >= 4}
-                    className="h-14 bg-muted hover:bg-muted/80 rounded-xl font-bold text-xl transition-all active:scale-95 disabled:opacity-50"
+                    className="h-12 md:h-14 bg-muted hover:bg-muted/80 rounded-xl font-bold text-xl transition-all active:scale-95 disabled:opacity-50"
                   >
                     {num}
                   </button>
@@ -385,13 +385,13 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
                 <button
                   onClick={() => handlePinClick("0")}
                   disabled={loading || pin.length >= 4}
-                  className="h-14 bg-muted hover:bg-muted/80 rounded-xl font-bold text-xl transition-all active:scale-95 disabled:opacity-50"
+                  className="h-12 md:h-14 bg-muted hover:bg-muted/80 rounded-xl font-bold text-xl transition-all active:scale-95 disabled:opacity-50"
                 >
                   0
                 </button>
                 <button
                   onClick={() => setPin("")}
-                  className="h-14 text-muted-foreground hover:text-foreground text-sm font-semibold"
+                  className="h-12 md:h-14 text-muted-foreground hover:text-foreground text-sm font-semibold"
                 >
                   Clear
                 </button>
@@ -407,7 +407,7 @@ const AuthScreen = ({ onAuthenticated }: { onAuthenticated: (user: AuthUser) => 
 
           {/* LOGIN FORM FOR OWNER */}
           {mode === "login" && loginMode === "owner" && (
-            <form onSubmit={handleLogin} className="space-y-4 relative z-10">
+            <form onSubmit={handleLogin} className="space-y-3 relative z-10">
               <input
                 type="text"
                 value={username}
