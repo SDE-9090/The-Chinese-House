@@ -762,17 +762,17 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
 
       {/* Menu Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {Array.from({ length: 8 }).map((_, i) => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="bg-card border border-border rounded-2xl p-3 animate-pulse">
-              <div className="w-full aspect-square bg-muted rounded-xl mb-2" />
+              <div className="w-full aspect-[4/3] bg-muted rounded-xl mb-2" />
               <div className="h-4 bg-muted rounded w-3/4 mb-1" />
               <div className="h-3 bg-muted rounded w-1/2" />
             </div>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {availableItems.map((item) => {
             const qty = getCartQty(item.id!);
             return (
@@ -785,7 +785,7 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
                 className={`bg-card rounded-2xl overflow-hidden border group hover:shadow-xl hover:shadow-primary/5 transition-shadow ${qty > 0 ? "border-primary/50 shadow-md shadow-primary/10" : "border-border/50"
                   }`}
               >
-                <div className="relative overflow-hidden aspect-square bg-primary/5 flex items-center justify-center">
+                <div className="relative overflow-hidden aspect-[4/3] bg-primary/5 flex items-center justify-center">
                   {(!item.image || item.image.includes("placeholder.svg") || item.image.includes("placeholder.jpg")) ? (
                     <CategoryIconPlaceholder category={item.category} />
                   ) : (
