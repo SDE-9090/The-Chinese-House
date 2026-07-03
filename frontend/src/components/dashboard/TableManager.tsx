@@ -296,6 +296,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
         {loading ? (
           <div className="flex items-center justify-center p-12">
             <Loader2 className="animate-spin w-8 h-8 text-primary" />
+          </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
             {tables.map(table => {
