@@ -779,10 +779,11 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
         ))}
       </div>
 
-      {/* Menu Grid */}
+      {/* Menu Grid / List */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {Array.from({ length: 12 }).map((_, i) => (
+        viewMode === "grid" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="bg-card border border-border rounded-2xl p-3 animate-pulse">
               <div className="w-full aspect-[4/3] bg-muted rounded-xl mb-2" />
               <div className="h-4 bg-muted rounded w-3/4 mb-1" />
@@ -790,9 +791,23 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
             </div>
           ))}
         </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="bg-card border border-border rounded-xl p-3 animate-pulse flex justify-between items-center">
+                <div className="flex flex-col gap-2 w-1/2">
+                  <div className="h-4 bg-muted rounded w-full" />
+                  <div className="h-3 bg-muted rounded w-1/2" />
+                </div>
+                <div className="h-8 w-16 bg-muted rounded-xl" />
+              </div>
+            ))}
+          </div>
+        )
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {availableItems.map((item) => {
+        viewMode === "grid" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {availableItems.map((item) => {
             const qty = getCartQty(item.id!);
             return (
               <motion.div
@@ -873,6 +888,83 @@ const CounterOrderContent = ({ user }: { user?: AuthUser }) => {
             );
           })}
         </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+            {availableItems.map((item) => {
+              const qty = getCartQty(item.id!);
+              return (
+                <motion.div
+                  key={item.name}
+                  layout
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className={`bg-card rounded-xl p-3 flex justify-between items-center border group hover:shadow-md transition-shadow ${qty > 0 ? "border-primary/50 shadow-sm" : "border-border/50"}`}
+                >
+                  <div 
+                    className="flex-1 cursor-pointer pr-2"
+                    onClick={() => {
+                      if (item.variants && item.variants.length > 0) {
+                        setVariantModalItem(item);
+                      } else {
+                        addToCart(item);
+                      }
+                    }}
+                  >
+                    <h4 className="font-heading font-bold text-sm mb-0.5">{item.name}</h4>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-primary font-bold">{item.priceLabel}</span>
+                      <span className="text-[10px] text-muted-foreground">{item.category}</span>
+                    </div>
+                  </div>
+                  
+                  {qty === 0 ? (
+                    <button
+                      onClick={() => {
+                        if (item.variants && item.variants.length > 0) {
+                          setVariantModalItem(item);
+                        } else {
+                          addToCart(item);
+                        }
+                      }}
+                      className="ml-2 w-16 bg-secondary text-secondary-foreground py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center transition hover:bg-secondary/80"
+                    >
+                      Add
+                    </button>
+                  ) : (
+                    <div className="ml-2 flex items-center gap-2 bg-primary/10 rounded-lg p-1 border border-primary/20">
+                      <button
+                        onClick={() => {
+                          if (item.variants && item.variants.length > 0) {
+                            setVariantModalItem(item);
+                          } else {
+                            updateQty(item.id!, -1);
+                          }
+                        }}
+                        className="w-7 h-7 flex items-center justify-center bg-card rounded-md text-foreground shadow-sm hover:bg-muted"
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <span className="w-5 text-center font-bold text-sm text-primary">{qty}</span>
+                      <button
+                        onClick={() => {
+                          if (item.variants && item.variants.length > 0) {
+                            setVariantModalItem(item);
+                          } else {
+                            updateQty(item.id!, 1);
+                          }
+                        }}
+                        className="w-7 h-7 flex items-center justify-center bg-primary text-primary-foreground rounded-md shadow-sm hover:bg-primary/90"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+        )
       )}
 
       {/* Cart Summary Bar */}
