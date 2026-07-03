@@ -887,7 +887,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
             <div className={`flex gap-2 mb-4 overflow-x-auto scrollbar-hide no-scrollbar ${!(user.role === 'admin' || user.permissions?.canViewOrderStats) ? 'mt-4' : ''}`} style={{ scrollbarWidth: "none" }}>
               {[
                 { key: "active" as const, label: "Active Orders", icon: Package, permissionKey: "active" as const },
-                { key: "counter-order" as const, label: "New Order (POS)", icon: UtensilsCrossed, permissionKey: "pos" as const, check: () => user.features?.pos_system },
+                { key: "counter-order" as const, label: "New Order", icon: UtensilsCrossed, permissionKey: "pos" as const, check: () => user.features?.pos_system },
                 { key: "history" as const, label: "History", icon: History, permissionKey: "history" as const },
               ]
                 .filter(st => user.role === 'admin' || (user.permissions?.orders && user.permissions.orders[st.permissionKey]))
@@ -914,8 +914,13 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                     className="flex gap-2 overflow-x-auto scrollbar-hide max-w-full"
                     style={{ scrollbarWidth: "none" }}
                   >
-                    {(["all", ...allStatuses] as const).map((s) => (
-                      <button
+                    {(["all", ...allStatuses] as const)
+                      .filter(s => {
+                        if (orderWorkflow === "quick-complete" && ["new", "preparing", "ready"].includes(s)) return false;
+                        return true;
+                      })
+                      .map((s) => (
+                        <button
                         key={s}
                         onClick={() => setStatusFilter(s)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${statusFilter === s

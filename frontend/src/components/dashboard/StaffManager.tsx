@@ -424,7 +424,7 @@ const StaffManager = () => {
                                 </label>
                                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                                   <input type="checkbox" checked={permissions?.orders?.pos || false} onChange={(e) => handlePermissionChange('orders.pos', e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
-                                  <span className="text-xs text-muted-foreground font-medium">New Order (POS)</span>
+                                  <span className="text-xs text-muted-foreground font-medium">New Order</span>
                                 </label>
                                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                                   <input type="checkbox" checked={permissions?.orders?.history || false} onChange={(e) => handlePermissionChange('orders.history', e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
