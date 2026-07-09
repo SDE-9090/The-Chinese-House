@@ -1834,35 +1834,48 @@ function OrderPageContent({
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.9 }}
                           onClick={() => setSelectedItem(item)}
-                          className={`bg-card rounded-2xl overflow-hidden border border-border/50 group hover:shadow-xl hover:shadow-primary/5 transition-shadow cursor-pointer ${viewMode === "list" ? "flex flex-row items-stretch p-2 gap-3" : "flex flex-col h-full"} ${!item.available ? "opacity-70" : ""}`}
+                          className={`bg-card rounded-2xl overflow-hidden border border-border/50 group hover:shadow-xl hover:shadow-primary/5 transition-shadow cursor-pointer ${viewMode === "list" ? "flex flex-row items-center justify-between p-3 gap-3" : "flex flex-col h-full"} ${!item.available ? "opacity-70" : ""}`}
                         >
-                          <div className={`relative overflow-hidden bg-primary/5 flex items-center justify-center shrink-0 ${viewMode === "list" ? "w-28 h-28 rounded-xl" : "aspect-square"}`}>
-                            {(!item.image || item.image.includes("placeholder.svg") || item.image.includes("placeholder.jpg")) ? (
-                              <CategoryPlaceholder category={item.category} />
-                            ) : (
-                              <img
-                                src={item.image}
-                                alt={item.name}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                loading="lazy"
-                              />
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="absolute top-2 right-2 bg-secondary text-secondary-foreground px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm">
-                              {item.priceLabel}
+                          {viewMode === "grid" && (
+                            <div className="relative overflow-hidden aspect-square bg-primary/5 flex items-center justify-center shrink-0">
+                              {(!item.image || item.image.includes("placeholder.svg") || item.image.includes("placeholder.jpg")) ? (
+                                <CategoryPlaceholder category={item.category} />
+                              ) : (
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                  loading="lazy"
+                                />
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-foreground/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                              <div className="absolute top-2 right-2 bg-secondary text-secondary-foreground px-2.5 py-0.5 rounded-full text-xs font-bold shadow-sm">
+                                {item.priceLabel}
+                              </div>
                             </div>
-                          </div>
-                          <div className={`flex flex-col flex-grow min-w-0 ${viewMode === "list" ? "py-1 pr-1" : "p-3"}`}>
-                            <h3 className="font-bold text-base leading-tight flex items-start gap-1.5">
-                              <span className="flex-1">{item.name}</span>
-                              {item.diet_type === "veg" && <span className="w-3 h-3 rounded-sm border border-green-600 bg-green-50 flex items-center justify-center mt-1 shrink-0" title="Veg"><span className="w-1.5 h-1.5 rounded-full bg-green-600"></span></span>}
-                              {item.diet_type === "non-veg" && <span className="w-3 h-3 rounded-sm border border-red-600 bg-red-50 flex items-center justify-center mt-1 shrink-0" title="Non-Veg"><span className="w-1.5 h-1.5 rounded-full bg-red-600"></span></span>}
-                              {item.diet_type === "egg" && <span className="w-3 h-3 rounded-sm border border-yellow-600 bg-yellow-50 flex items-center justify-center mt-1 shrink-0" title="Contains Egg"><span className="w-1.5 h-1.5 rounded-full bg-yellow-600"></span></span>}
+                          )}
+                          <div className={`flex flex-col flex-grow min-w-0 ${viewMode === "list" ? "" : "p-3"}`}>
+                            <h3 className={`font-bold leading-tight flex items-start gap-1.5 ${viewMode === "list" ? "text-sm mb-1 truncate" : "text-base"}`}>
+                              <span className="truncate">{item.name}</span>
+                              {item.diet_type === "veg" && <span className="w-3 h-3 rounded-sm border border-green-600 bg-green-50 flex items-center justify-center mt-0.5 shrink-0" title="Veg"><span className="w-1.5 h-1.5 rounded-full bg-green-600"></span></span>}
+                              {item.diet_type === "non-veg" && <span className="w-3 h-3 rounded-sm border border-red-600 bg-red-50 flex items-center justify-center mt-0.5 shrink-0" title="Non-Veg"><span className="w-1.5 h-1.5 rounded-full bg-red-600"></span></span>}
+                              {item.diet_type === "egg" && <span className="w-3 h-3 rounded-sm border border-yellow-600 bg-yellow-50 flex items-center justify-center mt-0.5 shrink-0" title="Contains Egg"><span className="w-1.5 h-1.5 rounded-full bg-yellow-600"></span></span>}
                             </h3>
-                            <p className={`text-muted-foreground text-xs mb-3 ${viewMode === "list" ? "line-clamp-2" : "line-clamp-2"}`}>
-                              {item.desc}
-                            </p>
-                            <div className="mt-auto" onClick={(e) => e.stopPropagation()}>
+                            
+                            {viewMode === "grid" && (
+                              <p className="text-muted-foreground text-xs mb-3 line-clamp-2">
+                                {item.desc}
+                              </p>
+                            )}
+
+                            {viewMode === "list" && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-primary font-bold text-sm tracking-tight">{item.priceLabel}</span>
+                                <span className="text-muted-foreground text-xs">{item.category}</span>
+                              </div>
+                            )}
+
+                            <div className={`${viewMode === "grid" ? "mt-auto" : "hidden"}`} onClick={(e) => e.stopPropagation()}>
                               {!item.available ? (
                                 <div className="w-full bg-destructive/10 text-destructive py-2 rounded-xl font-semibold text-xs text-center flex items-center justify-center gap-1">
                                   <Ban size={12} /> Out of Stock
@@ -1936,6 +1949,68 @@ function OrderPageContent({
                               )}
                             </div>
                           </div>
+
+                          {viewMode === "list" && (
+                            <div className="shrink-0 ml-2" onClick={(e) => e.stopPropagation()}>
+                              {!item.available ? (
+                                <span className="text-destructive font-semibold text-xs">Out of Stock</span>
+                              ) : inCart ? (
+                                <div className="flex items-center gap-3 bg-muted p-1 rounded-lg border border-border/50">
+                                  <button
+                                    onClick={() => {
+                                      if (isTableLocked) {
+                                        toast({ title: "Table Locked", description: "You cannot modify the cart until the table is unlocked.", variant: "destructive" });
+                                        return;
+                                      }
+                                      updateQuantity(item.id!, inCart.quantity - 1);
+                                    }}
+                                    className="w-7 h-7 rounded-md bg-card flex items-center justify-center shadow-sm hover:text-destructive transition-colors"
+                                  >
+                                    {inCart.quantity === 1 ? <Trash2 size={12} /> : <Minus size={12} />}
+                                  </button>
+                                  <span className="font-bold text-sm w-4 text-center">{inCart.quantity}</span>
+                                  <button
+                                    onClick={() => {
+                                      if (isTableLocked) {
+                                        toast({ title: "Table Locked", description: "You cannot modify the cart until the table is unlocked.", variant: "destructive" });
+                                        return;
+                                      }
+                                      updateQuantity(item.id!, inCart.quantity + 1);
+                                    }}
+                                    className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center shadow-sm transition-colors"
+                                  >
+                                    <Plus size={12} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => {
+                                    if (isTableLocked) {
+                                      toast({ title: "Table Locked", description: "You cannot modify the cart until the table is unlocked.", variant: "destructive" });
+                                      return;
+                                    }
+                                    if (item.variants && item.variants.length > 0) {
+                                      setVariantModalContext("cart");
+                                      setVariantModalItem(item);
+                                    } else {
+                                      addItem({
+                                        id: item.id!,
+                                        name: item.name,
+                                        price: item.price,
+                                        priceLabel: item.priceLabel,
+                                        image: item.image,
+                                      });
+                                    }
+                                  }}
+                                  className="bg-[#D9A019] hover:bg-[#C08C15] text-white px-5 py-1.5 rounded text-sm font-semibold shadow-sm transition-colors"
+                                >
+                                  Add
+                                </motion.button>
+                              )}
+                            </div>
+                          )}
                         </motion.div>
                       );
                     })}
