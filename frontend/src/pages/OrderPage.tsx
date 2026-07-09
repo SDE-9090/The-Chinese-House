@@ -1804,7 +1804,7 @@ function OrderPageContent({
           )}
 
           <div className="container mx-auto p-4">
-            <div className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "flex flex-col gap-3"}>
+            <div className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-3"}>
               {menuLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <div
