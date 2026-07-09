@@ -21,6 +21,8 @@ import {
   Edit3,
   MoreVertical,
   Star,
+  LayoutGrid,
+  List,
   Coffee,
   Soup,
   IceCream,
@@ -178,6 +180,14 @@ function OrderPageContent({
     }
   }, [customerPhone, isTableMode]);
   const editItemsRef = useRef<Order["items"]>([]);
+  const [viewMode, setViewMode] = useState<"grid" | "list">(
+    (localStorage.getItem("customerViewMode") as "grid" | "list") || "grid"
+  );
+  
+  const handleViewModeChange = (mode: "grid" | "list") => {
+    setViewMode(mode);
+    localStorage.setItem("customerViewMode", mode);
+  };
   const [open, setOpen] = useState(false);
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<CouponValidation | null>(
@@ -1755,28 +1765,46 @@ function OrderPageContent({
                     </motion.button>
                   ))}
                 </div>
-                <div className="flex items-center gap-2 px-1">
-                  <button
-                    onClick={() => setVegOnly(!vegOnly)}
-                    className={`relative w-11 h-6 rounded-full transition-colors ${vegOnly ? 'bg-green-600' : 'bg-muted-foreground/30'}`}
-                  >
-                    <motion.div
-                      className="absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-sm"
-                      animate={{ x: vegOnly ? 20 : 0 }}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                    />
-                  </button>
-                  <span className="text-sm font-semibold flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-sm border border-green-600 bg-green-50 flex items-center justify-center"><span className="w-1.5 h-1.5 rounded-full bg-green-600"></span></span>
-                    Veg Only
-                  </span>
+                <div className="flex items-center justify-between gap-4 px-1">
+                  <div className="flex items-center gap-1.5 bg-muted p-1 rounded-lg">
+                    <button
+                      onClick={() => handleViewModeChange("grid")}
+                      className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      title="Grid View"
+                    >
+                      <LayoutGrid size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleViewModeChange("list")}
+                      className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      title="List View"
+                    >
+                      <List size={16} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setVegOnly(!vegOnly)}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${vegOnly ? 'bg-green-600' : 'bg-muted-foreground/30'}`}
+                    >
+                      <motion.div
+                        className="absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-sm"
+                        animate={{ x: vegOnly ? 20 : 0 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      />
+                    </button>
+                    <span className="text-sm font-semibold flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-sm border border-green-600 bg-green-50 flex items-center justify-center"><span className="w-1.5 h-1.5 rounded-full bg-green-600"></span></span>
+                      Veg Only
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
           <div className="container mx-auto p-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "flex flex-col gap-3"}>
               {menuLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <div
@@ -1806,9 +1834,9 @@ function OrderPageContent({
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.9 }}
                           onClick={() => setSelectedItem(item)}
-                          className={`bg-card rounded-2xl overflow-hidden border border-border/50 group hover:shadow-xl hover:shadow-primary/5 transition-shadow cursor-pointer flex flex-col h-full ${!item.available ? "opacity-70" : ""}`}
+                          className={`bg-card rounded-2xl overflow-hidden border border-border/50 group hover:shadow-xl hover:shadow-primary/5 transition-shadow cursor-pointer ${viewMode === "list" ? "flex flex-row items-stretch p-2 gap-3" : "flex flex-col h-full"} ${!item.available ? "opacity-70" : ""}`}
                         >
-                          <div className="relative overflow-hidden aspect-square bg-primary/5 flex items-center justify-center">
+                          <div className={`relative overflow-hidden bg-primary/5 flex items-center justify-center shrink-0 ${viewMode === "list" ? "w-28 h-28 rounded-xl" : "aspect-square"}`}>
                             {(!item.image || item.image.includes("placeholder.svg") || item.image.includes("placeholder.jpg")) ? (
                               <CategoryPlaceholder category={item.category} />
                             ) : (
@@ -1824,14 +1852,14 @@ function OrderPageContent({
                               {item.priceLabel}
                             </div>
                           </div>
-                          <div className="p-3 flex flex-col flex-grow">
+                          <div className={`flex flex-col flex-grow min-w-0 ${viewMode === "list" ? "py-1 pr-1" : "p-3"}`}>
                             <h3 className="font-bold text-base leading-tight flex items-start gap-1.5">
                               <span className="flex-1">{item.name}</span>
                               {item.diet_type === "veg" && <span className="w-3 h-3 rounded-sm border border-green-600 bg-green-50 flex items-center justify-center mt-1 shrink-0" title="Veg"><span className="w-1.5 h-1.5 rounded-full bg-green-600"></span></span>}
                               {item.diet_type === "non-veg" && <span className="w-3 h-3 rounded-sm border border-red-600 bg-red-50 flex items-center justify-center mt-1 shrink-0" title="Non-Veg"><span className="w-1.5 h-1.5 rounded-full bg-red-600"></span></span>}
                               {item.diet_type === "egg" && <span className="w-3 h-3 rounded-sm border border-yellow-600 bg-yellow-50 flex items-center justify-center mt-1 shrink-0" title="Contains Egg"><span className="w-1.5 h-1.5 rounded-full bg-yellow-600"></span></span>}
                             </h3>
-                            <p className="text-muted-foreground text-xs mb-3 line-clamp-2">
+                            <p className={`text-muted-foreground text-xs mb-3 ${viewMode === "list" ? "line-clamp-2" : "line-clamp-2"}`}>
                               {item.desc}
                             </p>
                             <div className="mt-auto" onClick={(e) => e.stopPropagation()}>
