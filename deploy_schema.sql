@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict cjRj7uG6kcpMebr8hd2S3BsJqGUzzSeq7bvfgrYaSrmWeFw6ZdwTLJVMYUd1ZH8
+\restrict 944sZEV87CHcSzfgK3VSj7mQDx8AxSdKvs2cdo3rlcr5xqzS40zd9taIgNovMbb
 
--- Dumped from database version 17.8 (a284a84)
--- Dumped by pg_dump version 17.9 (Ubuntu 17.9-1.pgdg24.04+1)
+-- Dumped from database version 18.4 (709c4c3)
+-- Dumped by pg_dump version 18.4 (Debian 18.4-1.pgdg13+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -27,7 +27,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
 
 --
--- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner: -
+-- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner: 
 --
 
 COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
@@ -38,7 +38,7 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: admin_account; Type: TABLE; Schema: public; Owner: -
+-- Name: admin_account; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.admin_account (
@@ -47,12 +47,16 @@ CREATE TABLE public.admin_account (
     mobile_number text NOT NULL,
     created_at timestamp without time zone DEFAULT now(),
     updated_at timestamp without time zone DEFAULT now(),
-    business_id uuid NOT NULL
+    business_id uuid NOT NULL,
+    email text,
+    webauthn_user_id text NOT NULL
 );
 
 
+ALTER TABLE public.admin_account OWNER TO neondb_owner;
+
 --
--- Name: admin_account_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: admin_account_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.admin_account_id_seq
@@ -64,15 +68,17 @@ CREATE SEQUENCE public.admin_account_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.admin_account_id_seq OWNER TO neondb_owner;
+
 --
--- Name: admin_account_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: admin_account_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.admin_account_id_seq OWNED BY public.admin_account.id;
 
 
 --
--- Name: admin_login_logs; Type: TABLE; Schema: public; Owner: -
+-- Name: admin_login_logs; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.admin_login_logs (
@@ -86,8 +92,10 @@ CREATE TABLE public.admin_login_logs (
 );
 
 
+ALTER TABLE public.admin_login_logs OWNER TO neondb_owner;
+
 --
--- Name: admin_login_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: admin_login_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.admin_login_logs_id_seq
@@ -99,15 +107,38 @@ CREATE SEQUENCE public.admin_login_logs_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.admin_login_logs_id_seq OWNER TO neondb_owner;
+
 --
--- Name: admin_login_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: admin_login_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.admin_login_logs_id_seq OWNED BY public.admin_login_logs.id;
 
 
 --
--- Name: business_settings; Type: TABLE; Schema: public; Owner: -
+-- Name: admin_passkeys; Type: TABLE; Schema: public; Owner: neondb_owner
+--
+
+CREATE TABLE public.admin_passkeys (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    credential_id text NOT NULL,
+    public_key bytea NOT NULL,
+    webauthn_user_id text NOT NULL,
+    counter bigint DEFAULT 0 NOT NULL,
+    device_type character varying(32) NOT NULL,
+    backed_up boolean DEFAULT false NOT NULL,
+    transports character varying(255),
+    admin_id integer,
+    business_id uuid,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.admin_passkeys OWNER TO neondb_owner;
+
+--
+-- Name: business_settings; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.business_settings (
@@ -124,12 +155,20 @@ CREATE TABLE public.business_settings (
     sgst_rate numeric(5,2) DEFAULT 2.5 NOT NULL,
     kitchen_pin character varying(6) DEFAULT '1234'::character varying,
     business_id uuid NOT NULL,
-    CONSTRAINT business_settings_id_check CHECK ((id = 1))
+    landing_page_content jsonb DEFAULT '{}'::jsonb,
+    order_workflow character varying(50) DEFAULT 'quick-complete'::character varying NOT NULL,
+    loyalty_enabled boolean DEFAULT true,
+    loyalty_points_per_100 integer DEFAULT 10,
+    loyalty_discount_per_point numeric(5,2) DEFAULT 1.00,
+    qr_routing_mode character varying(20) DEFAULT 'claim'::character varying NOT NULL,
+    printer_width character varying(10) DEFAULT '58mm'::character varying
 );
 
 
+ALTER TABLE public.business_settings OWNER TO neondb_owner;
+
 --
--- Name: businesses; Type: TABLE; Schema: public; Owner: -
+-- Name: businesses; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.businesses (
@@ -140,12 +179,16 @@ CREATE TABLE public.businesses (
     subscription_tier character varying(20) DEFAULT 'free'::character varying,
     features jsonb DEFAULT '{"pos_system": true, "kitchen_display": true, "manual_table_orders": true, "qr_digital_ordering": true}'::jsonb,
     is_active boolean DEFAULT true,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    theme character varying(50) DEFAULT 'gourmet-royal'::character varying,
+    layout_theme character varying(50) DEFAULT 'classic'::character varying
 );
 
 
+ALTER TABLE public.businesses OWNER TO neondb_owner;
+
 --
--- Name: coupons; Type: TABLE; Schema: public; Owner: -
+-- Name: coupons; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.coupons (
@@ -154,18 +197,38 @@ CREATE TABLE public.coupons (
     value numeric(10,2) NOT NULL,
     expiry_date date,
     active boolean DEFAULT true NOT NULL,
-    is_public boolean DEFAULT false NOT NULL,
     usage_limit integer DEFAULT 1 NOT NULL,
     used_count integer DEFAULT 0 NOT NULL,
     created_by text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     business_id uuid NOT NULL,
+    is_public boolean DEFAULT false NOT NULL,
     CONSTRAINT coupons_discount_type_check CHECK ((discount_type = ANY (ARRAY['percent'::text, 'flat'::text])))
 );
 
 
+ALTER TABLE public.coupons OWNER TO neondb_owner;
+
 --
--- Name: gallery_images; Type: TABLE; Schema: public; Owner: -
+-- Name: customers; Type: TABLE; Schema: public; Owner: neondb_owner
+--
+
+CREATE TABLE public.customers (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    business_id uuid NOT NULL,
+    phone character varying(15) NOT NULL,
+    name character varying(100) DEFAULT ''::character varying,
+    points_balance numeric(10,2) DEFAULT 0,
+    total_spent numeric(10,2) DEFAULT 0,
+    last_visit timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.customers OWNER TO neondb_owner;
+
+--
+-- Name: gallery_images; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.gallery_images (
@@ -178,8 +241,10 @@ CREATE TABLE public.gallery_images (
 );
 
 
+ALTER TABLE public.gallery_images OWNER TO neondb_owner;
+
 --
--- Name: gallery_images_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: gallery_images_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.gallery_images_id_seq
@@ -191,32 +256,35 @@ CREATE SEQUENCE public.gallery_images_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.gallery_images_id_seq OWNER TO neondb_owner;
+
 --
--- Name: gallery_images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: gallery_images_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.gallery_images_id_seq OWNED BY public.gallery_images.id;
 
 
 --
--- Name: hero_content; Type: TABLE; Schema: public; Owner: -
+-- Name: hero_content; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.hero_content (
     id integer DEFAULT 1 NOT NULL,
-    location_tag text DEFAULT '🧇 k, Pune'::text NOT NULL,
-    title text DEFAULT 'Fresh <span>Belgian Waffles</span> in k'::text NOT NULL,
+    location_tag text DEFAULT '🧇 Koregaon Park, Pune'::text NOT NULL,
+    title text DEFAULT 'Fresh <span>Belgian Waffles</span> in Koregaon Park'::text NOT NULL,
     description text DEFAULT 'Crispy outside. Fluffy inside. Made fresh every time. Experience authentic Belgian waffle culture at Henny''s Gourmet.'::text NOT NULL,
     image_url text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    business_id uuid NOT NULL,
-    CONSTRAINT hero_content_single_row CHECK ((id = 1))
+    business_id uuid NOT NULL
 );
 
 
+ALTER TABLE public.hero_content OWNER TO neondb_owner;
+
 --
--- Name: location_content; Type: TABLE; Schema: public; Owner: -
+-- Name: location_content; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.location_content (
@@ -232,13 +300,14 @@ CREATE TABLE public.location_content (
     close_time time without time zone DEFAULT '23:00:00'::time without time zone NOT NULL,
     closed_day integer DEFAULT 1 NOT NULL,
     opening_hours_display text,
-    business_id uuid NOT NULL,
-    CONSTRAINT location_content_single_row CHECK ((id = 1))
+    business_id uuid NOT NULL
 );
 
 
+ALTER TABLE public.location_content OWNER TO neondb_owner;
+
 --
--- Name: menu_categories; Type: TABLE; Schema: public; Owner: -
+-- Name: menu_categories; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.menu_categories (
@@ -250,8 +319,10 @@ CREATE TABLE public.menu_categories (
 );
 
 
+ALTER TABLE public.menu_categories OWNER TO neondb_owner;
+
 --
--- Name: menu_categories_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: menu_categories_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.menu_categories_id_seq
@@ -263,15 +334,17 @@ CREATE SEQUENCE public.menu_categories_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.menu_categories_id_seq OWNER TO neondb_owner;
+
 --
--- Name: menu_categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: menu_categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.menu_categories_id_seq OWNED BY public.menu_categories.id;
 
 
 --
--- Name: menu_items; Type: TABLE; Schema: public; Owner: -
+-- Name: menu_items; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.menu_items (
@@ -287,12 +360,17 @@ CREATE TABLE public.menu_items (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     category_id integer NOT NULL,
-    business_id uuid NOT NULL
+    business_id uuid NOT NULL,
+    is_deleted boolean DEFAULT false NOT NULL,
+    variants jsonb DEFAULT '[]'::jsonb,
+    diet_type character varying(20) DEFAULT 'none'::character varying
 );
 
 
+ALTER TABLE public.menu_items OWNER TO neondb_owner;
+
 --
--- Name: menu_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: menu_items_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.menu_items_id_seq
@@ -304,15 +382,17 @@ CREATE SEQUENCE public.menu_items_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.menu_items_id_seq OWNER TO neondb_owner;
+
 --
--- Name: menu_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: menu_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.menu_items_id_seq OWNED BY public.menu_items.id;
 
 
 --
--- Name: order_items; Type: TABLE; Schema: public; Owner: -
+-- Name: order_items; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.order_items (
@@ -324,12 +404,16 @@ CREATE TABLE public.order_items (
     quantity integer DEFAULT 1 NOT NULL,
     image text NOT NULL,
     menu_item_id integer NOT NULL,
-    business_id uuid NOT NULL
+    business_id uuid NOT NULL,
+    note text,
+    status character varying(50) DEFAULT 'pending'::character varying
 );
 
 
+ALTER TABLE public.order_items OWNER TO neondb_owner;
+
 --
--- Name: order_items_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: order_items_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.order_items_id_seq
@@ -341,15 +425,17 @@ CREATE SEQUENCE public.order_items_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.order_items_id_seq OWNER TO neondb_owner;
+
 --
--- Name: order_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: order_items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.order_items_id_seq OWNED BY public.order_items.id;
 
 
 --
--- Name: orders; Type: TABLE; Schema: public; Owner: -
+-- Name: orders; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.orders (
@@ -375,15 +461,22 @@ CREATE TABLE public.orders (
     order_source character varying(20) DEFAULT 'counter'::character varying,
     table_session_id uuid,
     business_id uuid NOT NULL,
-    CONSTRAINT orders_order_source_check CHECK (((order_source)::text = ANY ((ARRAY['counter'::character varying, 'table'::character varying])::text[]))),
-    CONSTRAINT orders_payment_method_check CHECK (((payment_method)::text = ANY ((ARRAY['counter'::character varying, 'online'::character varying, 'cash'::character varying, 'upi'::character varying, 'card'::character varying, 'split'::character varying])::text[]))),
-    CONSTRAINT orders_payment_status_check CHECK (((payment_status)::text = ANY ((ARRAY['pending'::character varying, 'paid'::character varying])::text[]))),
+    split_cash numeric(10,2) DEFAULT 0,
+    split_upi numeric(10,2) DEFAULT 0,
+    points_earned numeric(10,2) DEFAULT 0,
+    points_redeemed numeric(10,2) DEFAULT 0,
+    waiter_id uuid,
+    CONSTRAINT orders_order_source_check CHECK (((order_source)::text = ANY (ARRAY[('counter'::character varying)::text, ('table'::character varying)::text]))),
+    CONSTRAINT orders_payment_method_check CHECK (((payment_method)::text = ANY (ARRAY[('counter'::character varying)::text, ('online'::character varying)::text, ('cash'::character varying)::text, ('upi'::character varying)::text, ('card'::character varying)::text, ('split'::character varying)::text]))),
+    CONSTRAINT orders_payment_status_check CHECK (((payment_status)::text = ANY (ARRAY[('pending'::character varying)::text, ('paid'::character varying)::text]))),
     CONSTRAINT orders_status_check CHECK (((status)::text = ANY (ARRAY[('approval_pending'::character varying)::text, ('new'::character varying)::text, ('preparing'::character varying)::text, ('ready'::character varying)::text, ('completed'::character varying)::text, ('cancelled'::character varying)::text])))
 );
 
 
+ALTER TABLE public.orders OWNER TO neondb_owner;
+
 --
--- Name: promotions; Type: TABLE; Schema: public; Owner: -
+-- Name: promotions; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.promotions (
@@ -399,8 +492,10 @@ CREATE TABLE public.promotions (
 );
 
 
+ALTER TABLE public.promotions OWNER TO neondb_owner;
+
 --
--- Name: promotions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: promotions_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.promotions_id_seq
@@ -412,15 +507,17 @@ CREATE SEQUENCE public.promotions_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.promotions_id_seq OWNER TO neondb_owner;
+
 --
--- Name: promotions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: promotions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.promotions_id_seq OWNED BY public.promotions.id;
 
 
 --
--- Name: reviews; Type: TABLE; Schema: public; Owner: -
+-- Name: reviews; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.reviews (
@@ -436,8 +533,10 @@ CREATE TABLE public.reviews (
 );
 
 
+ALTER TABLE public.reviews OWNER TO neondb_owner;
+
 --
--- Name: reviews_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: reviews_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.reviews_id_seq
@@ -449,15 +548,17 @@ CREATE SEQUENCE public.reviews_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.reviews_id_seq OWNER TO neondb_owner;
+
 --
--- Name: reviews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: reviews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.reviews_id_seq OWNED BY public.reviews.id;
 
 
 --
--- Name: staff; Type: TABLE; Schema: public; Owner: -
+-- Name: staff; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.staff (
@@ -469,12 +570,15 @@ CREATE TABLE public.staff (
     created_at timestamp with time zone DEFAULT now(),
     phone character varying(20),
     business_id uuid NOT NULL,
-    CONSTRAINT staff_role_check CHECK (((role)::text = ANY ((ARRAY['manager'::character varying, 'waiter'::character varying, 'kitchen'::character varying])::text[])))
+    permissions jsonb DEFAULT '{}'::jsonb,
+    CONSTRAINT staff_role_check CHECK (((role)::text = ANY (ARRAY[('manager'::character varying)::text, ('waiter'::character varying)::text, ('kitchen'::character varying)::text])))
 );
 
 
+ALTER TABLE public.staff OWNER TO neondb_owner;
+
 --
--- Name: super_admins; Type: TABLE; Schema: public; Owner: -
+-- Name: super_admins; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.super_admins (
@@ -485,8 +589,10 @@ CREATE TABLE public.super_admins (
 );
 
 
+ALTER TABLE public.super_admins OWNER TO neondb_owner;
+
 --
--- Name: table_sessions; Type: TABLE; Schema: public; Owner: -
+-- Name: table_sessions; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.table_sessions (
@@ -501,12 +607,17 @@ CREATE TABLE public.table_sessions (
     end_time timestamp with time zone,
     created_at timestamp with time zone DEFAULT now(),
     business_id uuid NOT NULL,
-    CONSTRAINT table_sessions_status_check CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'billing'::character varying, 'completed'::character varying])::text[])))
+    coupon_code character varying(50),
+    discount_amount numeric(10,2) DEFAULT 0,
+    waiter_id uuid,
+    CONSTRAINT table_sessions_status_check CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('billing'::character varying)::text, ('completed'::character varying)::text])))
 );
 
 
+ALTER TABLE public.table_sessions OWNER TO neondb_owner;
+
 --
--- Name: tables; Type: TABLE; Schema: public; Owner: -
+-- Name: tables; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.tables (
@@ -516,12 +627,14 @@ CREATE TABLE public.tables (
     status character varying(20) DEFAULT 'available'::character varying,
     created_at timestamp with time zone DEFAULT now(),
     business_id uuid NOT NULL,
-    CONSTRAINT tables_status_check CHECK (((status)::text = ANY ((ARRAY['available'::character varying, 'occupied'::character varying, 'reserved'::character varying])::text[])))
+    CONSTRAINT tables_status_check CHECK (((status)::text = ANY (ARRAY[('available'::character varying)::text, ('occupied'::character varying)::text, ('reserved'::character varying)::text])))
 );
 
 
+ALTER TABLE public.tables OWNER TO neondb_owner;
+
 --
--- Name: token_counter; Type: TABLE; Schema: public; Owner: -
+-- Name: token_counter; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.token_counter (
@@ -531,64 +644,66 @@ CREATE TABLE public.token_counter (
 );
 
 
+ALTER TABLE public.token_counter OWNER TO neondb_owner;
+
 --
--- Name: admin_account id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: admin_account id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.admin_account ALTER COLUMN id SET DEFAULT nextval('public.admin_account_id_seq'::regclass);
 
 
 --
--- Name: admin_login_logs id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: admin_login_logs id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.admin_login_logs ALTER COLUMN id SET DEFAULT nextval('public.admin_login_logs_id_seq'::regclass);
 
 
 --
--- Name: gallery_images id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: gallery_images id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.gallery_images ALTER COLUMN id SET DEFAULT nextval('public.gallery_images_id_seq'::regclass);
 
 
 --
--- Name: menu_categories id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: menu_categories id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.menu_categories ALTER COLUMN id SET DEFAULT nextval('public.menu_categories_id_seq'::regclass);
 
 
 --
--- Name: menu_items id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: menu_items id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.menu_items ALTER COLUMN id SET DEFAULT nextval('public.menu_items_id_seq'::regclass);
 
 
 --
--- Name: order_items id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: order_items id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.order_items ALTER COLUMN id SET DEFAULT nextval('public.order_items_id_seq'::regclass);
 
 
 --
--- Name: promotions id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: promotions id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.promotions ALTER COLUMN id SET DEFAULT nextval('public.promotions_id_seq'::regclass);
 
 
 --
--- Name: reviews id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: reviews id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.reviews ALTER COLUMN id SET DEFAULT nextval('public.reviews_id_seq'::regclass);
 
 
 --
--- Name: admin_account admin_account_mobile_business_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: admin_account admin_account_mobile_business_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.admin_account
@@ -596,7 +711,7 @@ ALTER TABLE ONLY public.admin_account
 
 
 --
--- Name: admin_account admin_account_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: admin_account admin_account_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.admin_account
@@ -604,7 +719,7 @@ ALTER TABLE ONLY public.admin_account
 
 
 --
--- Name: admin_login_logs admin_login_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: admin_login_logs admin_login_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.admin_login_logs
@@ -612,15 +727,31 @@ ALTER TABLE ONLY public.admin_login_logs
 
 
 --
--- Name: business_settings business_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: admin_passkeys admin_passkeys_credential_id_key; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.admin_passkeys
+    ADD CONSTRAINT admin_passkeys_credential_id_key UNIQUE (credential_id);
+
+
+--
+-- Name: admin_passkeys admin_passkeys_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.admin_passkeys
+    ADD CONSTRAINT admin_passkeys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: business_settings business_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.business_settings
-    ADD CONSTRAINT business_settings_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT business_settings_pkey PRIMARY KEY (business_id);
 
 
 --
--- Name: businesses businesses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: businesses businesses_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.businesses
@@ -628,7 +759,7 @@ ALTER TABLE ONLY public.businesses
 
 
 --
--- Name: businesses businesses_slug_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: businesses businesses_slug_key; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.businesses
@@ -636,7 +767,7 @@ ALTER TABLE ONLY public.businesses
 
 
 --
--- Name: coupons coupons_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: coupons coupons_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.coupons
@@ -644,7 +775,23 @@ ALTER TABLE ONLY public.coupons
 
 
 --
--- Name: gallery_images gallery_images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: customers customers_business_id_phone_key; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.customers
+    ADD CONSTRAINT customers_business_id_phone_key UNIQUE (business_id, phone);
+
+
+--
+-- Name: customers customers_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.customers
+    ADD CONSTRAINT customers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: gallery_images gallery_images_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.gallery_images
@@ -652,31 +799,31 @@ ALTER TABLE ONLY public.gallery_images
 
 
 --
--- Name: hero_content hero_content_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: hero_content hero_content_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.hero_content
-    ADD CONSTRAINT hero_content_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT hero_content_pkey PRIMARY KEY (business_id);
 
 
 --
--- Name: location_content location_content_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: location_content location_content_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.location_content
-    ADD CONSTRAINT location_content_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT location_content_pkey PRIMARY KEY (business_id);
 
 
 --
--- Name: menu_categories menu_categories_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: menu_categories menu_categories_name_business_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.menu_categories
-    ADD CONSTRAINT menu_categories_name_key UNIQUE (name);
+    ADD CONSTRAINT menu_categories_name_business_unique UNIQUE (business_id, name);
 
 
 --
--- Name: menu_categories menu_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: menu_categories menu_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.menu_categories
@@ -684,15 +831,15 @@ ALTER TABLE ONLY public.menu_categories
 
 
 --
--- Name: menu_items menu_items_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: menu_items menu_items_name_business_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.menu_items
-    ADD CONSTRAINT menu_items_name_key UNIQUE (name);
+    ADD CONSTRAINT menu_items_name_business_unique UNIQUE (business_id, name);
 
 
 --
--- Name: menu_items menu_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: menu_items menu_items_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.menu_items
@@ -700,7 +847,7 @@ ALTER TABLE ONLY public.menu_items
 
 
 --
--- Name: menu_items menu_items_slug_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: menu_items menu_items_slug_key; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.menu_items
@@ -708,7 +855,7 @@ ALTER TABLE ONLY public.menu_items
 
 
 --
--- Name: order_items order_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: order_items order_items_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.order_items
@@ -716,7 +863,7 @@ ALTER TABLE ONLY public.order_items
 
 
 --
--- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.orders
@@ -724,7 +871,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: promotions promotions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: promotions promotions_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.promotions
@@ -732,7 +879,7 @@ ALTER TABLE ONLY public.promotions
 
 
 --
--- Name: reviews reviews_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: reviews reviews_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.reviews
@@ -740,7 +887,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: staff staff_pin_hash_business_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: staff staff_pin_hash_business_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.staff
@@ -748,7 +895,7 @@ ALTER TABLE ONLY public.staff
 
 
 --
--- Name: staff staff_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: staff staff_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.staff
@@ -756,7 +903,7 @@ ALTER TABLE ONLY public.staff
 
 
 --
--- Name: super_admins super_admins_email_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: super_admins super_admins_email_key; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.super_admins
@@ -764,7 +911,7 @@ ALTER TABLE ONLY public.super_admins
 
 
 --
--- Name: super_admins super_admins_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: super_admins super_admins_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.super_admins
@@ -772,7 +919,7 @@ ALTER TABLE ONLY public.super_admins
 
 
 --
--- Name: table_sessions table_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: table_sessions table_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.table_sessions
@@ -780,7 +927,7 @@ ALTER TABLE ONLY public.table_sessions
 
 
 --
--- Name: tables tables_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tables tables_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.tables
@@ -788,7 +935,7 @@ ALTER TABLE ONLY public.tables
 
 
 --
--- Name: tables tables_qr_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tables tables_qr_code_key; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.tables
@@ -796,7 +943,7 @@ ALTER TABLE ONLY public.tables
 
 
 --
--- Name: tables tables_table_number_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tables tables_table_number_key; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.tables
@@ -804,134 +951,158 @@ ALTER TABLE ONLY public.tables
 
 
 --
--- Name: token_counter token_counter_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: token_counter token_counter_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.token_counter
-    ADD CONSTRAINT token_counter_pkey PRIMARY KEY (date);
+    ADD CONSTRAINT token_counter_pkey PRIMARY KEY (business_id, date);
 
 
 --
--- Name: idx_coupons_active; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_coupons_active; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_coupons_active ON public.coupons USING btree (active);
 
 
 --
--- Name: idx_coupons_expiry; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_coupons_expiry; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_coupons_expiry ON public.coupons USING btree (expiry_date);
 
 
 --
--- Name: idx_gallery_display_order; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_gallery_display_order; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_gallery_display_order ON public.gallery_images USING btree (display_order);
 
 
 --
--- Name: idx_menu_items_available; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_menu_items_available; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_menu_items_available ON public.menu_items USING btree (available);
 
 
 --
--- Name: idx_menu_items_category_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_menu_items_category_id; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_menu_items_category_id ON public.menu_items USING btree (category_id);
 
 
 --
--- Name: idx_menu_items_sort; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_menu_items_sort; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_menu_items_sort ON public.menu_items USING btree (sort_order);
 
 
 --
--- Name: idx_order_items_order_id; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_order_items_order_id; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_order_items_order_id ON public.order_items USING btree (order_id);
 
 
 --
--- Name: idx_orders_created_at; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_orders_created_at; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_orders_created_at ON public.orders USING btree (created_at DESC);
 
 
 --
--- Name: idx_orders_created_at_payment_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_orders_created_at_payment_status; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_orders_created_at_payment_status ON public.orders USING btree (created_at, payment_status);
 
 
 --
--- Name: idx_orders_created_at_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_orders_created_at_status; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_orders_created_at_status ON public.orders USING btree (created_at, status);
 
 
 --
--- Name: idx_orders_customer_phone; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_orders_customer_phone; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_orders_customer_phone ON public.orders USING btree (customer_phone);
 
 
 --
--- Name: idx_orders_payment_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_orders_payment_status; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_orders_payment_status ON public.orders USING btree (payment_status);
 
 
 --
--- Name: idx_orders_phone_created; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_orders_phone_created; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_orders_phone_created ON public.orders USING btree (customer_phone, created_at DESC);
 
 
 --
--- Name: idx_orders_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_orders_status; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_orders_status ON public.orders USING btree (status);
 
 
 --
--- Name: idx_promotions_active_expires; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_promotions_active_expires; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_promotions_active_expires ON public.promotions USING btree (active, expires_at DESC);
 
 
 --
--- Name: idx_reviews_item_name; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_reviews_item_name; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_reviews_item_name ON public.reviews USING btree (item_name);
 
 
 --
--- Name: idx_reviews_rating; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_reviews_rating; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX idx_reviews_rating ON public.reviews USING btree (rating DESC);
 
 
 --
--- Name: admin_account fk_admin_account_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: admin_passkeys admin_passkeys_admin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.admin_passkeys
+    ADD CONSTRAINT admin_passkeys_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.admin_account(id) ON DELETE CASCADE;
+
+
+--
+-- Name: admin_passkeys admin_passkeys_business_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.admin_passkeys
+    ADD CONSTRAINT admin_passkeys_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: customers customers_business_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.customers
+    ADD CONSTRAINT customers_business_id_fkey FOREIGN KEY (business_id) REFERENCES public.businesses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: admin_account fk_admin_account_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.admin_account
@@ -939,7 +1110,7 @@ ALTER TABLE ONLY public.admin_account
 
 
 --
--- Name: admin_login_logs fk_admin_login_logs_admin; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: admin_login_logs fk_admin_login_logs_admin; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.admin_login_logs
@@ -947,7 +1118,7 @@ ALTER TABLE ONLY public.admin_login_logs
 
 
 --
--- Name: admin_login_logs fk_admin_login_logs_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: admin_login_logs fk_admin_login_logs_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.admin_login_logs
@@ -955,7 +1126,7 @@ ALTER TABLE ONLY public.admin_login_logs
 
 
 --
--- Name: business_settings fk_business_settings_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: business_settings fk_business_settings_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.business_settings
@@ -963,7 +1134,7 @@ ALTER TABLE ONLY public.business_settings
 
 
 --
--- Name: coupons fk_coupons_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: coupons fk_coupons_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.coupons
@@ -971,7 +1142,7 @@ ALTER TABLE ONLY public.coupons
 
 
 --
--- Name: gallery_images fk_gallery_images_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: gallery_images fk_gallery_images_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.gallery_images
@@ -979,7 +1150,7 @@ ALTER TABLE ONLY public.gallery_images
 
 
 --
--- Name: hero_content fk_hero_content_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: hero_content fk_hero_content_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.hero_content
@@ -987,7 +1158,7 @@ ALTER TABLE ONLY public.hero_content
 
 
 --
--- Name: location_content fk_location_content_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: location_content fk_location_content_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.location_content
@@ -995,7 +1166,7 @@ ALTER TABLE ONLY public.location_content
 
 
 --
--- Name: menu_categories fk_menu_categories_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: menu_categories fk_menu_categories_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.menu_categories
@@ -1003,7 +1174,7 @@ ALTER TABLE ONLY public.menu_categories
 
 
 --
--- Name: menu_items fk_menu_items_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: menu_items fk_menu_items_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.menu_items
@@ -1011,7 +1182,7 @@ ALTER TABLE ONLY public.menu_items
 
 
 --
--- Name: menu_items fk_menu_items_category; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: menu_items fk_menu_items_category; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.menu_items
@@ -1019,7 +1190,7 @@ ALTER TABLE ONLY public.menu_items
 
 
 --
--- Name: order_items fk_order_items_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: order_items fk_order_items_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.order_items
@@ -1027,7 +1198,7 @@ ALTER TABLE ONLY public.order_items
 
 
 --
--- Name: order_items fk_order_items_menu_item; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: order_items fk_order_items_menu_item; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.order_items
@@ -1035,7 +1206,7 @@ ALTER TABLE ONLY public.order_items
 
 
 --
--- Name: orders fk_orders_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders fk_orders_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.orders
@@ -1043,7 +1214,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: orders fk_orders_coupon; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders fk_orders_coupon; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.orders
@@ -1051,7 +1222,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: promotions fk_promotions_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: promotions fk_promotions_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.promotions
@@ -1059,7 +1230,7 @@ ALTER TABLE ONLY public.promotions
 
 
 --
--- Name: reviews fk_reviews_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: reviews fk_reviews_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.reviews
@@ -1067,7 +1238,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: reviews fk_reviews_menu_item; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: reviews fk_reviews_menu_item; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.reviews
@@ -1075,7 +1246,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: staff fk_staff_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: staff fk_staff_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.staff
@@ -1083,7 +1254,7 @@ ALTER TABLE ONLY public.staff
 
 
 --
--- Name: table_sessions fk_table_sessions_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: table_sessions fk_table_sessions_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.table_sessions
@@ -1091,7 +1262,7 @@ ALTER TABLE ONLY public.table_sessions
 
 
 --
--- Name: tables fk_tables_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tables fk_tables_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.tables
@@ -1099,7 +1270,7 @@ ALTER TABLE ONLY public.tables
 
 
 --
--- Name: token_counter fk_token_counter_business; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: token_counter fk_token_counter_business; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.token_counter
@@ -1107,7 +1278,7 @@ ALTER TABLE ONLY public.token_counter
 
 
 --
--- Name: order_items order_items_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: order_items order_items_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.order_items
@@ -1115,7 +1286,7 @@ ALTER TABLE ONLY public.order_items
 
 
 --
--- Name: orders orders_table_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_table_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.orders
@@ -1123,7 +1294,15 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: table_sessions table_sessions_table_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_waiter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_waiter_id_fkey FOREIGN KEY (waiter_id) REFERENCES public.staff(id) ON DELETE SET NULL;
+
+
+--
+-- Name: table_sessions table_sessions_table_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.table_sessions
@@ -1131,25 +1310,30 @@ ALTER TABLE ONLY public.table_sessions
 
 
 --
+-- Name: table_sessions table_sessions_waiter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.table_sessions
+    ADD CONSTRAINT table_sessions_waiter_id_fkey FOREIGN KEY (waiter_id) REFERENCES public.staff(id) ON DELETE SET NULL;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: cloud_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO neon_superuser WITH GRANT OPTION;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: cloud_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON TABLES TO neon_superuser WITH GRANT OPTION;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
--- ==============================================================================
--- DEFAULT INIT DATA
--- ==============================================================================
-
--- 1. Create a default business
-INSERT INTO public.businesses (id, name, slug, subscription_tier, is_active) 
-VALUES ('00000000-0000-0000-0000-000000000001', 'The Chinese House', 'the-chinese-house', 'premium', true)
-ON CONFLICT DO NOTHING;
-
--- 2. Create default business settings
-INSERT INTO public.business_settings (id, business_id, restaurant_name, is_gst_enabled)
-VALUES (1, '00000000-0000-0000-0000-000000000001', 'The Chinese House', false)
-ON CONFLICT DO NOTHING;
-
--- 3. Create the Default Admin (Password: admin123)
-INSERT INTO public.admin_account (business_id, mobile_number, password_hash) 
-VALUES ('00000000-0000-0000-0000-000000000001', '0000000000', '$2b$10$S6JJ9IXNqI.nbQGituPeTuT2IOO8ztL3A.tdLbaCiYgqwN9Mdk39y')
-ON CONFLICT DO NOTHING;
+\unrestrict 944sZEV87CHcSzfgK3VSj7mQDx8AxSdKvs2cdo3rlcr5xqzS40zd9taIgNovMbb
 
