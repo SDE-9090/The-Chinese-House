@@ -1337,3 +1337,22 @@ ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON TABL
 
 \unrestrict 944sZEV87CHcSzfgK3VSj7mQDx8AxSdKvs2cdo3rlcr5xqzS40zd9taIgNovMbb
 
+
+-- ==========================================
+-- DEFAULT SEED DATA
+-- ==========================================
+
+-- 1. Create default business
+INSERT INTO public.businesses (id, name, slug, subscription_tier, is_active) 
+VALUES ('00000000-0000-0000-0000-000000000001', 'The Chinese House', 'the-chinese-house', 'premium', true)
+ON CONFLICT DO NOTHING;
+
+-- 2. Create default business settings
+INSERT INTO public.business_settings (id, business_id, restaurant_name, is_gst_enabled)
+VALUES (1, '00000000-0000-0000-0000-000000000001', 'The Chinese House', false)
+ON CONFLICT DO NOTHING;
+
+-- 3. Create the Default Admin (Password: admin123)
+INSERT INTO public.admin_account (business_id, mobile_number, password_hash) 
+VALUES ('00000000-0000-0000-0000-000000000001', '0000000000', '$2b$10$S6JJ9IXNqI.nbQGituPeTuT2IOO8ztL3A.tdLbaCiYgqwN9Mdk39y')
+ON CONFLICT DO NOTHING;
