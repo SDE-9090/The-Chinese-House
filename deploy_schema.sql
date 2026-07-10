@@ -1353,6 +1353,6 @@ VALUES (1, '00000000-0000-0000-0000-000000000001', 'The Chinese House', false)
 ON CONFLICT DO NOTHING;
 
 -- 3. Create the Default Admin (Password: admin123)
-INSERT INTO public.admin_account (business_id, mobile_number, password_hash) 
-VALUES ('00000000-0000-0000-0000-000000000001', '0000000000', '$2b$10$S6JJ9IXNqI.nbQGituPeTuT2IOO8ztL3A.tdLbaCiYgqwN9Mdk39y')
+INSERT INTO public.admin_account (business_id, mobile_number, password_hash, webauthn_user_id) 
+VALUES ('00000000-0000-0000-0000-000000000001', '0000000000', '$2b$10$S6JJ9IXNqI.nbQGituPeTuT2IOO8ztL3A.tdLbaCiYgqwN9Mdk39y', 'admin_default_webauthn_id_001')
 ON CONFLICT DO NOTHING;
