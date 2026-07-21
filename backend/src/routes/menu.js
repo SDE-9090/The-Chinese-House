@@ -296,7 +296,12 @@ router.delete("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req
     const imageUrl = rows[0].image_url;
 
     await pool.query(
-      "UPDATE menu_items SET is_deleted = TRUE, updated_at = NOW() WHERE id=$1 AND business_id=$2",
+      `UPDATE menu_items 
+       SET is_deleted = TRUE, 
+           name = name || ' (Deleted ' || extract(epoch from now())::int || ')',
+           slug = slug || '-deleted-' || extract(epoch from now())::int,
+           updated_at = NOW() 
+       WHERE id=$1 AND business_id=$2`,
       [id, req.business_id]
     );
 
@@ -339,7 +344,12 @@ router.post("/bulk-delete-menu-items", adminAuth, authorizeRole(['admin', 'manag
     if (validIds.length === 0) return res.json({ message: "No valid menu items to delete" });
 
     await pool.query(
-      `UPDATE menu_items SET is_deleted = TRUE, updated_at = NOW() WHERE id = ANY($1) AND business_id = $2`,
+      `UPDATE menu_items 
+       SET is_deleted = TRUE, 
+           name = name || ' (Deleted ' || extract(epoch from now())::int || ')',
+           slug = slug || '-deleted-' || extract(epoch from now())::int,
+           updated_at = NOW() 
+       WHERE id = ANY($1) AND business_id = $2`,
       [validIds, req.business_id]
     );
 
