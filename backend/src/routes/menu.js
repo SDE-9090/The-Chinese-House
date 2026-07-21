@@ -146,8 +146,10 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuImage
 
     const { rows } = await pool.query(
       `INSERT INTO menu_items
-      (name, slug, description, price, price_label, category_id, image_url, available, business_id, variants, diet_type)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      (name, slug, description, price, price_label, category_id, image_url, available, business_id, variants, diet_type, sort_order)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, 
+        (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM menu_items WHERE business_id = $9)
+      )
       RETURNING *,
       (SELECT name FROM menu_categories WHERE id=$6) AS category`,
       [
