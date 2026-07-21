@@ -111,6 +111,13 @@ router.delete("/:id", adminAuth, async (req, res) => {
       });
     }
 
+    // Clean up any soft-deleted menu items attached to this category 
+    // so they don't trigger a Foreign Key violation
+    await pool.query(
+      "DELETE FROM menu_items WHERE category_id=$1 AND business_id=$2 AND is_deleted = TRUE",
+      [id, req.business_id]
+    );
+
     const result = await pool.query("DELETE FROM menu_categories WHERE id=$1 AND business_id=$2 RETURNING id", [id, req.business_id]);
 
     if (result.rowCount === 0) {
