@@ -41,6 +41,44 @@ export async function printReceiptNative(
     const spaces = len - left.length - right.length;
     return left + (spaces > 0 ? " ".repeat(spaces) : " ") + right;
   };
+
+  // Helper to wrap text cleanly on words
+  const wrapText = (text: string, maxWidth: number): string[] => {
+    if (!text) return [];
+    const words = text.split(" ");
+    const lines: string[] = [];
+    let currentLine = "";
+
+    for (const word of words) {
+      if (!currentLine) {
+        if (word.length > maxWidth) {
+          lines.push(word.substring(0, maxWidth));
+          let w = word.substring(maxWidth);
+          while (w.length > maxWidth) {
+            lines.push(w.substring(0, maxWidth));
+            w = w.substring(maxWidth);
+          }
+          currentLine = w;
+        } else {
+          currentLine = word;
+        }
+      } else {
+        if (currentLine.length + 1 + word.length <= maxWidth) {
+          currentLine += " " + word;
+        } else {
+          lines.push(currentLine);
+          let w = word;
+          while (w.length > maxWidth) {
+            lines.push(w.substring(0, maxWidth));
+            w = w.substring(maxWidth);
+          }
+          currentLine = w;
+        }
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+    return lines;
+  };
   const separator = "-".repeat(lineLength) + "\n";
   const thickSeparator = "=".repeat(lineLength) + "\n";
 
@@ -64,8 +102,26 @@ export async function printReceiptNative(
     receipt += separator;
 
     order.items.forEach(item => {
-      let itemName = item.name.substring(0, lineLength - 8);
-      receipt += padBetween(itemName, item.quantity.toString(), lineLength) + "\n";
+      const qtyStr = item.quantity.toString();
+      const nameMaxWidth = lineLength - qtyStr.length - 2; // Leave at least 2 spaces between name and qty
+      const nameLines = wrapText(item.name, nameMaxWidth > 0 ? nameMaxWidth : 10);
+      
+      if (nameLines.length > 0) {
+        receipt += padBetween(nameLines[0], qtyStr, lineLength) + "\n";
+        for (let i = 1; i < nameLines.length; i++) {
+          receipt += nameLines[i] + "\n";
+        }
+      }
+
+      if (item.note) {
+        const notePrefix = "  * Note: ";
+        const noteLines = wrapText(notePrefix + item.note, lineLength);
+        for (const nl of noteLines) {
+          receipt += nl + "\n";
+        }
+      }
+      
+      receipt += "\n";
     });
 
     receipt += thickSeparator;
@@ -111,9 +167,19 @@ export async function printReceiptNative(
     order.items.forEach(item => {
       let lineTotal = item.price * item.quantity;
       subtotal += lineTotal;
-      let itemName = item.name.substring(0, lineLength - 10);
-      let left = `${itemName} x${item.quantity}`;
-      receipt += padBetween(left, lineTotal.toFixed(2), lineLength) + "\n";
+      
+      const qtyStr = ` x${item.quantity}`;
+      const amountStr = lineTotal.toFixed(2);
+      const nameMaxWidth = lineLength - qtyStr.length - amountStr.length - 1; // Leave 1 space minimum before amount
+      const nameLines = wrapText(item.name, nameMaxWidth > 0 ? nameMaxWidth : 10);
+      
+      if (nameLines.length > 0) {
+        let firstLineLeft = `${nameLines[0]}${qtyStr}`;
+        receipt += padBetween(firstLineLeft, amountStr, lineLength) + "\n";
+        for (let i = 1; i < nameLines.length; i++) {
+          receipt += nameLines[i] + "\n";
+        }
+      }
     });
 
     receipt += separator;
