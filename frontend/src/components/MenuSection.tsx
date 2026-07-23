@@ -290,8 +290,7 @@ ${link}`;
                     </div>
                   </div>
                 );
-              })
-            }
+              })}
             </motion.div>
           </AnimatePresence>
         </div>
