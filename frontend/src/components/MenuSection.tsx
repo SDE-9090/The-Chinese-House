@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Star, Share2, Search, UtensilsCrossed, Ban, X } from "lucide-react";
@@ -38,6 +38,19 @@ const MenuSection = () => {
   useEffect(() => {
     setPage(1);
   }, [active, search]);
+
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else {
+      const menuElement = document.getElementById("menu");
+      if (menuElement) {
+        const y = menuElement.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }
+  }, [page]);
 
   const shareOnWhatsApp = (item: DynamicMenuItem) => {
     const link = `${window.location.origin}/order?item=${encodeURIComponent(item.slug)}`;
@@ -161,35 +174,37 @@ ${link}`;
         )}
 
         {/* Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-
-          {isLoading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-card rounded-2xl overflow-hidden border border-border"
-              >
-                <Skeleton className="h-48 w-full rounded-none" />
-              </div>
-            ))
-          ) : (
-            <AnimatePresence mode="popLayout">
-              {paginatedItems.map((item) => {
-                const summary = summaries[item.name];
-
-                return (
-                  <motion.div
-                    key={item.name}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.3 }}
-                    onClick={() => setSelectedItem(item)}
-                    className={`bg-card rounded-2xl overflow-hidden border border-border hover-lift group cursor-pointer flex flex-col h-full ${
-                      !item.available ? "opacity-70" : ""
-                    }`}
+        <div className="min-h-[500px]">
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={`${page}-${active}-${search}-${isLoading ? 'loading' : 'ready'}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6"
+            >
+              {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-card rounded-2xl overflow-hidden border border-border"
                   >
+                    <Skeleton className="h-48 w-full rounded-none" />
+                  </div>
+                ))
+              ) : (
+                paginatedItems.map((item) => {
+                  const summary = summaries[item.name];
+
+                  return (
+                    <div
+                      key={item.name}
+                      onClick={() => setSelectedItem(item)}
+                      className={`bg-card rounded-2xl overflow-hidden border border-border hover-lift group cursor-pointer flex flex-col h-full ${
+                        !item.available ? "opacity-70" : ""
+                      }`}
+                    >
 
                     {/* Image */}
                     <div className="relative overflow-hidden h-32 sm:h-48">
@@ -273,12 +288,12 @@ ${link}`;
                       </div>
 
                     </div>
-                  </motion.div>
+                  </div>
                 );
-              })}
-            </AnimatePresence>
-          )}
-
+              })
+            }
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Pagination */}
