@@ -287,30 +287,35 @@ ${link}`;
 
             <button
               disabled={page === 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="px-4 py-2 rounded-lg border border-border text-sm font-semibold disabled:opacity-40"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="shrink-0 px-3 py-2 sm:px-4 rounded-lg border border-border text-sm font-semibold disabled:opacity-40"
             >
               Prev
             </button>
 
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setPage(i + 1)}
-                className={`px-3 py-2 rounded-lg text-sm font-semibold ${
-                  page === i + 1
-                    ? "bg-primary text-primary-foreground"
-                    : "border border-border"
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
+            <div 
+              className="flex items-center gap-2 overflow-x-auto" 
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i + 1)}
+                  className={`shrink-0 px-3 py-2 rounded-lg text-sm font-semibold ${
+                    page === i + 1
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
 
             <button
               disabled={page === totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 rounded-lg border border-border text-sm font-semibold disabled:opacity-40"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="shrink-0 px-3 py-2 sm:px-4 rounded-lg border border-border text-sm font-semibold disabled:opacity-40"
             >
               Next
             </button>
