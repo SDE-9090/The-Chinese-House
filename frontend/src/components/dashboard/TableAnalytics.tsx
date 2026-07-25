@@ -17,7 +17,7 @@ export default function TableAnalytics() {
   const [data, setData] = useState<TableAnalyticsData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
+
   // Date range state
   const [dateRange, setDateRange] = useState<"today" | "7days" | "30days" | "all" | "custom">("30days");
   const [customStart, setCustomStart] = useState<string>("");
@@ -61,7 +61,7 @@ export default function TableAnalytics() {
         start = past.toISOString().split("T")[0];
         end = today.toISOString().split("T")[0];
       }
-      
+
       const res = await apiGetTableAnalytics(start, end);
       setData(res);
     } catch (err: any) {
@@ -104,7 +104,7 @@ export default function TableAnalytics() {
           <h2 className="text-xl font-bold font-heading">Table Analytics</h2>
           <p className="text-sm text-muted-foreground">Track revenue and order volume by physical table.</p>
         </div>
-        
+
         <div className="flex flex-col sm:items-end gap-3 w-full sm:w-auto">
           <div className="flex items-center gap-2 bg-muted p-1 rounded-xl w-full overflow-x-auto">
             {[
@@ -117,33 +117,32 @@ export default function TableAnalytics() {
               <button
                 key={range.id}
                 onClick={() => setDateRange(range.id as any)}
-                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
-                  dateRange === range.id
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${dateRange === range.id
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                }`}
+                  }`}
               >
                 {range.label}
               </button>
             ))}
           </div>
-          
+
           {dateRange === "custom" && (
             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-2 w-full sm:w-auto justify-end">
-              <input 
-                type="date" 
+              <input
+                type="date"
                 value={customStart}
                 onChange={e => setCustomStart(e.target.value)}
                 className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm outline-none focus:border-primary transition-colors"
               />
               <span className="text-muted-foreground">to</span>
-              <input 
-                type="date" 
+              <input
+                type="date"
                 value={customEnd}
                 onChange={e => setCustomEnd(e.target.value)}
                 className="bg-card border border-border rounded-lg px-3 py-1.5 text-sm outline-none focus:border-primary transition-colors"
               />
-              <button 
+              <button
                 onClick={fetchData}
                 disabled={!customStart || !customEnd}
                 className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-primary/90 disabled:opacity-50 transition-colors"
@@ -198,31 +197,31 @@ export default function TableAnalytics() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-10" />
-                  <XAxis 
-                    dataKey="tableNumber" 
+                  <XAxis
+                    dataKey="tableNumber"
                     tickFormatter={(val) => `T-${val}`}
-                    axisLine={false} 
-                    tickLine={false} 
+                    axisLine={false}
+                    tickLine={false}
                     dy={10}
                     className="text-xs sm:text-sm font-medium"
                   />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
                     tickFormatter={(val) => `₹${val}`}
                     className="text-xs sm:text-sm"
                   />
-                  <Tooltip 
+                  <Tooltip
                     cursor={{ fill: 'var(--primary)', opacity: 0.1 }}
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
                     formatter={(value: number) => [`₹${value}`, 'Revenue']}
                     labelFormatter={(label) => `Table ${label}`}
                   />
-                  <Bar 
-                    dataKey="totalRevenue" 
-                    fill="hsl(var(--primary))" 
-                    radius={[4, 4, 0, 0]} 
-                    name="Revenue" 
+                  <Bar
+                    dataKey="totalRevenue"
+                    fill="hsl(var(--primary))"
+                    radius={[4, 4, 0, 0]}
+                    name="Revenue"
                     maxBarSize={60}
                   />
                 </BarChart>
@@ -245,13 +244,13 @@ export default function TableAnalytics() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {data.map((row) => (
-                    <tr 
-                      key={row.tableNumber} 
+                    <tr
+                      key={row.tableNumber}
                       onClick={() => handleRowClick(row.tableNumber)}
                       className="hover:bg-muted/30 transition-colors cursor-pointer group"
                     >
                       <td className="p-4 font-bold flex items-center gap-2">
-                        Table {row.tableNumber}
+                        {row.tableNumber}
                         <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </td>
                       <td className="p-4 text-right">{row.totalSessions}</td>
@@ -286,14 +285,14 @@ export default function TableAnalytics() {
                   {dateRange === "7days" ? "Last 7 Days" : dateRange === "30days" ? "Last 30 Days" : "All Time"}
                 </p>
               </div>
-              <button 
+              <button
                 onClick={() => setSelectedTable(null)}
                 className="p-2 hover:bg-muted rounded-full transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto flex-1 bg-background">
               {loadingHistory ? (
                 <div className="flex justify-center items-center py-12">
@@ -307,7 +306,7 @@ export default function TableAnalytics() {
                 <div className="space-y-6">
                   {tableHistory.map((session) => (
                     <div key={session.id} className="bg-card border border-border rounded-xl p-5 shadow-sm">
-                      <div 
+                      <div
                         className="flex justify-between items-center cursor-pointer group"
                         onClick={() => toggleSession(session.id)}
                       >
@@ -339,7 +338,7 @@ export default function TableAnalytics() {
                           </motion.div>
                         </div>
                       </div>
-                      
+
                       <AnimatePresence>
                         {expandedSessions.has(session.id) && (
                           <motion.div

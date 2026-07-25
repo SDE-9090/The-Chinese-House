@@ -952,7 +952,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                       <option value="all">All Sources</option>
                       <option value="counter">Counter Orders</option>
                       {activeTableNumbers.map(t => (
-                        <option key={t} value={t}>🪑 Table {t}</option>
+                        <option key={t} value={t}>{t}</option>
                       ))}
                     </select>
                   </div>

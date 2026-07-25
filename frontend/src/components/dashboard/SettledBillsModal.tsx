@@ -15,7 +15,7 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
   const [sessions, setSessions] = useState<SettledSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
+
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -61,7 +61,7 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
 
   const handleThermalPrint = () => {
     if (!detailBill || !selectedSession) return;
-    
+
     const rd = {
       token: parseInt(selectedSession.session_id.slice(0, 4), 16) || 0,
       customerName: selectedSession.customer_name || "Guest",
@@ -87,7 +87,7 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
       gst: detailBill.sessionDetails?.gstTotal || 0,
       paidAmount: detailBill.totalAmount,
     };
-    
+
     printQueue.enqueue(`reprint-${Date.now()}`, "receipt", rd);
     toast.success("Receipt sent to thermal printer");
   };
@@ -128,9 +128,9 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
                     <Loader2 className="animate-spin text-primary" size={32} />
                   </div>
                 )}
-                
+
                 {error && <p className="text-destructive text-center p-4">{error}</p>}
-                
+
                 {!loading && sessions.length === 0 && !error && (
                   <div className="text-center py-12 text-muted-foreground">
                     No settled bills found.
@@ -141,16 +141,15 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
                   <div
                     key={session.session_id}
                     onClick={() => handleViewBill(session)}
-                    className={`p-3 md:p-4 rounded-xl border transition-all cursor-pointer ${
-                      selectedSession?.session_id === session.session_id
+                    className={`p-3 md:p-4 rounded-xl border transition-all cursor-pointer ${selectedSession?.session_id === session.session_id
                         ? "border-primary bg-primary/5 shadow-sm"
                         : "border-border bg-background hover:border-primary/30 hover:bg-muted/30"
-                    }`}
+                      }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-2">
                         <span className="bg-primary/10 text-primary px-2.5 py-1 rounded-md font-black text-sm">
-                          Table {session.table_number}
+                          {session.table_number}
                         </span>
                         <div className="flex items-center text-xs text-muted-foreground gap-1">
                           <User size={12} /> {session.customer_name}
@@ -160,7 +159,7 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
                         ₹{session.raw_total ? parseFloat(session.raw_total).toFixed(2) : "0.00"}
                       </span>
                     </div>
-                    
+
                     <div className="flex justify-between items-center text-xs text-muted-foreground mt-2 border-t border-border/50 pt-2">
                       <div className="flex items-center gap-1">
                         <Clock size={12} />
@@ -212,7 +211,7 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
                   </div>
 
                   <h3 className="font-black text-lg mb-4 text-center">Receipt Viewer</h3>
-                  
+
                   <div className="flex-1 overflow-y-auto bg-background rounded-xl border border-border p-4 shadow-sm relative no-scrollbar">
                     {loadingBill ? (
                       <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
