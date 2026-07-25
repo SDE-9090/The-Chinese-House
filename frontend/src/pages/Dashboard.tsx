@@ -620,9 +620,9 @@ const Dashboard = () => {
 };
 
 const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => void }) => {
-  const { orders, refreshOrders, optimisticUpdateStatus, unlockOrder } = useOrders(true);
+  const { orders, refreshOrders, optimisticUpdateStatus, unlockOrder, isLoading } = useOrders(true);
 
-  useAutoPrint(orders);
+  useAutoPrint(orders, isLoading);
   const [updatingOrders, setUpdatingOrders] = useState<Record<string, boolean>>(
     {},
   );

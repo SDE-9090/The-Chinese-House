@@ -40,7 +40,7 @@ function orderToReceiptData(order: Order): ReceiptData {
  * Hook: auto-prints receipts via a sequential queue in Electron.
  * Tracks printed IDs to prevent duplicates across re-renders/reconnects.
  */
-export function useAutoPrint(orders: Order[]) {
+export function useAutoPrint(orders: Order[], isInitialLoading: boolean = false) {
   const printedNewRef = useRef<Set<string>>(new Set());
   const printedPaidRef = useRef<Set<string>>(new Set());
   const prevOrderMapRef = useRef<Map<string, Order>>(new Map());
@@ -62,6 +62,7 @@ export function useAutoPrint(orders: Order[]) {
   // Auto-print new orders via queue
   useEffect(() => {
     if (!isAutoPrintSupported()) return;
+    if (isInitialLoading) return; // Wait for initial database fetch
 
     if (initialLoadRef.current) {
       initialLoadRef.current = false;
@@ -83,6 +84,7 @@ export function useAutoPrint(orders: Order[]) {
   // Auto-print when due payment is completed via queue
   useEffect(() => {
     if (!isAutoPrintSupported()) return;
+    if (isInitialLoading) return; // Wait for initial database fetch
     if (initialLoadRef.current) return;
 
     const prevMap = prevOrderMapRef.current;

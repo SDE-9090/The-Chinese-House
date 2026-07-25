@@ -8,6 +8,7 @@ import { socket } from "@/lib/socket";
 
 export function useOrders(todayOnly = true) {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Track order IDs currently being optimistically updated
   const lockedIdsRef = useRef<Set<string>>(new Set());
@@ -33,6 +34,8 @@ export function useOrders(todayOnly = true) {
       });
     } catch (err) {
       console.error("Failed to fetch orders:", err);
+    } finally {
+      setIsLoading(false);
     }
   }, [todayOnly]);
 
@@ -70,5 +73,5 @@ export function useOrders(todayOnly = true) {
     };
   }, [refreshOrders]);
 
-  return { orders, refreshOrders, optimisticUpdateStatus, unlockOrder };
+  return { orders, refreshOrders, optimisticUpdateStatus, unlockOrder, isLoading };
 }
