@@ -1203,7 +1203,7 @@ router.get("/customer-analytics", auth, async (req, res) => {
              COUNT(*)::int AS total_orders,
              COALESCE(SUM(total), 0)::numeric(10,2) AS total_spent
       FROM orders
-      WHERE status != 'cancelled' AND business_id = $1
+      WHERE status != 'cancelled' AND business_id = $1 AND customer_phone != '0000000000'
       GROUP BY customer_phone
       ORDER BY total_orders DESC
       LIMIT 10
@@ -1215,7 +1215,7 @@ router.get("/customer-analytics", auth, async (req, res) => {
              COUNT(*)::int AS total_orders,
              COALESCE(SUM(total), 0)::numeric(10,2) AS total_spent
       FROM orders
-      WHERE status != 'cancelled' AND business_id = $1
+      WHERE status != 'cancelled' AND business_id = $1 AND customer_phone != '0000000000'
       GROUP BY customer_phone
       ORDER BY total_spent DESC
       LIMIT 10
@@ -1228,7 +1228,7 @@ router.get("/customer-analytics", auth, async (req, res) => {
              COUNT(*)::int AS total_orders
       FROM orders o
       JOIN order_items oi ON oi.order_id = o.id
-      WHERE o.status != 'cancelled' AND o.business_id = $1
+      WHERE o.status != 'cancelled' AND o.business_id = $1 AND o.customer_phone != '0000000000'
       GROUP BY o.customer_phone
       ORDER BY unique_items DESC
       LIMIT 10
@@ -1240,7 +1240,7 @@ router.get("/customer-analytics", auth, async (req, res) => {
              ROUND(AVG(order_count))::int AS avg_orders_per_customer
       FROM (
         SELECT customer_phone, COUNT(*) AS order_count
-        FROM orders WHERE status != 'cancelled' AND business_id = $1
+        FROM orders WHERE status != 'cancelled' AND business_id = $1 AND customer_phone != '0000000000'
         GROUP BY customer_phone
       ) sub
     `, [req.business_id]);
@@ -1252,7 +1252,7 @@ router.get("/customer-analytics", auth, async (req, res) => {
         SUM(CASE WHEN order_count = 1 THEN 1 ELSE 0 END)::int AS one_time_customers
       FROM (
         SELECT customer_phone, COUNT(*) AS order_count
-        FROM orders WHERE status != 'cancelled' AND business_id = $1
+        FROM orders WHERE status != 'cancelled' AND business_id = $1 AND customer_phone != '0000000000'
         GROUP BY customer_phone
       ) sub
     `, [req.business_id]);
