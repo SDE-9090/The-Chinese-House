@@ -133,7 +133,7 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
         "table",
         tableSessionId
       );
-      toast.success("Items added to Table " + tableNumber);
+      toast.success("Items added to " + tableNumber);
       setCart([]);
       onSuccess();
       onClose();
@@ -159,7 +159,7 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
             <div className="p-4 border-b border-border flex justify-between items-center bg-muted/20">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <ShoppingCart className="text-primary" />
-                Add Items to Table {tableNumber}
+                Add Items to {tableNumber}
               </h2>
               <button
                 onClick={onClose}

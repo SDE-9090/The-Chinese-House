@@ -1877,6 +1877,19 @@ export async function apiAdminCreateTable(tableNumber: string, qrCode?: string):
   return res.json();
 }
 
+export async function apiAdminUpdateTable(id: string, tableNumber: string): Promise<Table> {
+  const res = await authFetch(`${API_URL}/tables/${id}`, {
+    method: "PUT",
+    headers: dashHeaders(),
+    body: JSON.stringify({ tableNumber }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to update table");
+  }
+  return res.json();
+}
+
 export async function apiGetTableByQr(qrCode: string): Promise<Table> {
   const res = await fetch(`${API_URL}/tables/qr/${qrCode}`, {
     headers: authHeaders(),

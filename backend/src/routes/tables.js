@@ -743,6 +743,35 @@ router.post("/sessions/:sessionId/close", adminAuth, async (req, res) => {
   }
 });
 
+// PUT /api/tables/:id (Admin)
+// Update a table's number/name
+router.put("/:id", adminAuth, async (req, res) => {
+  const { id } = req.params;
+  const { tableNumber } = req.body;
+  
+  if (!tableNumber) {
+    return res.status(400).json({ error: "Table number is required" });
+  }
+
+  try {
+    const tableRes = await pool.query("SELECT * FROM tables WHERE id = $1 AND business_id = $2", [id, req.business_id]);
+    if (!tableRes.rows.length) return res.status(404).json({ error: "Table not found" });
+
+    const { rows } = await pool.query(
+      "UPDATE tables SET table_number = $1 WHERE id = $2 AND business_id = $3 RETURNING *",
+      [String(tableNumber), id, req.business_id]
+    );
+    
+    const io = req.app.get("io");
+    if (io) io.emit("tables-updated");
+    
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Update table error:", err);
+    res.status(500).json({ error: "Failed to update table. The table name may already exist." });
+  }
+});
+
 // DELETE /api/tables/:id (Admin)
 router.delete("/:id", adminAuth, async (req, res) => {
   const { id } = req.params;

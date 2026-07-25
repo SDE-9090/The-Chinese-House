@@ -372,7 +372,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
 
                   <div className="flex flex-col gap-2 mb-4 pr-6">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-bold text-lg leading-none whitespace-nowrap">Table {table.tableNumber}</h3>
+                      <h3 className="font-bold text-lg leading-none whitespace-nowrap">{table.tableNumber}</h3>
                       {elapsedString && (
                         <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-background border border-border text-muted-foreground flex items-center gap-1 shadow-sm whitespace-nowrap" title="Time Occupied">
                           <Clock size={10} /> {elapsedString}
@@ -500,7 +500,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
             >
               <div className="p-6 border-b border-border flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold">Table {selectedTable.tableNumber}</h3>
+                  <h3 className="text-xl font-bold">{selectedTable.tableNumber}</h3>
                   {detailSession && (
                     <p className="text-sm text-muted-foreground">
                       {detailSession.customerName}

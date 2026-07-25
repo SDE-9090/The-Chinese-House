@@ -355,7 +355,7 @@ const OrderHistory = () => {
       "Date",
     ];
     const rows = groupedOrders.map((o) => [
-      o.tableNumber ? `Table ${o.tableNumber}` : o.token,
+      o.tableNumber ? o.tableNumber : o.token,
       o.customerName,
       o.customerPhone,
       o.items.map((i) => `${i.name} x${i.quantity}`).join("; "),
@@ -777,7 +777,7 @@ const OrderHistory = () => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     <span className="font-heading text-xl font-bold text-primary">
-                      {orderSourceFilter === "table" && order.tableNumber ? `Table ${order.tableNumber}` : `#${order.token}`}
+                      {orderSourceFilter === "table" && order.tableNumber ? order.tableNumber : `#${order.token}`}
                     </span>
                     <div>
                       <p className="font-semibold text-sm">

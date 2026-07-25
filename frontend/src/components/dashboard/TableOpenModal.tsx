@@ -37,7 +37,7 @@ export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, ta
     setLoading(true);
     try {
       await apiAdminOpenTableSession(tableId, customerName, customerPhone);
-      toast({ title: `Table ${tableNumber} is now Occupied!` });
+      toast({ title: `${tableNumber} is now Occupied!` });
       onSuccess();
       onClose();
       // Reset state for next time
@@ -65,7 +65,7 @@ export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, ta
           <div className="p-4 border-b border-border/50 flex justify-between items-center bg-muted/30">
             <h2 className="text-lg font-bold flex items-center gap-2">
               <Users className="text-primary" size={20} />
-              Open Table {tableNumber}
+              Open {tableNumber}
             </h2>
             <button
               onClick={onClose}

@@ -103,7 +103,7 @@ export function downloadKOTPrint(kotData: KOTData) {
 </head><body>
   <div class="header">
     <h1>TOKEN #${kotData.token}</h1>
-    ${kotData.tableNumber ? `<h2>TABLE ${kotData.tableNumber}</h2>` : ""}
+    ${kotData.tableNumber ? `<h2>${kotData.tableNumber}</h2>` : ""}
     <p>KOT - KITCHEN COPY</p>
   </div>
 
@@ -204,7 +204,7 @@ export function downloadBillPrint(bill: BillData, business?: BusinessInfo) {
   </div>
 
   <div class="meta">
-    ${bill.tableNumber ? `<div><b>Table:</b> ${bill.tableNumber}</div>` : ""}
+    ${bill.tableNumber ? `<div><b>${bill.tableNumber}</b></div>` : ""}
     ${bill.customerName ? `<div><b>Customer:</b> ${bill.customerName}</div>` : ""}
     ${bill.customerPhone ? `<div><b>Phone:</b> ${bill.customerPhone}</div>` : ""}
     <div><b>Date:</b> ${date}</div>
@@ -269,7 +269,7 @@ export default function BillDocument({ bill, business, showDownloadButton = true
 
       {/* Meta */}
       <div className="text-xs space-y-0.5 text-muted-foreground">
-        {bill.tableNumber && <div><span className="font-semibold text-foreground">Table:</span> {bill.tableNumber}</div>}
+        {bill.tableNumber && <div><span className="font-semibold text-foreground">{bill.tableNumber}</span></div>}
         {bill.customerName && <div><span className="font-semibold text-foreground">Customer:</span> {bill.customerName}</div>}
         <div><span className="font-semibold text-foreground">Date:</span> {date}</div>
         {bill.sessionId && <div><span className="font-semibold text-foreground">Ref:</span> {bill.sessionId.slice(0, 8).toUpperCase()}</div>}

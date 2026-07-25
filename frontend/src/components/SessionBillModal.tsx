@@ -93,7 +93,7 @@ export default function SessionBillModal({ sessionId, isOpen, onClose }: Session
                 <h2 className="font-heading font-bold text-lg leading-tight">My Table Bill</h2>
                 {bill?.tableNumber && (
                   <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                    Table {bill.tableNumber}
+                    {bill.tableNumber}
                   </p>
                 )}
               </div>

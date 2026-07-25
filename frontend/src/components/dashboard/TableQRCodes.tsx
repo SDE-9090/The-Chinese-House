@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { apiAdminGetTables, apiAdminCreateTable, apiDeleteTable, type Table } from "@/lib/apiClient";
-import { Printer, QrCode, Loader2, Plus, X, Trash2 } from "lucide-react";
+import { apiAdminGetTables, apiAdminCreateTable, apiDeleteTable, apiAdminUpdateTable, type Table } from "@/lib/apiClient";
+import { Printer, QrCode, Loader2, Plus, X, Trash2, Edit3 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Capacitor } from "@capacitor/core";
 import { printQRCodeNative } from "@/lib/thermalPrinter";
@@ -13,6 +13,11 @@ export default function TableQRCodes() {
   const [newTableNumber, setNewTableNumber] = useState("");
   const [addingTable, setAddingTable] = useState(false);
   const [deletingTableId, setDeletingTableId] = useState<string | null>(null);
+
+  const [showEditTableModal, setShowEditTableModal] = useState(false);
+  const [editingTableId, setEditingTableId] = useState<string | null>(null);
+  const [editingTableNumber, setEditingTableNumber] = useState("");
+  const [updatingTable, setUpdatingTable] = useState(false);
 
   useEffect(() => {
     fetchTables();
@@ -59,11 +64,28 @@ export default function TableQRCodes() {
     }
   };
 
+  const handleUpdateTable = async () => {
+    if (!editingTableId || !editingTableNumber.trim()) return;
+    setUpdatingTable(true);
+    try {
+      await apiAdminUpdateTable(editingTableId, editingTableNumber.trim());
+      await fetchTables();
+      setShowEditTableModal(false);
+      setEditingTableId(null);
+      setEditingTableNumber("");
+      toast({ title: "Table successfully updated" });
+    } catch (err: any) {
+      toast({ title: "Failed to update table", description: err.message, variant: "destructive" });
+    } finally {
+      setUpdatingTable(false);
+    }
+  };
+
   const printSingleQR = async (table: Table) => {
     const url = window.location.origin + '/table/' + table.qrCode;
     
     if (Capacitor.isNativePlatform()) {
-      const success = await printQRCodeNative(url, `Table ${table.tableNumber}`);
+      const success = await printQRCodeNative(url, table.tableNumber);
       if (!success) toast({ title: "Printer Error", description: "Failed to connect to Bluetooth printer.", variant: "destructive" });
       return;
     }
@@ -72,9 +94,9 @@ export default function TableQRCodes() {
     if (printWindow) {
       printWindow.document.write(`
         <html>
-          <head><title>Print QR - Table ${table.tableNumber}</title></head>
+          <head><title>Print QR - ${table.tableNumber}</title></head>
           <body style="text-align: center; font-family: system-ui, sans-serif; padding-top: 50px;">
-            <h1 style="font-size: 48px; margin-bottom: 5px;">Table ${table.tableNumber}</h1>
+            <h1 style="font-size: 48px; margin-bottom: 5px;">${table.tableNumber}</h1>
             <p style="font-size: 24px; color: #666; margin-top: 0; font-weight: bold;">Scan to view menu & order!</p>
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(url)}" style="width: 400px; height: 400px; margin-top: 30px;" />
             <script>
@@ -97,7 +119,7 @@ export default function TableQRCodes() {
       let failed = 0;
       for (const table of tables) {
         const url = window.location.origin + '/table/' + table.qrCode;
-        const success = await printQRCodeNative(url, `Table ${table.tableNumber}`);
+        const success = await printQRCodeNative(url, table.tableNumber);
         if (!success) failed++;
         // Give printer a tiny break between prints
         await new Promise(r => setTimeout(r, 1000));
@@ -127,7 +149,7 @@ export default function TableQRCodes() {
       tables.forEach((table, index) => {
         htmlContent += `
           <div class="page ${index !== tables.length - 1 ? 'page-break' : ''}">
-            <h1 style="font-size: 64px; margin-bottom: 10px;">Table ${table.tableNumber}</h1>
+            <h1 style="font-size: 64px; margin-bottom: 10px;">${table.tableNumber}</h1>
             <p style="font-size: 32px; color: #666; margin-top: 0; font-weight: bold;">Scan to view menu & order!</p>
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(window.location.origin + '/table/' + table.qrCode)}" style="width: 500px; height: 500px; margin-top: 50px;" />
           </div>
@@ -176,19 +198,32 @@ export default function TableQRCodes() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {tables.map(table => (
           <div key={table.id} className="bg-card border border-border rounded-2xl p-6 text-center shadow-sm relative">
-            <button
-              onClick={() => handleDeleteTable(table.id)}
-              disabled={deletingTableId === table.id}
-              className="absolute top-4 right-4 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition disabled:opacity-50"
-              title="Delete Table"
-            >
-              {deletingTableId === table.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-            </button>
-            <h3 className="font-bold text-lg mb-4">Table {table.tableNumber}</h3>
+            <div className="absolute top-4 right-4 flex items-center gap-1">
+              <button
+                onClick={() => {
+                  setEditingTableId(table.id);
+                  setEditingTableNumber(table.tableNumber);
+                  setShowEditTableModal(true);
+                }}
+                className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition"
+                title="Edit Table"
+              >
+                <Edit3 size={14} />
+              </button>
+              <button
+                onClick={() => handleDeleteTable(table.id)}
+                disabled={deletingTableId === table.id}
+                className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition disabled:opacity-50"
+                title="Delete Table"
+              >
+                {deletingTableId === table.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+              </button>
+            </div>
+            <h3 className="font-bold text-lg mb-4 mt-2">{table.tableNumber}</h3>
             <div className="bg-muted p-2 rounded-xl inline-block mb-4">
               <img 
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&color=000000&data=${encodeURIComponent(window.location.origin + '/table/' + table.qrCode)}`}
-                alt={`Table ${table.tableNumber} QR`}
+                alt={`${table.tableNumber} QR`}
                 className="w-32 h-32 rounded-lg mix-blend-multiply"
               />
             </div>
@@ -235,6 +270,38 @@ export default function TableQRCodes() {
               >
                 {addingTable ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                 Create Table
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Table Modal */}
+      {showEditTableModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-3xl p-6 w-full max-w-sm shadow-2xl relative">
+            <button onClick={() => setShowEditTableModal(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+              <X size={20} />
+            </button>
+            <h3 className="text-xl font-bold mb-4">Edit Table Name</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-semibold mb-1.5 block">Table Number / Label</label>
+                <input
+                  value={editingTableNumber}
+                  onChange={(e) => setEditingTableNumber(e.target.value)}
+                  placeholder="e.g. 5, Balcony 1"
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
+                  autoFocus
+                />
+              </div>
+              <button
+                onClick={handleUpdateTable}
+                disabled={updatingTable || !editingTableNumber.trim()}
+                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {updatingTable ? <Loader2 size={16} className="animate-spin" /> : <Edit3 size={16} />}
+                Update Table
               </button>
             </div>
           </div>

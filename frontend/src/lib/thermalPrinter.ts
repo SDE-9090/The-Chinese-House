@@ -90,9 +90,9 @@ export async function printReceiptNative(
     receipt += `Time: ${new Date(order.createdAt).toLocaleTimeString()}\n`;
     receipt += `Type: ${order.orderType?.toUpperCase() || "DINE-IN"}\n`;
     if ((order as any).tableNumber) {
-      receipt += `Table: ${(order as any).tableNumber}\n`;
+      receipt += `${(order as any).tableNumber}\n`;
     } else if (order.tableSessionId) {
-      receipt += `Table: ${order.tableSessionId.split("-")[0]}\n`;
+      receipt += `${order.tableSessionId.split("-")[0]}\n`;
     }
     receipt += thickSeparator;
     
