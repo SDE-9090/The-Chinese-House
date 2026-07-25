@@ -31,6 +31,8 @@ function orderToReceiptData(order: Order): ReceiptData {
     createdAt: order.createdAt,
     business: order.business,
     tableNumber: order.tableNumber,
+    specialInstructions: order.specialInstructions,
+    orderType: order.orderType,
   } as any;
 }
 
