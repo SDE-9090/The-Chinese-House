@@ -19,7 +19,13 @@ router.get("/", adminAuth, async (req, res) => {
       FROM tables t
       LEFT JOIN table_sessions s ON t.id = s.table_id AND s.status != 'completed' AND s.business_id = $1
       WHERE t.business_id = $1
-      ORDER BY t.table_number ASC
+      ORDER BY 
+        CASE 
+          WHEN t.table_number ILIKE 'Table%' THEN 1 
+          WHEN t.table_number ILIKE 'Parcel%' THEN 2 
+          ELSE 3 
+        END ASC, 
+        t.table_number ASC
     `, [req.business_id]);
     
     // Group sessions by table (since we used left join on non-completed)
