@@ -607,6 +607,7 @@ export interface SalesReportData {
   // item popularity per period
   topItems?: { name: string; qty: number }[];
   leastItems?: { name: string; qty: number }[];
+  allItems?: { name: string; qty: number; rev: number }[];
 }
 
 // ─── Typed Edit Items ────────────────────────────────────

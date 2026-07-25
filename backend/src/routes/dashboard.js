@@ -594,6 +594,21 @@ router.get("/sales-report", auth, async (req, res) => {
     `,
         [reportDate, req.business_id],
       );
+      // ---------------- ALL ITEMS ----------------
+      const allItemsResult = await pool.query(
+        `
+    SELECT oi.name, SUM(oi.quantity)::int as qty, SUM(oi.quantity * oi.price)::numeric as rev
+    FROM order_items oi
+    JOIN orders o ON oi.order_id = o.id
+    WHERE o.status != 'cancelled'
+      AND o.business_id = $2
+      AND (o.created_at AT TIME ZONE 'Asia/Kolkata')::date = $1::date${otFilter}
+    GROUP BY oi.name
+    ORDER BY qty DESC
+    `,
+        [reportDate, req.business_id],
+      );
+
 
       // ---------------- HOURLY DISTRIBUTION ----------------
       const hourlyResult = await pool.query(
@@ -639,6 +654,8 @@ router.get("/sales-report", auth, async (req, res) => {
 
         topItems: topItemsResult.rows,
         leastItems: leastItemsResult.rows,
+        allItems: allItemsResult.rows,
+        allItems: allItemsResult.rows,
 
         hourlyDistribution: hourlyResult.rows.map((h) => ({
           hour: h.hour,
@@ -768,6 +785,22 @@ router.get("/sales-report", auth, async (req, res) => {
     `,
         [start, end, req.business_id],
       );
+      // ---------------- ALL ITEMS ----------------
+      const allItemsResult = await pool.query(
+        `
+    SELECT oi.name, SUM(oi.quantity)::int as qty, SUM(oi.quantity * oi.price)::numeric as rev
+    FROM order_items oi
+    JOIN orders o ON oi.order_id = o.id
+    WHERE o.status != 'cancelled'
+      AND o.business_id = $3
+      AND (o.created_at AT TIME ZONE 'Asia/Kolkata')::date >= $1::date
+      AND (o.created_at AT TIME ZONE 'Asia/Kolkata')::date < $2::date${otFilter}
+    GROUP BY oi.name
+    ORDER BY qty DESC
+    `,
+        [start, end, req.business_id],
+      );
+
 
       // ---------------- RESPONSE ----------------
       const responseData = {
@@ -793,6 +826,8 @@ router.get("/sales-report", auth, async (req, res) => {
 
         topItems: topItemsResult.rows,
         leastItems: leastItemsResult.rows,
+        allItems: allItemsResult.rows,
+        allItems: allItemsResult.rows,
       };
 
       // ---------------- CACHE SAVE ----------------
@@ -873,6 +908,19 @@ router.get("/sales-report", auth, async (req, res) => {
       `,
         [selectedYear, selectedMonth, req.business_id],
       );
+      const allItemsResult = await pool.query(
+        `
+        SELECT oi.name, SUM(oi.quantity)::int as qty, SUM(oi.quantity * oi.price)::numeric as rev
+        FROM order_items oi JOIN orders o ON oi.order_id = o.id
+        WHERE o.status != 'cancelled'
+          AND o.business_id = $3
+          AND EXTRACT(YEAR FROM o.created_at AT TIME ZONE 'Asia/Kolkata') = $1
+          AND EXTRACT(MONTH FROM o.created_at AT TIME ZONE 'Asia/Kolkata') = $2${otFilter}
+        GROUP BY oi.name ORDER BY qty DESC
+      `,
+        [selectedYear, selectedMonth, req.business_id],
+      );
+
 
       const responseData = {
         type: "monthly",
@@ -885,6 +933,8 @@ router.get("/sales-report", auth, async (req, res) => {
         days,
         topItems: topItemsResult.rows,
         leastItems: leastItemsResult.rows,
+        allItems: allItemsResult.rows,
+        allItems: allItemsResult.rows,
       };
 
       await redisClient.set(cacheKey, JSON.stringify(responseData), { EX: 60 });
@@ -949,6 +999,18 @@ router.get("/sales-report", auth, async (req, res) => {
       `,
         [selectedYear, req.business_id],
       );
+      const allItemsResult = await pool.query(
+        `
+        SELECT oi.name, SUM(oi.quantity)::int as qty, SUM(oi.quantity * oi.price)::numeric as rev
+        FROM order_items oi JOIN orders o ON oi.order_id = o.id
+        WHERE o.status != 'cancelled'
+          AND o.business_id = $2
+          AND EXTRACT(YEAR FROM o.created_at AT TIME ZONE 'Asia/Kolkata') = $1${otFilter}
+        GROUP BY oi.name ORDER BY qty DESC
+      `,
+        [selectedYear, req.business_id],
+      );
+
 
       const responseData = {
         type: "yearly",
@@ -969,6 +1031,8 @@ router.get("/sales-report", auth, async (req, res) => {
         })),
         topItems: topItemsResult.rows,
         leastItems: leastItemsResult.rows,
+        allItems: allItemsResult.rows,
+        allItems: allItemsResult.rows,
       };
 
       await redisClient.set(cacheKey, JSON.stringify(responseData), { EX: 60 });
