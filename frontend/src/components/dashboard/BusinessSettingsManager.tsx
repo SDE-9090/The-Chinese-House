@@ -43,7 +43,13 @@ const defaultState: BusinessSettings = {
   loyaltyDiscountPerPoint: 1.00,
 };
 
-const BusinessSettingsManager = () => {
+import type { User } from "@/lib/apiClient";
+
+interface Props {
+  user?: User | any;
+}
+
+const BusinessSettingsManager = ({ user }: Props) => {
   const { toast } = useToast();
   const [data, setData] = useState<BusinessSettings>(defaultState);
   const [loading, setLoading] = useState(true);
@@ -170,10 +176,14 @@ const BusinessSettingsManager = () => {
 
   const totalGst = Number((Number(data.cgstRate) + Number(data.sgstRate)).toFixed(2)) || 0;
 
+  const isPrinterOnly = user?.role !== 'admin' && user?.permissions?.systemAccess?.printerOnly === true;
+
   return (
     <div className="space-y-6">
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
-        <div className="flex items-center gap-3">
+      {!isPrinterOnly && (
+        <>
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+          <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <Building2 className="text-primary" size={18} />
           </div>
@@ -561,6 +571,8 @@ const BusinessSettingsManager = () => {
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {/* Bluetooth Printer Settings (Native Only) */}
       {Capacitor.isNativePlatform() && (
@@ -610,6 +622,7 @@ const BusinessSettingsManager = () => {
       )}
 
       {/* Global Save Button */}
+      {!isPrinterOnly && (
       <div className="flex justify-end sticky bottom-6 z-10 pt-4">
         <button
           onClick={handleSave}
@@ -619,8 +632,10 @@ const BusinessSettingsManager = () => {
           <Save size={20} /> {saving ? "Saving..." : "Save All Settings"}
         </button>
       </div>
+      )}
 
       {/* Danger Zone */}
+      {!isPrinterOnly && (
       <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-6 space-y-4 mt-8">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
@@ -651,6 +666,7 @@ const BusinessSettingsManager = () => {
           </Button>
         </div>
       </div>
+      )}
 
       {/* Reset Modal */}
       <Dialog open={resetModalOpen} onOpenChange={setResetModalOpen}>

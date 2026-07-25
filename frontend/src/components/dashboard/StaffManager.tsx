@@ -48,6 +48,9 @@ const StaffManager = () => {
     },
     orders: {
       active: true, pos: true, history: true
+    },
+    systemAccess: {
+      printerOnly: false
     }
   };
   const [permissions, setPermissions] = useState<any>(defaultPermissions);
@@ -172,6 +175,9 @@ const StaffManager = () => {
     } else if (field.startsWith('orders.')) {
       const subTab = field.split('.')[1];
       setPermissions((prev: any) => ({ ...prev, orders: { ...(prev?.orders || {}), [subTab]: value } }));
+    } else if (field.startsWith('systemAccess.')) {
+      const subTab = field.split('.')[1];
+      setPermissions((prev: any) => ({ ...prev, systemAccess: { ...(prev?.systemAccess || {}), [subTab]: value } }));
     } else {
       setPermissions((prev: any) => ({ ...prev, [field]: value }));
     }
@@ -429,6 +435,14 @@ const StaffManager = () => {
                                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                                   <input type="checkbox" checked={permissions?.orders?.history || false} onChange={(e) => handlePermissionChange('orders.history', e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
                                   <span className="text-xs text-muted-foreground font-medium">History</span>
+                                </label>
+                              </div>
+                            )}
+                            {tab === 'system' && permissions?.tabs?.system && (
+                              <div className="flex flex-col gap-2 ml-6 mt-1">
+                                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                  <input type="checkbox" checked={permissions?.systemAccess?.printerOnly || false} onChange={(e) => handlePermissionChange('systemAccess.printerOnly', e.target.checked)} className="rounded text-primary focus:ring-primary w-3.5 h-3.5" />
+                                  <span className="text-xs text-muted-foreground font-medium">Printer Settings Only</span>
                                 </label>
                               </div>
                             )}

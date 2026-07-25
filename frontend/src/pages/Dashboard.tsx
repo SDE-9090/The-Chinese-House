@@ -1131,7 +1131,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
             </div>
 
             {settingsSubTab === "business" ? (
-              <BusinessSettingsManager />
+              <BusinessSettingsManager user={user} />
             ) : settingsSubTab === "account" ? (
               <AccountSecurity />
             ) : (
