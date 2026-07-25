@@ -25,7 +25,6 @@ import {
   apiAdminToggleCoupon,
   apiAdminDeleteCoupon,
   apiAdminBulkDeleteCoupons,
-  apiAdminShareCouponSMS,
   apiAdminToggleCouponPublic,
   type AdminCoupon,
 } from "@/lib/apiClient";
@@ -228,7 +227,7 @@ const CouponManagement = () => {
     }
   };
 
-  const handleShareSMS = async () => {
+  const handleShareWhatsApp = () => {
     if (!shareCode || !/^\d{10}$/.test(sharePhone.trim())) {
       toast({
         title: "Enter a valid 10-digit phone number",
@@ -236,24 +235,22 @@ const CouponManagement = () => {
       });
       return;
     }
-    setSharing(true);
-    try {
-      await apiAdminShareCouponSMS(shareCode, sharePhone.trim());
-      toast({
-        title: "SMS Sent ✅",
-        description: `Coupon details sent to ${sharePhone}`,
-      });
-      setShareCode(null);
-      setSharePhone("");
-    } catch (err: any) {
-      toast({
-        title: "Failed",
-        description: err.message,
-        variant: "destructive",
-      });
-    } finally {
-      setSharing(false);
-    }
+    
+    const coupon = coupons.find(c => c.code === shareCode);
+    if (!coupon) return;
+    
+    const discountText = coupon.discount_type === 'percent' 
+      ? `${coupon.value}% OFF` 
+      : `Flat ₹${coupon.value} OFF`;
+      
+    const formattedPhone = "91" + sharePhone.trim();
+    const message = `Hello! Here is your exclusive discount coupon for The Chinese House. Use code *${shareCode}* on your next visit to get ${discountText}!`;
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    
+    window.open(whatsappUrl, "_blank");
+    
+    setShareCode(null);
+    setSharePhone("");
   };
 
   // Analytics
@@ -973,7 +970,7 @@ const CouponManagement = () => {
             >
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-lg flex items-center gap-2">
-                  <Send size={18} className="text-primary" /> Share Coupon
+                  <Send size={18} className="text-primary" /> Share via WhatsApp
                 </h3>
                 <button
                   onClick={() => setShareCode(null)}
@@ -988,7 +985,7 @@ const CouponManagement = () => {
                 <span className="font-mono font-bold text-primary">
                   {shareCode}
                 </span>{" "}
-                details via SMS
+                details via WhatsApp
               </p>
 
               <div className="space-y-2">
@@ -1014,16 +1011,12 @@ const CouponManagement = () => {
               </div>
 
               <button
-                onClick={handleShareSMS}
-                disabled={sharing || !/^\d{10}$/.test(sharePhone)}
-                className="w-full px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                onClick={handleShareWhatsApp}
+                disabled={!/^\d{10}$/.test(sharePhone)}
+                className="w-full px-4 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {sharing ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Send size={16} />
-                )}
-                {sharing ? "Sending..." : "Send SMS"}
+                <Send size={16} />
+                Open in WhatsApp
               </button>
             </motion.div>
           </motion.div>
