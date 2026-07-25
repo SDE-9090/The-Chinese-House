@@ -1,7 +1,10 @@
-import re
+with open("frontend/src/components/dashboard/TableManager.tsx", "r") as f:
+    text = f.read()
+    
+start_idx = text.find("return (\n                <motion.div\n                  layout\n                  key={table.id}")
+if start_idx == -1: print("Start not found")
+else: print("Start found at", start_idx)
 
-with open("frontend/src/components/dashboard/BusinessSettingsManager.tsx", "r") as f:
-    content = f.read()
-
-# I will replace the main 4 cards (Business Profile, Taxation, Operations, Loyalty)
-# First I'll extract all the individual inputs from the original code to preserve their exact bindings and logic.
+end_idx = text.find("</motion.div>\n              );\n            })}\n          </div>", start_idx)
+if end_idx == -1: print("End not found")
+else: print("End found at", end_idx)
