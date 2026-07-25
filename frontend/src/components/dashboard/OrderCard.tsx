@@ -177,7 +177,7 @@ const OrderCard = ({
     try {
       setLoadingPayment(true);
       await apiPayDue(order.id);
-      
+
       // [AUTO-PRINT LOGIC] Automatically print final bill when payment is marked received
       console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL BILL for Order #${order.token} (Payment Collected)`);
       console.log(`   --> Amount Paid: ₹${dueAmount.toFixed(2)}`);
@@ -265,7 +265,7 @@ const OrderCard = ({
 
           {order.tableNumber && (
             <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground whitespace-nowrap">
-              Table {order.tableNumber}
+              {order.tableNumber}
             </span>
           )}
 
