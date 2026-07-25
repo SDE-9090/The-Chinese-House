@@ -43,10 +43,8 @@ const defaultState: BusinessSettings = {
   loyaltyDiscountPerPoint: 1.00,
 };
 
-import type { User } from "@/lib/apiClient";
-
 interface Props {
-  user?: User | any;
+  user?: any;
 }
 
 const BusinessSettingsManager = ({ user }: Props) => {
