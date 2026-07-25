@@ -5,7 +5,7 @@ import OrderCard from "./OrderCard";
 import BillDocument, { downloadBillPrint, downloadKOTPrint } from "@/components/BillDocument";
 import { printQueue } from "@/lib/printQueue";
 import { Capacitor } from "@capacitor/core";
-import { Loader2, CheckCircle, UtensilsCrossed, Clock, QrCode, Plus, X, Printer, Download, Trash2, RefreshCw, MoreVertical, ArrowLeftRight, FileText } from "lucide-react";
+import { User, ReceiptText, Loader2, CheckCircle, UtensilsCrossed, Clock, QrCode, Plus, X, Printer, Download, Trash2, RefreshCw, MoreVertical, ArrowLeftRight, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
