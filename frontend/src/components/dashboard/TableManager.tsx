@@ -501,7 +501,12 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
               <div className="p-6 border-b border-border flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-bold">Table {selectedTable.tableNumber}</h3>
-                  {detailSession && <p className="text-sm text-muted-foreground">{detailSession.customerName} · {detailSession.customerPhone}</p>}
+                  {detailSession && (
+                    <p className="text-sm text-muted-foreground">
+                      {detailSession.customerName}
+                      {detailSession.customerPhone && detailSession.customerPhone !== '0000000000' && ` · ${detailSession.customerPhone}`}
+                    </p>
+                  )}
                 </div>
                 <button onClick={() => setSelectedTable(null)} className="text-muted-foreground hover:text-foreground p-2 rounded-full hover:bg-muted"><X size={20} /></button>
               </div>
