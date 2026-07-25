@@ -1946,7 +1946,8 @@ export async function apiSessionClose(
   splitCash: number = 0, 
   splitUpi: number = 0,
   customerPhone?: string,
-  pointsRedeemed?: number
+  pointsRedeemed?: number,
+  couponCode?: string
 ): Promise<void> {
   const res = await authFetch(`${API_URL}/tables/sessions/${sessionId}/close`, {
     method: "POST",
@@ -1956,7 +1957,8 @@ export async function apiSessionClose(
       splitCash, 
       splitUpi,
       customerPhone,
-      pointsRedeemed
+      pointsRedeemed,
+      couponCode
     }),
   });
   if (!res.ok) throw new Error("Failed to close session");

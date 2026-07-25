@@ -630,7 +630,7 @@ router.post("/sessions/:sessionId/pay", async (req, res) => {
 // Closes the session, marks outstanding orders as paid, frees the table
 router.post("/sessions/:sessionId/close", adminAuth, async (req, res) => {
   const { sessionId } = req.params;
-  const { paymentMethod = "counter", splitCash = 0, splitUpi = 0, customerPhone, pointsRedeemed } = req.body;
+  const { paymentMethod = "counter", splitCash = 0, splitUpi = 0, customerPhone, pointsRedeemed, couponCode } = req.body;
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -639,7 +639,48 @@ router.post("/sessions/:sessionId/close", adminAuth, async (req, res) => {
       "SELECT sum(total) as session_total FROM orders WHERE table_session_id = $1 AND status != 'cancelled'",
       [sessionId]
     );
-    const sessionTotal = parseFloat(sessionRes.rows[0]?.session_total || 0);
+    let sessionTotal = parseFloat(sessionRes.rows[0]?.session_total || 0);
+
+    let couponDiscount = 0;
+    if (couponCode) {
+      const normalizedCode = couponCode.trim().toUpperCase();
+      const couponResult = await client.query(
+        "SELECT * FROM coupons WHERE code = $1 AND business_id = $2 FOR UPDATE",
+        [normalizedCode, req.business_id]
+      );
+      if (couponResult.rows.length > 0) {
+        const coupon = couponResult.rows[0];
+        if (coupon.active && (!coupon.expiry_date || new Date(coupon.expiry_date) >= new Date()) && coupon.used_count < coupon.usage_limit) {
+          if (coupon.discount_type === "percent") {
+            couponDiscount = (sessionTotal * parseFloat(coupon.value)) / 100;
+          } else {
+            couponDiscount = parseFloat(coupon.value);
+          }
+          if (couponDiscount > sessionTotal) couponDiscount = sessionTotal;
+
+          await client.query("UPDATE coupons SET used_count = used_count + 1 WHERE code = $1 AND business_id = $2", [normalizedCode, req.business_id]);
+          
+          await client.query(
+            "UPDATE table_sessions SET discount_amount = COALESCE(discount_amount, 0) + $1, coupon_code = $2 WHERE id = $3",
+            [couponDiscount, normalizedCode, sessionId]
+          );
+
+          await client.query(`
+            UPDATE orders 
+            SET total = GREATEST(0, total - $1),
+                discount = COALESCE(discount, 0) + $1,
+                coupon_code = $2
+            WHERE id = (
+              SELECT id FROM orders 
+              WHERE table_session_id = $3 AND status != 'cancelled' 
+              ORDER BY created_at DESC LIMIT 1
+            )
+          `, [couponDiscount, normalizedCode, sessionId]);
+          
+          sessionTotal = Math.max(0, sessionTotal - couponDiscount);
+        }
+      }
+    }
 
     let loyaltyDiscount = 0;
     const requestedPoints = parseFloat(pointsRedeemed) || 0;

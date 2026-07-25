@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { socket } from "@/lib/socket";
-import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, type Table, type Order, type SessionBill, type AuthUser, type TableHistoryOrder } from "@/lib/apiClient";
+import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, apiValidateCoupon, type Table, type Order, type SessionBill, type AuthUser, type TableHistoryOrder } from "@/lib/apiClient";
 import OrderCard from "./OrderCard";
 import BillDocument, { downloadBillPrint, downloadKOTPrint } from "@/components/BillDocument";
 import { printQueue } from "@/lib/printQueue";
@@ -78,6 +78,12 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [selectedTable, setSelectedTable] = useState<Table | null>(null); // For admin detail modal
   const [business, setBusiness] = useState<any>(null);
   const [deletingTableId, setDeletingTableId] = useState<string | null>(null);
+
+  // Coupon State
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number; discountType: 'flat' | 'percent'; value: number } | null>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState("");
 
   const [openTableState, setOpenTableState] = useState<{ id: string, number: string } | null>(null);
   const [orderTableState, setOrderTableState] = useState<{ sessionId: string, number: string, customerName?: string, customerPhone?: string } | null>(null);
@@ -200,7 +206,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const handleCloseSession = async (sessionId: string, method: string, printBill: boolean = true) => {
     setClosingId(sessionId);
     try {
-      await apiSessionClose(sessionId, method, parseFloat(splitCash) || 0, parseFloat(splitUpi) || 0, loyaltyPhone || undefined, pointsRedeemed);
+      await apiSessionClose(sessionId, method, parseFloat(splitCash) || 0, parseFloat(splitUpi) || 0, loyaltyPhone || undefined, pointsRedeemed, appliedCoupon?.code);
       
       // [AUTO-PRINT LOGIC] Print Final Bill after clearing the table
       const bill = billsMap[sessionId];
@@ -251,6 +257,9 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
       setLoyaltyPhone("");
       setPointsRedeemed(0);
       setLoyaltyPoints(0);
+      setCouponCode("");
+      setAppliedCoupon(null);
+      setCouponError("");
     }
   };
 
@@ -688,7 +697,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
             {billsMap[showPaymentModal] && (() => {
               const baseTotal = billsMap[showPaymentModal].totalAmount;
               const loyaltyDiscountValue = loyaltySettings?.enabled ? (pointsRedeemed * (loyaltySettings.discount_per_point || 1)) : 0;
-              const finalTotal = Math.max(0, baseTotal - loyaltyDiscountValue);
+              const couponDiscountValue = appliedCoupon ? appliedCoupon.discount : 0;
+              const finalTotal = Math.max(0, baseTotal - couponDiscountValue - loyaltyDiscountValue);
 
               return (
                 <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl mb-6 text-center space-y-2">
@@ -696,6 +706,12 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                     <span>Subtotal</span>
                     <span>₹{baseTotal.toFixed(2)}</span>
                   </div>
+                  {appliedCoupon && (
+                    <div className="flex justify-between text-sm text-emerald-600 font-bold px-4">
+                      <span>Coupon ({appliedCoupon.code})</span>
+                      <span>-₹{couponDiscountValue.toFixed(2)}</span>
+                    </div>
+                  )}
                   {pointsRedeemed > 0 && loyaltySettings?.enabled && (
                     <div className="flex justify-between text-sm text-primary font-bold px-4">
                       <span>Loyalty Reward</span>
@@ -764,6 +780,55 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                   )}
                 </div>
               )}
+
+              <div className="pt-2 border-t border-border/50">
+                <label className="text-xs font-bold text-muted-foreground ml-1">Discount Coupon</label>
+                {!appliedCoupon ? (
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }}
+                      placeholder="e.g. SUMMER20"
+                      className="flex-1 bg-muted border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-primary outline-none uppercase"
+                    />
+                    <button
+                      disabled={validatingCoupon || !couponCode}
+                      onClick={async () => {
+                        setValidatingCoupon(true);
+                        setCouponError("");
+                        try {
+                          const baseTotal = billsMap[showPaymentModal].totalAmount;
+                          const res = await apiValidateCoupon(couponCode, baseTotal);
+                          setAppliedCoupon({ code: couponCode, ...res });
+                          toast({ title: "Coupon Applied", description: `You saved ₹${res.discount.toFixed(2)}` });
+                        } catch (err: any) {
+                          setCouponError(err.message);
+                        } finally {
+                          setValidatingCoupon(false);
+                        }
+                      }}
+                      className="bg-primary text-primary-foreground px-4 rounded-xl font-bold text-sm disabled:opacity-50"
+                    >
+                      {validatingCoupon ? <Loader2 size={16} className="animate-spin" /> : "Apply"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl flex items-center justify-between mt-1">
+                    <div>
+                      <p className="text-xs font-bold text-emerald-600">Coupon Applied</p>
+                      <p className="text-sm font-semibold text-emerald-700">{appliedCoupon.code}</p>
+                    </div>
+                    <button
+                      onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}
+                      className="text-xs font-bold bg-destructive/10 text-destructive px-3 py-1.5 rounded-lg"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+                {couponError && <p className="text-xs text-destructive ml-1 mt-1 font-semibold">{couponError}</p>}
+              </div>
             </div>
 
             {!splitMode ? (
