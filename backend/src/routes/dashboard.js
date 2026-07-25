@@ -490,6 +490,7 @@ router.get("/stats", auth, async (req, res) => {
       FROM orders 
       WHERE (created_at AT TIME ZONE 'Asia/Kolkata')::date =
       (NOW() AT TIME ZONE 'Asia/Kolkata')::date 
+      AND status != 'cancelled'
       AND business_id = $1
     `, [req.business_id]);
 
@@ -499,6 +500,7 @@ router.get("/stats", auth, async (req, res) => {
       JOIN orders o ON oi.order_id = o.id
       WHERE (o.created_at AT TIME ZONE 'Asia/Kolkata')::date =
       (NOW() AT TIME ZONE 'Asia/Kolkata')::date
+      AND o.status != 'cancelled'
       AND o.business_id = $1
       GROUP BY oi.name 
       ORDER BY total_qty DESC 
@@ -725,6 +727,7 @@ router.get("/sales-report", auth, async (req, res) => {
     FROM orders
     WHERE (created_at AT TIME ZONE 'Asia/Kolkata')::date >= $1::date
       AND (created_at AT TIME ZONE 'Asia/Kolkata')::date < $2::date
+      AND status != 'cancelled'
       AND business_id = $3${otFilter}
     GROUP BY day
     ORDER BY day
@@ -827,6 +830,7 @@ router.get("/sales-report", auth, async (req, res) => {
         FROM orders
         WHERE EXTRACT(YEAR FROM created_at AT TIME ZONE 'Asia/Kolkata') = $1
         AND EXTRACT(MONTH FROM created_at AT TIME ZONE 'Asia/Kolkata') = $2
+        AND status != 'cancelled'
         AND business_id = $3${otFilter}
         GROUP BY day
         ORDER BY day ASC
@@ -913,6 +917,7 @@ router.get("/sales-report", auth, async (req, res) => {
           COALESCE(SUM(total), 0) as total_revenue
         FROM orders
         WHERE EXTRACT(YEAR FROM created_at AT TIME ZONE 'Asia/Kolkata') = $1
+          AND status != 'cancelled'
           AND business_id = $2${otFilter}
         GROUP BY month, month_num
         ORDER BY month_num
@@ -992,7 +997,8 @@ router.get("/sales-report", auth, async (req, res) => {
           COUNT(*) as total_orders,
           COALESCE(SUM(total), 0) as total_revenue
         FROM orders
-        WHERE business_id = $1${otFilter}
+        WHERE status != 'cancelled'
+          AND business_id = $1${otFilter}
         GROUP BY day
         ORDER BY day DESC
         `,
@@ -1107,6 +1113,7 @@ router.get("/menu-analytics", auth, async (req, res) => {
       SELECT (created_at AT TIME ZONE 'Asia/Kolkata')::date as day, COUNT(*)::int as orders, COALESCE(SUM(total),0)::numeric(10,2) as revenue
       FROM orders
       WHERE created_at >= NOW() - INTERVAL '7 days'
+        AND status != 'cancelled'
         AND business_id = $1
       GROUP BY day
       ORDER BY day
@@ -1315,7 +1322,7 @@ router.get("/table-analytics", auth, async (req, res) => {
         COALESCE(SUM(o.total), 0) as total_revenue
       FROM tables t
       LEFT JOIN table_sessions ts ON t.id = ts.table_id ${timeFilter}
-      LEFT JOIN orders o ON ts.id = o.table_session_id AND o.payment_status = 'paid'
+      LEFT JOIN orders o ON ts.id = o.table_session_id AND o.payment_status = 'paid' AND o.status != 'cancelled'
       WHERE t.business_id = $1
       GROUP BY t.id, t.table_number
       ORDER BY NULLIF(regexp_replace(t.table_number, '\\D', '', 'g'), '')::int NULLS LAST, t.table_number;
@@ -1375,7 +1382,7 @@ router.get("/table-analytics/:tableNumber/history", auth, async (req, res) => {
         ) FILTER (WHERE o.id IS NOT NULL) as orders
       FROM table_sessions ts
       JOIN tables t ON ts.table_id = t.id
-      LEFT JOIN orders o ON ts.id = o.table_session_id AND o.payment_status = 'paid'
+      LEFT JOIN orders o ON ts.id = o.table_session_id AND o.payment_status = 'paid' AND o.status != 'cancelled'
       WHERE t.table_number = $1 AND t.business_id = $2 ${timeFilter}
       GROUP BY ts.id
       ORDER BY ts.start_time DESC;
