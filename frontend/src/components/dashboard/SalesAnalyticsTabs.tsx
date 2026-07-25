@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, CalendarDays, CalendarRange, Calendar, CalendarClock,
   TrendingUp, ShoppingCart, IndianRupee, ArrowUpRight, ArrowDownRight,
-  Crown, TrendingDown, ArrowUpDown, ChevronUp, ChevronDown,
+  Crown, TrendingDown, ArrowUpDown, ChevronUp, ChevronDown, Search,
 } from "lucide-react";
 import {
   apiGetSalesReport,
@@ -92,12 +92,18 @@ const ChartCard = ({ title, children }: { title: string; children: React.ReactNo
 
 /* ── Item popularity horizontal bar charts ── */
 
+
 const MenuPerformanceTable = ({ allItems }: { allItems?: { name: string; qty: number; rev: number }[] }) => {
   const [sortConfig, setSortConfig] = useState<{ key: 'name' | 'qty' | 'rev', direction: 'asc' | 'desc' }>({ key: 'qty', direction: 'desc' });
+  const [searchQuery, setSearchQuery] = useState("");
 
   if (!allItems || allItems.length === 0) return null;
 
-  const sortedItems = [...allItems].sort((a, b) => {
+  const filteredItems = allItems.filter(item => 
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const sortedItems = [...filteredItems].sort((a, b) => {
     if (sortConfig.key === 'name') {
       return sortConfig.direction === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
     }
@@ -119,36 +125,53 @@ const MenuPerformanceTable = ({ allItems }: { allItems?: { name: string; qty: nu
 
   return (
     <ChartCard title="Comprehensive Menu Performance">
-      <div className="overflow-x-auto rounded-xl border border-border">
+      <div className="mb-4 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+        <input
+          type="text"
+          placeholder="Search menu items..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full md:w-1/3 bg-background border border-border rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+        />
+      </div>
+      <div className="overflow-y-auto overflow-x-auto rounded-xl border border-border max-h-[400px]">
         <table className="w-full text-sm text-left">
-          <thead className="bg-muted/50 text-muted-foreground text-xs uppercase font-semibold">
+          <thead className="bg-muted text-muted-foreground text-xs uppercase font-semibold sticky top-0 z-10 shadow-sm">
             <tr>
-              <th className="px-4 py-3 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => requestSort('name')}>
+              <th className="px-4 py-3 cursor-pointer hover:bg-muted/80 transition-colors bg-muted" onClick={() => requestSort('name')}>
                 <div className="flex items-center gap-1">Item Name {renderSortIcon('name')}</div>
               </th>
-              <th className="px-4 py-3 cursor-pointer hover:bg-muted/80 transition-colors text-right" onClick={() => requestSort('qty')}>
+              <th className="px-4 py-3 cursor-pointer hover:bg-muted/80 transition-colors text-right bg-muted" onClick={() => requestSort('qty')}>
                 <div className="flex items-center justify-end gap-1">Quantity Sold {renderSortIcon('qty')}</div>
               </th>
-              <th className="px-4 py-3 cursor-pointer hover:bg-muted/80 transition-colors text-right" onClick={() => requestSort('rev')}>
+              <th className="px-4 py-3 cursor-pointer hover:bg-muted/80 transition-colors text-right bg-muted" onClick={() => requestSort('rev')}>
                 <div className="flex items-center justify-end gap-1">Revenue {renderSortIcon('rev')}</div>
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {sortedItems.map((item, idx) => (
-              <tr key={idx} className="hover:bg-muted/30 transition-colors">
-                <td className="px-4 py-3 font-medium text-foreground">{item.name}</td>
-                <td className="px-4 py-3 text-right">{item.qty}</td>
-                <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400 font-medium">₹{item.rev.toLocaleString("en-IN")}</td>
+            {sortedItems.length > 0 ? (
+              sortedItems.map((item, idx) => (
+                <tr key={idx} className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 font-medium text-foreground">{item.name}</td>
+                  <td className="px-4 py-3 text-right">{item.qty}</td>
+                  <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400 font-medium">₹{item.rev.toLocaleString("en-IN")}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={3} className="px-4 py-8 text-center text-muted-foreground">
+                  No items match your search.
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
     </ChartCard>
   );
 };
-
 const ItemPopularityCharts = ({ topItems, leastItems, periodLabel }: {
   topItems?: { name: string; qty: number }[];
   leastItems?: { name: string; qty: number }[];
