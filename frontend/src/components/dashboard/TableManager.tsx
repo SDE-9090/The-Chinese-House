@@ -335,11 +335,11 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                 <motion.div
                   layout
                   key={table.id}
-                  className={`relative p-5 rounded-2xl border flex flex-col transition-all ${isTableEditing ? 'border-amber-500 shadow-lg shadow-amber-500/20 bg-amber-500/5' :
-                    table.status === 'occupied' ? 'bg-primary/5 border-primary/30 shadow-md' :
-                      table.status === 'reserved' ? 'bg-amber-500/5 border-amber-500/30 shadow-md' :
-                        'bg-card border-border hover:shadow-lg'
-                    }`}
+                  className={`relative p-5 rounded-[18px] border bg-white flex flex-col transition-all duration-200 min-h-[220px] ${
+                    isTableEditing 
+                      ? 'border-amber-300 shadow-[0_4px_16px_rgba(251,191,36,0.15)] ring-2 ring-amber-400 ring-opacity-50' 
+                      : 'border-gray-200 shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)]'
+                  }`}
                 >
                   {isTableEditing && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg animate-bounce flex items-center gap-1 z-10 whitespace-nowrap">
@@ -348,141 +348,169 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                     </div>
                   )}
 
-                  {/* 3 Dot Menu at Absolute Top Right */}
-                  {session && (
-                    <div className="absolute top-4 right-4 z-10">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger className="p-1 hover:bg-muted rounded-md transition text-muted-foreground outline-none">
-                          <MoreVertical size={16} />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                          {(user.role === 'admin' || user.permissions?.canTransferTable) && (
-                            <DropdownMenuItem
-                              onClick={() => setTransferTableState({ sessionId: session.id, number: table.tableNumber })}
-                              className="gap-2 cursor-pointer"
-                            >
-                              <ArrowLeftRight size={14} className="text-muted-foreground" />
-                              <span>Transfer Table</span>
-                            </DropdownMenuItem>
-                          )}
-                          {(user.role === 'admin' || user.permissions?.canClearTable) && (
-                            <DropdownMenuItem
-                              onClick={() => handleClearTableClick(session.id, session.customerPhone)}
-                              disabled={closingId === session.id}
-                              className="gap-2 text-destructive focus:text-destructive cursor-pointer md:hidden"
-                            >
-                              <X size={14} />
-                              <span>Clear Table</span>
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                  {/* Header Section */}
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="flex flex-col gap-1.5">
+                      <h3 className="font-extrabold text-xl text-gray-900 leading-none">{table.tableNumber}</h3>
                     </div>
-                  )}
-
-                  <div className="flex flex-col gap-2 mb-4 pr-6">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-bold text-lg leading-none whitespace-nowrap">{table.tableNumber}</h3>
+                    <div className="flex items-center gap-2">
                       {elapsedString && (
-                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-background border border-border text-muted-foreground flex items-center gap-1 shadow-sm whitespace-nowrap" title="Time Occupied">
-                          <Clock size={10} /> {elapsedString}
+                        <span className="px-2.5 py-1 text-[11px] font-bold rounded-full bg-gray-100 text-gray-600 flex items-center gap-1.5 border border-gray-200">
+                          <Clock size={12} /> {elapsedString}
                         </span>
                       )}
+                      {session && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger className="p-1 hover:bg-gray-100 rounded-md transition text-gray-500 outline-none">
+                            <MoreVertical size={16} />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-lg border-gray-200">
+                            {(user.role === 'admin' || user.permissions?.canTransferTable) && (
+                              <DropdownMenuItem
+                                onClick={() => setTransferTableState({ sessionId: session.id, number: table.tableNumber })}
+                                className="gap-2 cursor-pointer font-medium"
+                              >
+                                <ArrowLeftRight size={14} className="text-gray-500" />
+                                <span>Transfer Table</span>
+                              </DropdownMenuItem>
+                            )}
+                            {(user.role === 'admin' || user.permissions?.canClearTable) && (
+                              <DropdownMenuItem
+                                onClick={() => handleClearTableClick(session.id, session.customerPhone)}
+                                disabled={closingId === session.id}
+                                className="gap-2 text-red-600 focus:text-red-600 cursor-pointer md:hidden font-bold"
+                              >
+                                <X size={14} />
+                                <span>Clear Table</span>
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
-                    {!(table.status === 'occupied' && session?.status !== 'billing') && (
-                      <div>
-                        <span className={`inline-block px-2.5 py-1 text-xs font-bold rounded-full ${session?.status === 'billing' ? 'bg-purple-600 text-white shadow-sm' :
-                          table.status === 'reserved' ? 'bg-amber-500 text-white' :
-                            'bg-muted text-muted-foreground'
-                          }`}>
-                          {session?.status === 'billing' ? "BILLING" : table.status.toUpperCase()}
-                        </span>
-                      </div>
-                    )}
                   </div>
 
+                  {/* Status Pill */}
+                  <div className="mb-3">
+                    {(() => {
+                      let bgClass = "bg-gray-100";
+                      let textClass = "text-gray-600";
+                      let borderClass = "border-gray-200";
+                      let label = table.status.toUpperCase();
+
+                      if (session?.status === 'billing') {
+                        bgClass = "bg-purple-100"; textClass = "text-purple-700"; borderClass = "border-purple-200";
+                        label = "BILLING";
+                      } else if (table.status === 'occupied') {
+                        bgClass = "bg-emerald-100"; textClass = "text-emerald-700"; borderClass = "border-emerald-200";
+                      } else if (table.status === 'reserved') {
+                        bgClass = "bg-amber-100"; textClass = "text-amber-700"; borderClass = "border-amber-200";
+                      }
+                      
+                      return (
+                        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] uppercase font-bold rounded-md border ${bgClass} ${textClass} ${borderClass}`}>
+                          {label}
+                        </span>
+                      );
+                    })()}
+                  </div>
+
+                  <hr className="border-gray-100 my-2" />
+
+                  {/* Body Section */}
                   {!session && table.status === 'available' && (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                        <UtensilsCrossed className="w-5 h-5 text-muted-foreground/50" />
+                    <div className="flex-1 flex flex-col justify-end gap-4 mt-2">
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center">
+                          <UtensilsCrossed size={20} className="text-gray-300" />
+                        </div>
                       </div>
                       <button
                         onClick={() => setOpenTableState({ id: table.id, number: table.tableNumber })}
-                        className="w-full bg-primary/10 text-primary hover:bg-primary/20 py-2 rounded-xl text-sm font-bold border border-primary/20 transition-colors"
+                        className="w-full h-11 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-[0_2px_4px_rgba(0,0,0,0.02)] flex items-center justify-center gap-2"
                       >
-                        Open Table
+                        <UtensilsCrossed size={16} /> Open Table
                       </button>
                     </div>
                   )}
 
                   {session && (
-                    <div className="flex-1 flex flex-col space-y-5">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold text-sm flex items-center gap-1">
-                            {session.customerName}
-                            <CheckCircle className="w-3 h-3 text-emerald-600 inline ml-1" />
-                          </p>
-                          {session.customerPhone && session.customerPhone !== "0000000000" && (
-                            <p className="text-xs text-muted-foreground">{session.customerPhone}</p>
-                          )}
+                    <div className="flex-1 flex flex-col justify-between mt-2">
+                      {/* Guest & Bill Row */}
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100 shrink-0">
+                            <User size={14} className="text-gray-500" />
+                          </div>
+                          <div className="overflow-hidden">
+                            <p className="text-sm font-bold text-gray-800 leading-tight truncate">
+                              {session.customerName || "Guest"}
+                            </p>
+                            {session.customerPhone && session.customerPhone !== "0000000000" && (
+                              <p className="text-[10px] font-semibold text-gray-400 mt-0.5 truncate">{session.customerPhone}</p>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-start gap-3">
-                          {billsMap[session.id] && (
-                            <div className="text-right">
-                              <p className="text-[10px] uppercase font-bold text-muted-foreground/70">Bill Total</p>
-                              <p className="text-base font-black text-primary leading-none mt-0.5">₹{billsMap[session.id].totalAmount.toFixed(0)}</p>
-                            </div>
-                          )}
-                        </div>
+
+                        {billsMap[session.id] && (
+                          <div className="text-right shrink-0 ml-2">
+                            <p className="text-[9px] uppercase font-extrabold text-gray-400 tracking-wider mb-0.5">Bill Total</p>
+                            <p className="text-[22px] font-black text-gray-900 leading-none">
+                              ₹{billsMap[session.id].totalAmount.toFixed(0)}
+                            </p>
+                          </div>
+                        )}
                       </div>
 
-                      {session.status === 'billing' ? (
-                        <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-3 text-center">
-                          <p className="text-sm font-bold text-purple-600 mb-2">Customer is Done</p>
-                          <p className="text-xs text-muted-foreground mb-3">Please collect payment to free this table.</p>
-                          {(user.role === 'admin' || user.permissions?.canClearTable) && (
-                            <div className="flex flex-col gap-2">
+                      {/* Actions */}
+                      <div className="flex flex-col gap-3 mt-auto">
+                        {session.status === 'billing' ? (
+                          <div className="bg-purple-50 border border-purple-100 rounded-xl p-3 text-center">
+                            <p className="text-sm font-bold text-purple-700 mb-1">Customer is Done</p>
+                            <p className="text-[11px] text-purple-600/70 mb-3 font-medium">Please collect payment to free this table.</p>
+                            {(user.role === 'admin' || user.permissions?.canClearTable) && (
                               <button
                                 onClick={() => handleClearTableClick(session.id, session.customerPhone)}
                                 disabled={closingId === session.id}
-                                className="w-full bg-purple-600 text-white py-2 flex items-center justify-center gap-2 rounded-lg text-xs font-bold shadow-md hover:bg-purple-700 transition disabled:opacity-50"
+                                className="w-full bg-purple-600 text-white h-10 flex items-center justify-center gap-2 rounded-lg text-xs font-bold shadow-md shadow-purple-500/20 hover:bg-purple-700 transition active:scale-95 disabled:opacity-50"
                               >
                                 {closingId === session.id ? <Loader2 className="animate-spin w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
                                 Clear Table
                               </button>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setOrderTableState({ sessionId: session.id, number: table.tableNumber, customerName: session.customerName, customerPhone: session.customerPhone })}
-                            className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 py-2 px-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition shadow-sm leading-tight"
-                          >
-                            <Plus size={14} className="shrink-0" /> <span className="text-center">Add Items</span>
-                          </button>
-                          <button
-                            onClick={() => setSelectedTable(table)}
-                            className="flex-1 bg-muted text-foreground hover:bg-muted/80 py-2 px-2 flex items-center justify-center rounded-xl text-xs font-bold border border-border transition shadow-sm leading-tight text-center"
-                          >
-                            View Bill
-                          </button>
-                        </div>
-                      )}
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setOrderTableState({ sessionId: session.id, number: table.tableNumber, customerName: session.customerName, customerPhone: session.customerPhone })}
+                              className="flex-1 bg-amber-500 hover:bg-amber-600 text-white h-11 flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-[0_4px_10px_rgba(245,158,11,0.2)]"
+                            >
+                              <Plus size={16} /> Add Items
+                            </button>
+                            <button
+                              onClick={() => setSelectedTable(table)}
+                              className="flex-1 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 h-11 flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-[0_2px_4px_rgba(0,0,0,0.02)]"
+                            >
+                              <ReceiptText size={16} /> View Bill
+                            </button>
+                          </div>
+                        )}
 
-                      {(user.role === 'admin' || user.permissions?.canClearTable) && (
-                        <div className="hidden md:flex flex-1 flex-col justify-end mt-3">
-                          <button
-                            onClick={() => handleClearTableClick(session.id, session.customerPhone)}
-                            disabled={closingId === session.id}
-                            className="w-full border border-destructive/30 text-destructive hover:bg-destructive/10 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                          >
-                            {closingId === session.id ? <Loader2 className="animate-spin w-4 h-4" /> : <X size={14} />}
-                            Clear Table
-                          </button>
-                        </div>
-                      )}
+                        {/* Danger Action */}
+                        {(user.role === 'admin' || user.permissions?.canClearTable) && session.status !== 'billing' && (
+                          <div className="hidden md:block">
+                            <hr className="border-gray-100 mb-3" />
+                            <button
+                              onClick={() => handleClearTableClick(session.id, session.customerPhone)}
+                              disabled={closingId === session.id}
+                              className="w-full h-11 border border-red-200 text-red-600 bg-red-50/50 hover:bg-red-50 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors active:scale-95 disabled:opacity-50"
+                            >
+                              {closingId === session.id ? <Loader2 className="animate-spin w-4 h-4" /> : <X size={16} />}
+                              Clear Table
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </motion.div>
