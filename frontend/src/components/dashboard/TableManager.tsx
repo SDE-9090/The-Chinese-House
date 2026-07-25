@@ -689,7 +689,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
       {/* Payment Confirmation Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-md p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-sm rounded-[2rem] p-6 shadow-2xl relative">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-sm rounded-[2rem] p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onClick={() => { setShowPaymentModal(null); setSplitMode(false); }} disabled={!!closingId} className="absolute top-5 right-5 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors disabled:opacity-50">
               <X size={20} />
             </button>
