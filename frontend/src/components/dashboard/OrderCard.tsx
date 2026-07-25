@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ChefHat,
@@ -145,6 +145,18 @@ const OrderCard = ({
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [claiming, setClaiming] = useState(false);
 
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    if (order.status === "new" || order.status === "preparing") {
+      const interval = setInterval(() => setNow(new Date()), 60000);
+      return () => clearInterval(interval);
+    }
+  }, [order.status]);
+
+  const elapsedMinutes = Math.floor((now.getTime() - new Date(order.createdAt).getTime()) / 60000);
+  const isOverdue45 = (order.status === "new" || order.status === "preparing") && elapsedMinutes >= 45;
+  const isOverdue15 = (order.status === "new" || order.status === "preparing") && elapsedMinutes >= 15 && !isOverdue45;
+
   const isTableOrder = order.orderSource === "table";
   const hasDue = !isTableOrder && dueAmount > 0;
 
@@ -222,7 +234,7 @@ const OrderCard = ({
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-card border ${isCustomerEditing ? 'border-amber-500 shadow-lg shadow-amber-500/10' : 'border-border/30'} rounded-2xl p-3 active:scale-[0.98] transition`}
+      className={`bg-card border ${isCustomerEditing ? 'border-amber-500 shadow-lg shadow-amber-500/10' : isOverdue45 ? 'border-red-500 shadow-lg shadow-red-500/20 bg-red-500/5' : isOverdue15 ? 'border-amber-500 shadow-md shadow-amber-500/10 bg-amber-500/5' : 'border-border/30'} rounded-2xl p-3 active:scale-[0.98] transition`}
     >
       {isCustomerEditing && (
         <div className="mb-3 bg-amber-500/10 border border-amber-500/30 rounded-xl py-2 px-3 flex items-center gap-2 animate-pulse">
@@ -234,9 +246,16 @@ const OrderCard = ({
       <div className="mb-3">
         {/* Row 1 */}
         <div className="flex items-start justify-between gap-2">
-          <span className="bg-primary/10 text-primary px-2 py-1 rounded-md font-bold text-sm shrink-0 mt-0.5">
-            #{order.token}
-          </span>
+          <div className="flex flex-col gap-1 items-start shrink-0 mt-0.5">
+            <span className="bg-primary/10 text-primary px-2 py-1 rounded-md font-bold text-sm">
+              #{order.token}
+            </span>
+            {(isOverdue45 || isOverdue15) && (
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${isOverdue45 ? 'bg-red-500/20 text-red-600' : 'bg-amber-500/20 text-amber-600'} animate-pulse`}>
+                {elapsedMinutes}m wait
+              </span>
+            )}
+          </div>
 
           <div className="text-right min-w-0 flex-1">
             <p className="font-semibold text-sm leading-tight truncate">

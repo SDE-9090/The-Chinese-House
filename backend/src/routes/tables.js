@@ -586,6 +586,14 @@ async function closeSession(client, sessionId, business_id) {
   if (sessionRes.rows.length) {
     const { table_id } = sessionRes.rows[0];
     await client.query("UPDATE tables SET status = 'available' WHERE id = $1 AND business_id = $2", [table_id, business_id]);
+
+    // Auto-complete stale orders to prevent dashboard clutter
+    await client.query(
+      `UPDATE orders 
+       SET status = 'completed' 
+       WHERE table_session_id = $1 AND business_id = $2 AND status IN ('new', 'preparing', 'ready')`,
+      [sessionId, business_id]
+    );
   }
   return sessionRes.rows.length > 0;
 }
