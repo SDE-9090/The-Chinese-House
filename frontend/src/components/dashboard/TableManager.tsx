@@ -740,19 +740,23 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                 </label>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-muted-foreground ml-1">Customer Phone (Loyalty)</label>
-                <input
-                  type="text"
-                  maxLength={10}
-                  value={loyaltyPhone}
-                  onChange={(e) => setLoyaltyPhone(e.target.value.replace(/\D/g, ""))}
-                  placeholder="Enter phone number..."
-                  className="w-full bg-muted border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-primary outline-none mt-1"
-                />
-              </div>
+              {loyaltySettings?.enabled && (
+                <>
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground ml-1">Customer Phone (Loyalty)</label>
+                    <input
+                      type="text"
+                      maxLength={10}
+                      value={loyaltyPhone}
+                      onChange={(e) => setLoyaltyPhone(e.target.value.replace(/\D/g, ""))}
+                      placeholder="Enter phone number..."
+                      className="w-full bg-muted border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-primary outline-none mt-1"
+                    />
+                  </div>
 
-              {checkingLoyalty && <p className="text-xs text-muted-foreground ml-1">Checking loyalty points...</p>}
+                  {checkingLoyalty && <p className="text-xs text-muted-foreground ml-1">Checking loyalty points...</p>}
+                </>
+              )}
 
               {!checkingLoyalty && loyaltyPoints > 0 && loyaltySettings?.enabled && (
                 <div className="bg-orange-500/10 border border-orange-500/20 p-3 rounded-xl flex items-center justify-between">
