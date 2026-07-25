@@ -14,6 +14,7 @@ function orderToReceiptData(order: Order): ReceiptData {
       name: i.name,
       price: i.price,
       quantity: i.quantity,
+      note: i.note,
     })),
     subtotal: order.subtotal,
     discount: order.discount,
