@@ -638,7 +638,7 @@ router.post("/sessions/:sessionId/pay", async (req, res) => {
 // Closes the session, marks outstanding orders as paid, frees the table
 router.post("/sessions/:sessionId/close", adminAuth, async (req, res) => {
   const { sessionId } = req.params;
-  const { paymentMethod = "counter", splitCash = 0, splitUpi = 0, customerPhone, pointsRedeemed, couponCode } = req.body;
+  const { paymentMethod = "counter", splitCash = 0, splitUpi = 0, customerPhone, pointsRedeemed, couponCode, customDiscountAmount = 0 } = req.body;
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -768,6 +768,32 @@ router.post("/sessions/:sessionId/close", adminAuth, async (req, res) => {
           `, [req.business_id, finalPhone, pointsEarned, totalAfterDiscount]);
         }
       }
+    }
+
+    
+
+    // Custom Ad-hoc Discount
+    let customDiscount = parseFloat(customDiscountAmount) || 0;
+    if (customDiscount > sessionTotal) customDiscount = sessionTotal;
+
+    if (customDiscount > 0) {
+      await client.query(
+        "UPDATE table_sessions SET discount_amount = COALESCE(discount_amount, 0) + $1 WHERE id = $2",
+        [customDiscount, sessionId]
+      );
+      
+      await client.query(`
+        UPDATE orders 
+        SET total = GREATEST(0, total - $1),
+            discount = COALESCE(discount, 0) + $1
+        WHERE id = (
+          SELECT id FROM orders 
+          WHERE table_session_id = $2 AND status != 'cancelled' 
+          ORDER BY created_at DESC LIMIT 1
+        )
+      `, [customDiscount, sessionId]);
+      
+      sessionTotal = Math.max(0, sessionTotal - customDiscount);
     }
 
     // Mark outstanding orders as settled by the provided payment method

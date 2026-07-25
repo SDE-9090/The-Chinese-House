@@ -59,6 +59,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [newTableNumber, setNewTableNumber] = useState("");
   const [addingTable, setAddingTable] = useState(false);
+  const [customDiscount, setCustomDiscount] = useState("");
   const [showSettledBills, setShowSettledBills] = useState(false);
 
   const [showPaymentModal, setShowPaymentModal] = useState<string | null>(null);
@@ -206,7 +207,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const handleCloseSession = async (sessionId: string, method: string, printBill: boolean = true) => {
     setClosingId(sessionId);
     try {
-      await apiSessionClose(sessionId, method, parseFloat(splitCash) || 0, parseFloat(splitUpi) || 0, loyaltyPhone || undefined, pointsRedeemed, appliedCoupon?.code);
+      await apiSessionClose(sessionId, method, parseFloat(splitCash) || 0, parseFloat(splitUpi) || 0, loyaltyPhone || undefined, pointsRedeemed, appliedCoupon?.code, parseFloat(customDiscount) || 0);
       
       // [AUTO-PRINT LOGIC] Print Final Bill after clearing the table
       const bill = billsMap[sessionId];
@@ -269,6 +270,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
       handleCloseSession(sessionId, 'none', false);
     } else {
       setShowPaymentModal(sessionId);
+      setCustomDiscount("");
       if (customerPhone && customerPhone !== "0000000000") {
         setLoyaltyPhone(customerPhone);
       } else {
@@ -835,6 +837,20 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
               </div>
             </div>
 
+
+              {/* Custom Discount Input */}
+              <div className="bg-muted border border-border p-3 rounded-xl mb-6">
+                <label className="text-xs font-bold text-muted-foreground mb-1 block">Custom Discount (₹) [Optional]</label>
+                <input
+                  type="number"
+                  placeholder="Enter flat discount amount..."
+                  value={customDiscount}
+                  onChange={(e) => setCustomDiscount(e.target.value)}
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  disabled={!!closingId}
+                />
+              </div>
+
             {!splitMode ? (
               <div className="grid grid-cols-2 gap-3 mb-6">
                 {[
@@ -882,7 +898,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                         const val = parseFloat(e.target.value) || 0;
                         const baseTotal = billsMap[showPaymentModal]?.totalAmount || 0;
                         const loyaltyDiscountValue = loyaltySettings?.enabled ? (pointsRedeemed * (loyaltySettings.discount_per_point || 1)) : 0;
-                        const total = Math.max(0, baseTotal - loyaltyDiscountValue);
+                        const customDiscountValue = parseFloat(customDiscount) || 0;
+                        const total = Math.max(0, baseTotal - loyaltyDiscountValue - customDiscountValue);
                         setSplitUpi(Math.max(0, total - val).toString());
                       }}
                     />
@@ -902,7 +919,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                         const val = parseFloat(e.target.value) || 0;
                         const baseTotal = billsMap[showPaymentModal]?.totalAmount || 0;
                         const loyaltyDiscountValue = loyaltySettings?.enabled ? (pointsRedeemed * (loyaltySettings.discount_per_point || 1)) : 0;
-                        const total = Math.max(0, baseTotal - loyaltyDiscountValue);
+                        const customDiscountValue = parseFloat(customDiscount) || 0;
+                        const total = Math.max(0, baseTotal - loyaltyDiscountValue - customDiscountValue);
                         setSplitCash(Math.max(0, total - val).toString());
                       }}
                     />
