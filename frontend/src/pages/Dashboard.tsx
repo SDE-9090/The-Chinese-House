@@ -798,6 +798,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
         customerPhone: editOrder.customerPhone || "",
         items: updatedItems,
         total: items.reduce((acc, i) => acc + i.price * i.quantity, 0),
+        paymentMethod: (editOrder.paymentMethod || "counter") as any,
         orderType: editOrder.orderType as any,
         createdAt: new Date().toISOString(),
         isUpdatedKOT: true
