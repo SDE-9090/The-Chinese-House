@@ -66,6 +66,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [splitCash, setSplitCash] = useState<string>("");
   const [splitUpi, setSplitUpi] = useState<string>("");
   const [closingId, setClosingId] = useState<string | null>(null);
+  const [printBillOnClear, setPrintBillOnClear] = useState(true);
   const [billsMap, setBillsMap] = useState<Record<string, SessionBill>>({}); // sessionId -> bill
 
   // Loyalty State
@@ -196,7 +197,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
 
 
 
-  const handleCloseSession = async (sessionId: string, method: string) => {
+  const handleCloseSession = async (sessionId: string, method: string, printBill: boolean = true) => {
     setClosingId(sessionId);
     try {
       await apiSessionClose(sessionId, method, parseFloat(splitCash) || 0, parseFloat(splitUpi) || 0, loyaltyPhone || undefined, pointsRedeemed);
@@ -204,7 +205,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
       // [AUTO-PRINT LOGIC] Print Final Bill after clearing the table
       const bill = billsMap[sessionId];
       const detailSession = tables.find((t) => t.activeSession?.id === sessionId)?.activeSession;
-      if (bill && bill.totalAmount > 0 && detailSession) {
+      if (printBill && bill && bill.totalAmount > 0 && detailSession) {
         console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL TABLE BILL for Ref #${sessionId.slice(0, 8)}`);
         const rd = {
           token: parseInt(detailSession.id.slice(0, 4), 16) || 0,
@@ -256,7 +257,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const handleClearTableClick = (sessionId: string, customerPhone?: string | null) => {
     const bill = billsMap[sessionId];
     if (bill && bill.totalAmount === 0) {
-      handleCloseSession(sessionId, 'none');
+      handleCloseSession(sessionId, 'none', false);
     } else {
       setShowPaymentModal(sessionId);
       if (customerPhone && customerPhone !== "0000000000") {
@@ -710,6 +711,19 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
             })()}
 
             <div className="mb-6 space-y-3">
+              <div className="flex items-center gap-2 mt-4 pb-2 border-b border-border/50">
+                <input 
+                  type="checkbox" 
+                  id="printBill" 
+                  checked={printBillOnClear}
+                  onChange={(e) => setPrintBillOnClear(e.target.checked)}
+                  className="w-4 h-4 text-primary rounded"
+                />
+                <label htmlFor="printBill" className="text-sm font-semibold text-muted-foreground cursor-pointer">
+                  Print physical bill automatically
+                </label>
+              </div>
+
               <div>
                 <label className="text-xs font-bold text-muted-foreground ml-1">Customer Phone (Loyalty)</label>
                 <input
@@ -762,7 +776,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                   <button
                     key={method.id}
                     disabled={!!closingId}
-                    onClick={() => handleCloseSession(showPaymentModal, method.id)}
+                    onClick={() => handleCloseSession(showPaymentModal, method.id, printBillOnClear)}
                     className="bg-card hover:bg-primary/10 border-2 border-border hover:border-primary text-foreground p-4 rounded-2xl font-bold text-sm flex flex-col items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
                   >
                     <span className="text-2xl">{method.icon}</span>
@@ -827,7 +841,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                 </div>
                 <button
                   disabled={!!closingId}
-                  onClick={() => handleCloseSession(showPaymentModal, 'split')}
+                  onClick={() => handleCloseSession(showPaymentModal, 'split', printBillOnClear)}
                   className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold mt-2 hover:bg-primary/90 disabled:opacity-50 transition-all"
                 >
                   Confirm Split
