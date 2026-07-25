@@ -44,7 +44,12 @@ async function chatWithGroq(messageHistory, businessId) {
       `SELECT m.name, m.available
        FROM order_items oi
        JOIN menu_items m ON oi.menu_item_id = m.id
+       JOIN menu_categories c ON m.category_id = c.id
        WHERE m.business_id = $1
+         AND c.name NOT ILIKE '%beverage%'
+         AND c.name NOT ILIKE '%extra%'
+         AND c.name NOT ILIKE '%drink%'
+         AND c.name NOT ILIKE '%water%'
        GROUP BY m.name, m.available
        ORDER BY SUM(oi.quantity) DESC
        LIMIT 2`,
