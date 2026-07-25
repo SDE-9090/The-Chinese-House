@@ -29,6 +29,7 @@ export interface ReceiptData {
   orderType?: string;
   specialInstructions?: string;
   tableSessionId?: string | null;
+  isUpdatedKOT?: boolean;
 }
 
 export interface ZReportData {
@@ -388,7 +389,15 @@ export function buildKotCanvas(data: ReceiptData): HTMLCanvasElement {
   ctx.fillStyle = "#000000";
   ctx.font = `bold 24px ${FONT}`;
   ctx.textAlign = "center";
-  ctx.fillText("KOT", W / 2, y);
+  
+  if (data.isUpdatedKOT) {
+    ctx.fillText("*** UPDATED KOT ***", W / 2, y);
+    y += 24;
+    ctx.font = `bold 16px ${FONT}`;
+    ctx.fillText("(DISCARD PREVIOUS)", W / 2, y);
+  } else {
+    ctx.fillText("KOT", W / 2, y);
+  }
   y += 20;
 
   ctx.font = `14px ${FONT}`;

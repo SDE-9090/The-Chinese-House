@@ -779,6 +779,33 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
   const handleSaveEditOrder = async (items: EditItem[]) => {
     if (!editOrder) return;
     await apiUpdateOrderItems(editOrder.id, items);
+
+    // Auto-print updated KOT for the kitchen
+    if (Capacitor.isNativePlatform()) {
+      console.log(`🖨️ [PRINTER] AUTO-PRINTING UPDATED KOT for Order #${editOrder.token}`);
+      const updatedItems = items.map(i => ({
+        id: String(i.id),
+        name: i.name,
+        quantity: i.quantity,
+        price: i.price,
+        priceLabel: i.priceLabel || `₹${i.price}`,
+        note: i.note || ""
+      }));
+      
+      const kotData = {
+        token: editOrder.token,
+        customerName: editOrder.customerName || "Table Guest",
+        customerPhone: editOrder.customerPhone || "",
+        items: updatedItems,
+        total: items.reduce((acc, i) => acc + i.price * i.quantity, 0),
+        orderType: editOrder.orderType as any,
+        createdAt: new Date().toISOString(),
+        isUpdatedKOT: true
+      };
+      
+      printQueue.enqueue(`updated-kot-${editOrder.id}-${Date.now()}`, "kot", kotData);
+    }
+
     await refreshOrders();
   };
 
