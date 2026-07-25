@@ -1,182 +1,16 @@
-import { useEffect, useState } from "react";
-import { Building2, MapPin, ReceiptText, Save } from "lucide-react";
-import {
-  apiAdminGetBusinessSettings,
-  apiAdminUpdateBusinessSettings,
-  type BusinessSettings,
-} from "@/lib/apiClient";
-import { useToast } from "@/hooks/use-toast";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Loader2, AlertTriangle, Printer, Bluetooth, Settings, Utensils } from "lucide-react";
-import { apiAdminFactoryReset } from "@/lib/apiClient";
-import { Capacitor } from "@capacitor/core";
-import { BluetoothPrinter } from "@candraadiw/capacitor-bluetooth-printer";
+import re
 
-import { validateName, validateMobile, validateGST } from "@/lib/validators";
+with open("frontend/src/components/dashboard/BusinessSettingsManager.tsx", "r") as f:
+    text = f.read()
 
-const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+# Add Settings and Utensils to lucide imports
+text = text.replace(
+    "import { Loader2, AlertTriangle, Printer, Bluetooth } from \"lucide-react\";",
+    "import { Loader2, AlertTriangle, Printer, Bluetooth, Settings, Utensils } from \"lucide-react\";"
+)
 
-const defaultState: BusinessSettings = {
-  restaurantName: "",
-  gstin: null,
-  address: "",
-  phone: "",
-  email: "",
-  isGstEnabled: true,
-  isOnlinePaymentEnabled: true,
-  cgstRate: 2.5,
-  sgstRate: 2.5,
-  kitchenPin: "1234",
-  loyaltyEnabled: true,
-  loyaltyPointsPer100: 10,
-  loyaltyDiscountPerPoint: 1.00,
-};
-
-interface Props {
-  user?: any;
-}
-
-const BusinessSettingsManager = ({ user }: Props) => {
-  const { toast } = useToast();
-  const [data, setData] = useState<BusinessSettings>(defaultState);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<{name?: string, mobile?: string, gst?: string}>({});
-
-  const [resetModalOpen, setResetModalOpen] = useState(false);
-  const [resetConfirmText, setResetConfirmText] = useState("");
-  const [resetting, setResetting] = useState(false);
-
-  // Bluetooth Printer States
-  const [btDevices, setBtDevices] = useState<any[]>([]);
-  const [isScanning, setIsScanning] = useState(false);
-  const [connectedPrinter, setConnectedPrinter] = useState<string | null>(null);
-
-  useEffect(() => {
-    apiAdminGetBusinessSettings()
-      .then(setData)
-      .catch((err: Error) => setError(err.message || "Failed to load settings"))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleSave = async () => {
-    setError("");
-
-    // Run validators
-    const nameErr = validateName(data.restaurantName);
-    const mobileErr = validateMobile(data.phone || "");
-    const gstErr = validateGST(data.gstin || "");
-
-    if (nameErr || mobileErr || gstErr) {
-      setFieldErrors({ name: nameErr || undefined, mobile: mobileErr || undefined, gst: gstErr || undefined });
-      setError("Please fix the validation errors before saving.");
-      return;
-    }
-
-    const parsedCgst = Number(data.cgstRate);
-    const parsedSgst = Number(data.sgstRate);
-    if (isNaN(parsedCgst) || parsedCgst < 0 || isNaN(parsedSgst) || parsedSgst < 0) {
-      setError("GST rates must be valid non-negative numbers");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const updated = await apiAdminUpdateBusinessSettings({
-        restaurantName: data.restaurantName.trim(),
-        gstin: data.gstin?.trim().toUpperCase() || null,
-        address: data.address.trim(),
-        phone: data.phone?.trim() || "",
-        email: data.email?.trim() || "",
-        isGstEnabled: data.isGstEnabled,
-        cgstRate: parsedCgst,
-        sgstRate: parsedSgst,
-        features: data.features,
-        loyaltyEnabled: data.loyaltyEnabled,
-        loyaltyPointsPer100: data.loyaltyPointsPer100,
-        loyaltyDiscountPerPoint: data.loyaltyDiscountPerPoint,
-        qrRoutingMode: data.qrRoutingMode,
-        printerWidth: data.printerWidth,
-      });
-      setData(updated);
-      toast({ title: "Saved", description: "Business settings updated." });
-    } catch (err: any) {
-      setError(err.message || "Failed to save settings");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleFactoryReset = async () => {
-    if (resetConfirmText !== "DELETE ALL DATA") return;
-    setResetting(true);
-    try {
-      await apiAdminFactoryReset(resetConfirmText);
-      toast({ title: "Success", description: "Database has been reset." });
-      setResetModalOpen(false);
-      setResetConfirmText("");
-      setTimeout(() => window.location.reload(), 1500);
-    } catch (err: any) {
-      toast({ title: "Reset Failed", description: err.message, variant: "destructive" });
-      setResetting(false);
-    }
-  };
-
-  const handleScanPrinters = async () => {
-    if (!Capacitor.isNativePlatform()) {
-      toast({ title: "Not Supported", description: "Bluetooth printing is only available on the Android app.", variant: "destructive" });
-      return;
-    }
-    setIsScanning(true);
-    try {
-      const res = await BluetoothPrinter.listDevices();
-      setBtDevices(res.devices || []);
-      if (res.devices && res.devices.length === 0) {
-        toast({ title: "No Printers Found", description: "Ensure the printer is turned on and paired in Android Settings." });
-      }
-    } catch (err: any) {
-      toast({ title: "Scan Failed", description: err.message, variant: "destructive" });
-    } finally {
-      setIsScanning(false);
-    }
-  };
-
-  const handleConnectPrinter = async (address: string, name: string) => {
-    try {
-      toast({ title: "Connecting...", description: `Connecting to ${name}` });
-      await BluetoothPrinter.connect({ address });
-      setConnectedPrinter(address);
-      toast({ title: "Connected", description: `Successfully connected to ${name}` });
-    } catch (err: any) {
-      toast({ title: "Connection Failed", description: err.message, variant: "destructive" });
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="bg-card border border-border rounded-2xl p-6 text-sm text-muted-foreground">
-        Loading business settings...
-      </div>
-    );
-  }
-
-  const totalGst = Number((Number(data.cgstRate) + Number(data.sgstRate)).toFixed(2)) || 0;
-
-  const isPrinterOnly = user?.role !== 'admin' && user?.permissions?.systemAccess?.printerOnly === true;
-
-
+# Define the new JSX structure for the top part
+new_jsx = """
   return (
     <div className="space-y-6">
       {!isPrinterOnly && (
@@ -407,91 +241,21 @@ const BusinessSettingsManager = ({ user }: Props) => {
               </div>
             </div>
           </div>
+"""
 
-      {/* Loyalty Program Settings */}
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-500 lucide lucide-gift"><polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7"/><line x1="12" x2="12" y1="22" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
-          </div>
-          <div>
-            <h2 className="font-heading text-lg font-bold">Loyalty Program</h2>
-            <p className="text-sm text-muted-foreground">
-              Configure points earned per ₹100 and discount value per point.
-            </p>
-          </div>
-        </div>
+# Extract everything up to the return statement
+idx_start = text.find("  return (\n    <div className=\"space-y-6\">")
+idx_end = text.find("{/* Loyalty Program Settings */}")
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
-              Program Status
-            </label>
+if idx_start != -1 and idx_end != -1:
+    text = text[:idx_start] + new_jsx + "\n      " + text[idx_end:]
 
-            <div className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3 h-[52px]">
-              <span className="text-sm text-muted-foreground">
-                Enable Loyalty Program
-              </span>
+# Now we need to move "Global Printer Width" into the Bluetooth Printer Settings block or create a Hardware block.
+# Let's see the Bluetooth Printer section.
+idx_bt_start = text.find("{/* Bluetooth Printer Settings (Native Only) */}")
 
-              <Switch
-                id="loyalty-toggle"
-                checked={data.loyaltyEnabled ?? true}
-                onCheckedChange={(checked) =>
-                  setData((prev) => ({ ...prev, loyaltyEnabled: checked }))
-                }
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
-              Points Earned (per ₹100 spent)
-            </label>
-            <input
-              type="number"
-              min={0}
-              step={1}
-              value={data.loyaltyPointsPer100 ?? 10}
-              onChange={(e) => {
-                const val = parseInt(e.target.value);
-                setData((prev) => ({
-                  ...prev,
-                  loyaltyPointsPer100: isNaN(val) ? 0 : Math.max(0, val),
-                }));
-              }}
-              disabled={!data.loyaltyEnabled}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
-              placeholder="10"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
-              Discount Value (₹ per Point)
-            </label>
-            <input
-              type="number"
-              min={0}
-              step={0.1}
-              value={data.loyaltyDiscountPerPoint ?? 1}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value);
-                setData((prev) => ({
-                  ...prev,
-                  loyaltyDiscountPerPoint: isNaN(val) ? 0 : Math.max(0, val),
-                }));
-              }}
-              disabled={!data.loyaltyEnabled}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
-              placeholder="1.0"
-            />
-          </div>
-        </div>
-      </div>
-      </>
-      )}
-
-      
+if idx_bt_start != -1:
+    hardware_jsx = """
       {/* 4. Hardware & Printing */}
       <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
         <div className="flex items-center gap-3">
@@ -554,94 +318,10 @@ const BusinessSettingsManager = ({ user }: Props) => {
           </div>
         )}
       </div>
+"""
+    # Replace the old Bluetooth Printer Settings section
+    idx_bt_end = text.find("{/* Global Save Button */}")
+    text = text[:idx_bt_start] + hardware_jsx + "\n      " + text[idx_bt_end:]
 
-      {/* Global Save Button */}
-      {!isPrinterOnly && (
-      <div className="flex justify-end sticky bottom-6 z-10 pt-4">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-4 font-bold text-primary-foreground transition-all hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-xl shadow-primary/30"
-        >
-          <Save size={20} /> {saving ? "Saving..." : "Save All Settings"}
-        </button>
-      </div>
-      )}
-
-      {/* Danger Zone */}
-      {!isPrinterOnly && (
-      <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-6 space-y-4 mt-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-            <AlertTriangle className="text-destructive" size={18} />
-          </div>
-          <div>
-            <h2 className="font-heading text-lg font-bold text-destructive">Danger Zone</h2>
-            <p className="text-sm text-muted-foreground">
-              Destructive actions that cannot be undone.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-background border border-border rounded-xl">
-          <div>
-            <h3 className="font-semibold text-foreground">Factory Reset Database</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Wipe all orders, tables, menu items, reviews, and staff data. 
-              Landing page and business settings will remain untouched.
-            </p>
-          </div>
-          <Button 
-            variant="destructive" 
-            onClick={() => setResetModalOpen(true)}
-            className="shrink-0"
-          >
-            Reset Database
-          </Button>
-        </div>
-      </div>
-      )}
-
-      {/* Reset Modal */}
-      <Dialog open={resetModalOpen} onOpenChange={setResetModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-destructive">Are you absolutely sure?</DialogTitle>
-            <DialogDescription>
-              This action <b>cannot be undone</b>. This will permanently delete your menu items,
-              orders, tables, staff, and sales history. Your admin login and landing page data will be kept.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3 py-4">
-            <Label className="text-foreground">
-              Please type <span className="font-mono font-bold text-destructive select-all">DELETE ALL DATA</span> to confirm.
-            </Label>
-            <Input 
-              value={resetConfirmText}
-              onChange={(e) => setResetConfirmText(e.target.value)}
-              placeholder="DELETE ALL DATA"
-              className="font-mono"
-            />
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setResetModalOpen(false); setResetConfirmText(""); }} disabled={resetting}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleFactoryReset} 
-              disabled={resetConfirmText !== "DELETE ALL DATA" || resetting}
-            >
-              {resetting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-              Confirm Factory Reset
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default BusinessSettingsManager;
+with open("frontend/src/components/dashboard/BusinessSettingsManager.tsx", "w") as f:
+    f.write(text)
