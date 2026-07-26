@@ -154,12 +154,10 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
 
   useEffect(() => {
     fetchTables();
-    const interval = setInterval(fetchTables, 15000); // reduced polling frequency since we have sockets
     
     socket.on("tables-updated", fetchTables);
     
     return () => {
-      clearInterval(interval);
       socket.off("tables-updated", fetchTables);
     };
   }, [fetchTables]);

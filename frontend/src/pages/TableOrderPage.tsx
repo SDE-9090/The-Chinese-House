@@ -7,6 +7,7 @@ import {
   setTenantSlug as setGlobalTenantSlug,
   type Table, type SessionBill,
 } from "@/lib/apiClient";
+import { socket } from "@/lib/socket";
 import OrderPage from "./OrderPage";
 import { validateName, validateMobile } from "@/lib/validators";
 import BillDocument, { downloadBillPrint } from "@/components/BillDocument";
@@ -52,11 +53,18 @@ export default function TableOrderPage() {
   useEffect(() => {
     if (!qrCode) return;
     fetchTable();
-    const interval = setInterval(() => {
-      // Stop polling once payment is done — session is closed and we want to keep bill visible
+    
+    const handleTableUpdate = () => {
       if (payStepRef.current !== "done") fetchTable();
-    }, 5000);
-    return () => clearInterval(interval);
+    };
+
+    socket.on("tables-updated", handleTableUpdate);
+    socket.on("orders-updated", handleTableUpdate);
+    
+    return () => {
+      socket.off("tables-updated", handleTableUpdate);
+      socket.off("orders-updated", handleTableUpdate);
+    };
   }, [qrCode]);
 
   // Keep payStepRef in sync

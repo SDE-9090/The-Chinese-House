@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiGetTokens } from "@/lib/apiClient";
+import { socket } from "@/lib/socket";
 
 type TokenRow = {
   id: string;
@@ -21,8 +22,14 @@ export function useTokens(intervalMs = 3000) {
 
   useEffect(() => {
     loadTokens();
-    const id = setInterval(loadTokens, intervalMs);
-    return () => clearInterval(id);
+    
+    socket.on("orders-updated", loadTokens);
+    socket.on("new-order", loadTokens);
+    
+    return () => {
+      socket.off("orders-updated", loadTokens);
+      socket.off("new-order", loadTokens);
+    };
   }, []);
 
   return { tokens };
