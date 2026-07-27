@@ -70,7 +70,7 @@ router.post("/upload", adminAuth, upload.single("file"), async (req, res) => {
   const client = await pool.connect();
   try {
     // The public URL to the file
-    const fileUrl = \`/public/updates/\${req.file.filename}\`;
+    const fileUrl = `/public/updates/${req.file.filename}`;
 
     await client.query("BEGIN");
 
