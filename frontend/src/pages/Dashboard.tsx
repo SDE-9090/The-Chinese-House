@@ -635,7 +635,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
   const [contentSubTab, setContentSubTab] = useState<"menu" | "hero" | "gallery" | "page" | "address" | "promotions">("menu");
   const [managementSubTab, setManagementSubTab] = useState<"coupons" | "reviews" | "qr-codes" | "customers">("qr-codes");
   const [analyticsSubTab, setAnalyticsSubTab] = useState<"menu" | "table">("menu");
-  const [settingsSubTab, setSettingsSubTab] = useState<"security" | "account" | "business">("business");
+  const [settingsSubTab, setSettingsSubTab] = useState<"security" | "account" | "business" | "updates">("business");
   const [orderSubTab, setOrderSubTab] = useState<"active" | "history" | "counter-order">("active");
   const [statusFilter, setStatusFilter] = useState<Order["status"] | "all">(
     "all",
