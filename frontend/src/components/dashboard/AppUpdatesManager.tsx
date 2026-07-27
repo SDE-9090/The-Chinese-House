@@ -29,8 +29,26 @@ export default function AppUpdatesManager({ user }: AppUpdatesManagerProps) {
     try {
       setChecking(true);
       const res = await apiCheckForUpdates();
+      
+      let currentVersion = "";
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const current = await CapacitorUpdater.current();
+          currentVersion = current.bundle.version;
+        } catch (e) {
+          console.log("No current bundle found or not supported", e);
+        }
+      }
+
       if (res.updateAvailable) {
-        setLatestUpdate(res.update);
+        // If we're on native and the current version matches the latest backend version, we are already up to date
+        if (Capacitor.isNativePlatform() && currentVersion === res.update.version) {
+          setLatestUpdate(null);
+        } else {
+          setLatestUpdate(res.update);
+        }
+      } else {
+        setLatestUpdate(null);
       }
     } catch (err: any) {
       console.error(err);
