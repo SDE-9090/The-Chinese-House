@@ -26,7 +26,11 @@ export default function PaymentCollectionModal({
   initialCustomerPhone = "",
   title = "Clear Table"
 }: Props) {
-  const { settings: loyaltySettings } = useBusinessSettings();
+  const { settings } = useBusinessSettings();
+  const loyaltySettings = settings ? {
+    enabled: settings.loyalty_enabled,
+    discount_per_point: settings.loyalty_discount_per_point
+  } : null;
 
   const [loyaltyPhone, setLoyaltyPhone] = useState(initialCustomerPhone);
   const [checkingLoyalty] = useState(false);
