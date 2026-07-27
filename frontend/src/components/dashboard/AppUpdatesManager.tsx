@@ -5,7 +5,11 @@ import { useToast } from "@/hooks/use-toast";
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { Capacitor } from '@capacitor/core';
 
-export default function AppUpdatesManager() {
+interface AppUpdatesManagerProps {
+  user: any;
+}
+
+export default function AppUpdatesManager({ user }: AppUpdatesManagerProps) {
   const { toast } = useToast();
   const [checking, setChecking] = useState(false);
   const [latestUpdate, setLatestUpdate] = useState<any>(null);
@@ -135,57 +139,59 @@ export default function AppUpdatesManager() {
       </div>
 
       {/* Admin Upload Side */}
-      <div className="bg-card border border-border p-6 rounded-2xl shadow-sm">
-        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <UploadCloud className="text-primary" /> Publish Update (Admin)
-        </h3>
-        <p className="text-sm text-muted-foreground mb-6">
-          Upload a zipped `dist` folder to push a live Over-The-Air update to all tablets instantly.
-        </p>
+      {user?.role === "admin" && (
+        <div className="bg-card border border-border p-6 rounded-2xl shadow-sm">
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <UploadCloud className="text-primary" /> Publish Update (Admin)
+          </h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Upload a zipped `dist` folder to push a live Over-The-Air update to all tablets instantly.
+          </p>
 
-        <form onSubmit={handleUpload} className="space-y-4">
-          <div>
-            <label className="text-sm font-bold text-muted-foreground block mb-1">Version Number (e.g. 1.0.5)</label>
-            <input 
-              required
-              type="text" 
-              value={version}
-              onChange={e => setVersion(e.target.value)}
-              className="w-full bg-muted border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-primary outline-none"
-              placeholder="1.0.0"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-bold text-muted-foreground block mb-1">Release Notes</label>
-            <textarea 
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              className="w-full bg-muted border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none min-h-[80px]"
-              placeholder="What's new in this version?"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-bold text-muted-foreground block mb-1">Select Build (.zip)</label>
-            <input 
-              required
-              type="file"
-              accept=".zip"
-              onChange={e => setFile(e.target.files?.[0] || null)}
-              className="w-full file:bg-primary file:text-primary-foreground file:border-none file:px-4 file:py-2 file:rounded-lg file:mr-4 file:font-bold text-sm text-muted-foreground bg-muted p-2 rounded-xl"
-            />
-          </div>
-          
-          <div className="pt-2">
-            <button 
-              type="submit"
-              disabled={uploading || !file || !version}
-              className="w-full bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 font-bold rounded-xl py-3 transition-all hover:scale-[1.02] disabled:opacity-50 flex justify-center items-center gap-2"
-            >
-              <UploadCloud size={18} /> {uploading ? "Uploading..." : "Publish Update to Tablets"}
-            </button>
-          </div>
-        </form>
-      </div>
+          <form onSubmit={handleUpload} className="space-y-4">
+            <div>
+              <label className="text-sm font-bold text-muted-foreground block mb-1">Version Number (e.g. 1.0.5)</label>
+              <input 
+                required
+                type="text" 
+                value={version}
+                onChange={e => setVersion(e.target.value)}
+                className="w-full bg-muted border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-primary outline-none"
+                placeholder="1.0.0"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-bold text-muted-foreground block mb-1">Release Notes</label>
+              <textarea 
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                className="w-full bg-muted border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none min-h-[80px]"
+                placeholder="What's new in this version?"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-bold text-muted-foreground block mb-1">Select Build (.zip)</label>
+              <input 
+                required
+                type="file"
+                accept=".zip"
+                onChange={e => setFile(e.target.files?.[0] || null)}
+                className="w-full file:bg-primary file:text-primary-foreground file:border-none file:px-4 file:py-2 file:rounded-lg file:mr-4 file:font-bold text-sm text-muted-foreground bg-muted p-2 rounded-xl"
+              />
+            </div>
+            
+            <div className="pt-2">
+              <button 
+                type="submit"
+                disabled={uploading || !file || !version}
+                className="w-full bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 font-bold rounded-xl py-3 transition-all hover:scale-[1.02] disabled:opacity-50 flex justify-center items-center gap-2"
+              >
+                <UploadCloud size={18} /> {uploading ? "Uploading..." : "Publish Update to Tablets"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db/pool");
-const { adminAuth } = require("../middleware/adminAuth");
+const { adminAuth, authorizeRole } = require("../middleware/adminAuth");
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("../../config/cloudinary");
@@ -50,7 +50,7 @@ router.get("/latest", async (req, res) => {
 });
 
 // POST /api/updates/upload - Admin only
-router.post("/upload", adminAuth, upload.single("file"), async (req, res) => {
+router.post("/upload", adminAuth, authorizeRole([]), upload.single("file"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No update file uploaded" });
   }

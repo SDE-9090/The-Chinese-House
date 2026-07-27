@@ -1207,7 +1207,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
             ) : settingsSubTab === "security" ? (
               <SecurityLogs />
             ) : (
-              <AppUpdatesManager />
+              <AppUpdatesManager user={user} />
             )}
           </div>
         ) : tab === "staff" ? (
