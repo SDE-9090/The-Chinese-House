@@ -73,6 +73,28 @@ router.post("/upload", adminAuth, upload.single("file"), async (req, res) => {
       [req.business_id, version, fileUrl, release_notes || ""]
     );
 
+    // Auto-delete older updates (Keep only the latest 3)
+    const oldUpdates = await client.query(
+      `SELECT id, url FROM app_updates WHERE business_id = $1 ORDER BY created_at DESC OFFSET 3`,
+      [req.business_id]
+    );
+
+    for (const row of oldUpdates.rows) {
+      try {
+        if (row.url.includes("cloudinary")) {
+          const parts = row.url.split("/");
+          const filename = parts[parts.length - 1];
+          const folder = parts[parts.length - 2];
+          // For raw files in Cloudinary, the extension is part of the public_id
+          const publicId = `${folder}/${filename}`;
+          await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
+        }
+        await client.query(`DELETE FROM app_updates WHERE id = $1`, [row.id]);
+      } catch (e) {
+        console.error("Failed to delete old update:", e);
+      }
+    }
+
     await client.query("COMMIT");
 
     res.json({
