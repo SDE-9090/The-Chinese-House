@@ -28,8 +28,8 @@ export default function PaymentCollectionModal({
 }: Props) {
   const { settings } = useBusinessSettings();
   const loyaltySettings = settings ? {
-    enabled: settings.loyalty_enabled,
-    discount_per_point: settings.loyalty_discount_per_point
+    enabled: settings.loyaltyEnabled,
+    discount_per_point: settings.loyaltyDiscountPerPoint
   } : null;
 
   const [loyaltyPhone, setLoyaltyPhone] = useState(initialCustomerPhone);
