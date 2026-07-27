@@ -3,31 +3,24 @@ const router = express.Router();
 const pool = require("../db/pool");
 const { adminAuth } = require("../middleware/adminAuth");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../../config/cloudinary");
 
-// Ensure public/updates directory exists
-const updatesDir = path.join(__dirname, "../../public/updates");
-if (!fs.existsSync(updatesDir)) {
-  fs.mkdirSync(updatesDir, { recursive: true });
-}
-
-// Set up multer for handling .zip uploads locally
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, updatesDir);
-  },
-  filename: function (req, file, cb) {
-    // Generate a unique filename: update-<timestamp>.zip
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, "update-" + uniqueSuffix + path.extname(file.originalname));
+// Set up multer for handling .zip uploads via Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "app_updates",
+    resource_type: "raw", // Required for non-image/video files like .zip
+    public_id: (req, file) => `update-${Date.now()}-${Math.round(Math.random() * 1e9)}`,
   },
 });
 
-const upload = multer({
+const upload = multer({ 
   storage: storage,
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === "application/zip" || file.mimetype === "application/x-zip-compressed" || path.extname(file.originalname) === '.zip') {
+    // Only accept .zip files
+    if (file.mimetype === "application/zip" || file.mimetype === "application/x-zip-compressed" || file.originalname.endsWith('.zip')) {
       cb(null, true);
     } else {
       cb(new Error("Only .zip files are allowed for updates"));
@@ -69,8 +62,8 @@ router.post("/upload", adminAuth, upload.single("file"), async (req, res) => {
 
   const client = await pool.connect();
   try {
-    // The public URL to the file
-    const fileUrl = `/public/updates/${req.file.filename}`;
+    // The public URL to the file is returned by Cloudinary in req.file.path
+    const fileUrl = req.file.path;
 
     await client.query("BEGIN");
 
