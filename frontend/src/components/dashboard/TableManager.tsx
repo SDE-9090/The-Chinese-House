@@ -201,12 +201,12 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
     if (!showPaymentModal) return;
     try {
       if (printBill) {
-        const detailBill = Object.values(billsMap).find(b => b.sessionDetails.id === showPaymentModal);
+        const detailBill = Object.values(billsMap).find(b => b.sessionId === showPaymentModal);
         if (detailBill) {
           const rd = {
             token: 0,
-            customerName: detailBill.sessionDetails.customerName || "Guest",
-            customerPhone: detailBill.sessionDetails.customerPhone,
+            customerName: detailBill.customerName || "Guest",
+            customerPhone: detailBill.customerPhone,
             items: detailBill.orders.flatMap(o => o.items.map(i => ({
               id: i.id, name: i.name, quantity: i.quantity, price: i.price, priceLabel: i.priceLabel, note: i.note
             }))),
