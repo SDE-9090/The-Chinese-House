@@ -29,6 +29,7 @@ import TableOpenModal from "./TableOpenModal";
 import TableOrderModal from "./TableOrderModal";
 import TableTransferModal from "./TableTransferModal";
 import SettledBillsModal from "./SettledBillsModal";
+import PaymentCollectionModal from "../PaymentCollectionModal";
 
 interface TableManagerProps {
   orders: Order[];
@@ -196,76 +197,50 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
     }
   }, [loyaltyPhone]);
 
-
-
-
-
-
-
-  const handleCloseSession = async (sessionId: string, method: string, printBill: boolean = true) => {
-    setClosingId(sessionId);
+  const handlePaymentSuccess = async (printBill: boolean, method: string) => {
+    if (!showPaymentModal) return;
     try {
-      await apiSessionClose(sessionId, method, parseFloat(splitCash) || 0, parseFloat(splitUpi) || 0, loyaltyPhone || undefined, pointsRedeemed, appliedCoupon?.code, parseFloat(customDiscount) || 0);
-      
-      // [AUTO-PRINT LOGIC] Print Final Bill after clearing the table
-      const bill = billsMap[sessionId];
-      const detailSession = tables.find((t) => t.activeSession?.id === sessionId)?.activeSession;
-      if (printBill && bill && bill.totalAmount > 0 && detailSession) {
-        console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL TABLE BILL for Ref #${sessionId.slice(0, 8)}`);
-        const rd = {
-          token: parseInt(detailSession.id.slice(0, 4), 16) || 0,
-          customerName: detailSession.customerName || "Table Guest",
-          customerPhone: detailSession.customerPhone || "",
-          items: bill.itemized?.map((i: SessionBill["itemized"][0]) => ({
-            id: String(i.menuItemId || i.name || Date.now()),
-            name: i.name,
-            price: i.price,
-            quantity: i.quantity,
-            priceLabel: `₹${i.price}`,
-            note: ""
-          })) || [],
-          total: bill.totalAmount,
-          paymentMethod: (method === "cash" || method === "upi" || method === "card" || method === "split" ? "counter" : "online") as "counter" | "online",
-          createdAt: new Date().toISOString(),
-          orderType: "dine-in" as const,
-          paymentStatus: "paid" as const,
-          tableSessionId: detailSession.id,
-          subtotal: bill.sessionDetails?.subtotal || 0,
-          discount: bill.sessionDetails?.discount || 0,
-          cgst: bill.sessionDetails?.cgst || 0,
-          sgst: bill.sessionDetails?.sgst || 0,
-          gst: bill.sessionDetails?.gstTotal || 0,
-          paidAmount: bill.totalAmount,
-        };
-        printQueue.enqueue(`auto-receipt-${Date.now()}`, "receipt", rd);
+      if (printBill) {
+        const detailBill = Object.values(billsMap).find(b => b.sessionDetails.id === showPaymentModal);
+        if (detailBill) {
+          const rd = {
+            token: 0,
+            customerName: detailBill.sessionDetails.customerName || "Guest",
+            customerPhone: detailBill.sessionDetails.customerPhone,
+            items: detailBill.orders.flatMap(o => o.items.map(i => ({
+              id: i.id, name: i.name, quantity: i.quantity, price: i.price, priceLabel: i.priceLabel, note: i.note
+            }))),
+            total: detailBill.totalAmount,
+            paymentMethod: method as any,
+            createdAt: new Date().toISOString(),
+            orderType: "dine-in" as any,
+            tableSessionId: showPaymentModal,
+            subtotal: detailBill.sessionDetails.subtotal || 0,
+            discount: detailBill.sessionDetails.discount || 0,
+            cgst: detailBill.sessionDetails.cgst || 0,
+            sgst: detailBill.sessionDetails.sgst || 0,
+            gst: detailBill.sessionDetails.gstTotal || 0,
+            paidAmount: detailBill.totalPaid || 0,
+          };
+          printQueue.enqueue(`manual-receipt-${Date.now()}`, "receipt", rd);
+        }
       }
-
-      await fetchTables();
-      await onRefresh();
-      toast({ title: method === 'none' ? "Table cleared (No Bill)" : `Table cleared (${method.toUpperCase()})` });
-      setSelectedTable(null);
-    } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : "Unknown error";
-      toast({ title: "Failed to free table", description: errorMsg, variant: "destructive" });
-    } finally {
-      setClosingId(null);
       setShowPaymentModal(null);
-      setSplitMode(false);
-      setSplitCash("");
-      setSplitUpi("");
-      setLoyaltyPhone("");
-      setPointsRedeemed(0);
-      setLoyaltyPoints(0);
-      setCouponCode("");
-      setAppliedCoupon(null);
-      setCouponError("");
+      await fetchTables();
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const handleClearTableClick = (sessionId: string, customerPhone?: string | null) => {
     const bill = billsMap[sessionId];
     if (bill && bill.totalAmount === 0) {
-      handleCloseSession(sessionId, 'none', false);
+      // Direct Close for zero-amount tables
+      setClosingId(sessionId);
+      apiSessionClose(sessionId, 'none', 0, 0, undefined, 0, undefined, 0).then(() => {
+        fetchTables();
+        onRefresh();
+      }).finally(() => setClosingId(null));
     } else {
       setShowPaymentModal(sessionId);
       setCustomDiscount("");
@@ -668,10 +643,9 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                   {(user.role === 'admin' || user.permissions?.canClearTable) && (
                     <button
                       onClick={() => handleClearTableClick(detailSession.id, detailSession.customerPhone)}
-                      disabled={closingId === detailSession.id}
-                      className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 transition flex items-center justify-center gap-2"
                     >
-                      {closingId === detailSession.id ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle size={16} />}
+                      <CheckCircle size={16} />
                       Mark Paid & Clear Table
                     </button>
                   )}
@@ -685,268 +659,17 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
 
 
       {/* Payment Confirmation Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-md p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-sm rounded-[2rem] p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onClick={() => { setShowPaymentModal(null); setSplitMode(false); }} disabled={!!closingId} className="absolute top-5 right-5 text-muted-foreground hover:bg-muted p-2 rounded-full transition-colors disabled:opacity-50">
-              <X size={20} />
-            </button>
-            <h3 className="text-2xl font-black mb-1">Clear Table</h3>
-            <p className="text-sm font-semibold text-muted-foreground mb-6">How did the customer pay?</p>
+      <PaymentCollectionModal
+        isOpen={!!showPaymentModal}
+        onClose={() => setShowPaymentModal(null)}
+        onSuccess={handlePaymentSuccess}
+        type="table"
+        id={showPaymentModal || ""}
+        baseTotal={showPaymentModal ? (billsMap[showPaymentModal]?.totalAmount || 0) : 0}
+        initialCustomerPhone={loyaltyPhone}
+        title="Clear Table"
+      />
 
-            {billsMap[showPaymentModal] && (() => {
-              const baseTotal = billsMap[showPaymentModal].totalAmount;
-              const loyaltyDiscountValue = loyaltySettings?.enabled ? (pointsRedeemed * (loyaltySettings.discount_per_point || 1)) : 0;
-              const couponDiscountValue = appliedCoupon ? appliedCoupon.discount : 0;
-              const customDiscountValue = parseFloat(customDiscount) || 0;
-              const finalTotal = Math.max(0, baseTotal - couponDiscountValue - loyaltyDiscountValue - customDiscountValue);
-
-              return (
-                <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl mb-6 text-center space-y-2">
-                  <div className="flex justify-between text-sm text-muted-foreground font-semibold px-4">
-                    <span>Subtotal</span>
-                    <span>₹{baseTotal.toFixed(2)}</span>
-                  </div>
-                  {appliedCoupon && (
-                    <div className="flex justify-between text-sm text-emerald-600 font-bold px-4">
-                      <span>Coupon ({appliedCoupon.code})</span>
-                      <span>-₹{couponDiscountValue.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {pointsRedeemed > 0 && loyaltySettings?.enabled && (
-                    <div className="flex justify-between text-sm text-primary font-bold px-4">
-                      <span>Loyalty Reward</span>
-                      <span>-₹{loyaltyDiscountValue.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {customDiscountValue > 0 && (
-                    <div className="flex justify-between text-sm text-amber-600 font-bold px-4">
-                      <span>Custom Discount</span>
-                      <span>-₹{customDiscountValue.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="pt-2 border-t border-primary/10">
-                    <p className="text-xs text-primary font-bold uppercase tracking-widest mb-1">Total Due</p>
-                    <p className="text-4xl font-black text-primary">₹{finalTotal.toFixed(0)}</p>
-                  </div>
-                </div>
-              );
-            })()}
-
-            <div className="mb-6 space-y-3">
-              <div className="flex items-center gap-2 mt-4 pb-2 border-b border-border/50">
-                <input 
-                  type="checkbox" 
-                  id="printBill" 
-                  checked={printBillOnClear}
-                  onChange={(e) => setPrintBillOnClear(e.target.checked)}
-                  className="w-4 h-4 text-primary rounded"
-                />
-                <label htmlFor="printBill" className="text-sm font-semibold text-muted-foreground cursor-pointer">
-                  Print physical bill automatically
-                </label>
-              </div>
-
-              {loyaltySettings?.enabled && (
-                <>
-                  <div>
-                    <label className="text-xs font-bold text-muted-foreground ml-1">Customer Phone (Loyalty)</label>
-                    <input
-                      type="text"
-                      maxLength={10}
-                      value={loyaltyPhone}
-                      onChange={(e) => setLoyaltyPhone(e.target.value.replace(/\D/g, ""))}
-                      placeholder="Enter phone number..."
-                      className="w-full bg-muted border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-primary outline-none mt-1"
-                    />
-                  </div>
-
-                  {checkingLoyalty && <p className="text-xs text-muted-foreground ml-1">Checking loyalty points...</p>}
-                </>
-              )}
-
-              {!checkingLoyalty && loyaltyPoints > 0 && loyaltySettings?.enabled && (
-                <div className="bg-orange-500/10 border border-orange-500/20 p-3 rounded-xl flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-orange-600">Loyalty Member</p>
-                    <p className="text-sm font-semibold text-orange-700">{loyaltyPoints} points available</p>
-                  </div>
-                  {pointsRedeemed > 0 ? (
-                    <button
-                      onClick={() => setPointsRedeemed(0)}
-                      className="text-xs font-bold bg-destructive/10 text-destructive px-3 py-1.5 rounded-lg"
-                    >
-                      Remove
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        const maxPoints = Math.floor(billsMap[showPaymentModal].totalAmount / loyaltySettings.discount_per_point);
-                        setPointsRedeemed(Math.min(loyaltyPoints, maxPoints || loyaltyPoints));
-                      }}
-                      className="text-xs font-bold bg-orange-500 text-white px-3 py-1.5 rounded-lg"
-                    >
-                      Redeem
-                    </button>
-                  )}
-                </div>
-              )}
-
-              <div className="pt-2 border-t border-border/50">
-                <label className="text-xs font-bold text-muted-foreground ml-1">Discount Coupon</label>
-                {!appliedCoupon ? (
-                  <div className="flex gap-2 mt-1">
-                    <input
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }}
-                      placeholder="e.g. SUMMER20"
-                      className="flex-1 bg-muted border-none rounded-xl p-3 font-semibold focus:ring-2 focus:ring-primary outline-none uppercase"
-                    />
-                    <button
-                      disabled={validatingCoupon || !couponCode}
-                      onClick={async () => {
-                        setValidatingCoupon(true);
-                        setCouponError("");
-                        try {
-                          const baseTotal = billsMap[showPaymentModal].totalAmount;
-                          const res = await apiValidateCoupon(couponCode, baseTotal);
-                          setAppliedCoupon({ code: couponCode, ...res });
-                          toast({ title: "Coupon Applied", description: `You saved ₹${res.discount.toFixed(2)}` });
-                        } catch (err: any) {
-                          setCouponError(err.message);
-                        } finally {
-                          setValidatingCoupon(false);
-                        }
-                      }}
-                      className="bg-primary text-primary-foreground px-4 rounded-xl font-bold text-sm disabled:opacity-50"
-                    >
-                      {validatingCoupon ? <Loader2 size={16} className="animate-spin" /> : "Apply"}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl flex items-center justify-between mt-1">
-                    <div>
-                      <p className="text-xs font-bold text-emerald-600">Coupon Applied</p>
-                      <p className="text-sm font-semibold text-emerald-700">{appliedCoupon.code}</p>
-                    </div>
-                    <button
-                      onClick={() => { setAppliedCoupon(null); setCouponCode(""); }}
-                      className="text-xs font-bold bg-destructive/10 text-destructive px-3 py-1.5 rounded-lg"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-                {couponError && <p className="text-xs text-destructive ml-1 mt-1 font-semibold">{couponError}</p>}
-              </div>
-            </div>
-
-
-              {/* Custom Discount Input */}
-              <div className="bg-muted border border-border p-3 rounded-xl mb-6">
-                <label className="text-xs font-bold text-muted-foreground mb-1 block">Custom Discount (₹) [Optional]</label>
-                <input
-                  type="number"
-                  placeholder="Enter flat discount amount..."
-                  value={customDiscount}
-                  onChange={(e) => setCustomDiscount(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  disabled={!!closingId}
-                />
-              </div>
-
-            {!splitMode ? (
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {[
-                  { id: 'cash', label: 'Cash', icon: '💵' },
-                  { id: 'upi', label: 'UPI', icon: '📱' },
-                  { id: 'card', label: 'Card', icon: '💳' },
-                ].map(method => (
-                  <button
-                    key={method.id}
-                    disabled={!!closingId}
-                    onClick={() => handleCloseSession(showPaymentModal, method.id, printBillOnClear)}
-                    className="bg-card hover:bg-primary/10 border-2 border-border hover:border-primary text-foreground p-4 rounded-2xl font-bold text-sm flex flex-col items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
-                  >
-                    <span className="text-2xl">{method.icon}</span>
-                    {method.label}
-                  </button>
-                ))}
-                <button
-                  disabled={!!closingId}
-                  onClick={() => {
-                    setSplitMode(true);
-                    setSplitCash("");
-                    setSplitUpi("");
-                  }}
-                  className="bg-card hover:bg-primary/10 border-2 border-border hover:border-primary text-foreground p-4 rounded-2xl font-bold text-sm flex flex-col items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  <span className="text-2xl">⚖️</span>
-                  Split
-                </button>
-              </div>
-            ) : (
-              <div className="mb-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">💵</span>
-                  <div className="flex-1">
-                    <label className="text-xs font-bold text-muted-foreground ml-1">Cash Received</label>
-                    <input
-                      type="number"
-                      autoFocus
-                      placeholder="₹0"
-                      className="w-full bg-muted border-none rounded-xl p-3 font-bold text-lg focus:ring-2 focus:ring-primary outline-none"
-                      value={splitCash}
-                      onChange={(e) => {
-                        setSplitCash(e.target.value);
-                        const val = parseFloat(e.target.value) || 0;
-                        const baseTotal = billsMap[showPaymentModal]?.totalAmount || 0;
-                        const loyaltyDiscountValue = loyaltySettings?.enabled ? (pointsRedeemed * (loyaltySettings.discount_per_point || 1)) : 0;
-                        const customDiscountValue = parseFloat(customDiscount) || 0;
-                        const total = Math.max(0, baseTotal - loyaltyDiscountValue - customDiscountValue);
-                        setSplitUpi(Math.max(0, total - val).toString());
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">📱</span>
-                  <div className="flex-1">
-                    <label className="text-xs font-bold text-muted-foreground ml-1">UPI Received</label>
-                    <input
-                      type="number"
-                      placeholder="₹0"
-                      className="w-full bg-muted border-none rounded-xl p-3 font-bold text-lg focus:ring-2 focus:ring-primary outline-none"
-                      value={splitUpi}
-                      onChange={(e) => {
-                        setSplitUpi(e.target.value);
-                        const val = parseFloat(e.target.value) || 0;
-                        const baseTotal = billsMap[showPaymentModal]?.totalAmount || 0;
-                        const loyaltyDiscountValue = loyaltySettings?.enabled ? (pointsRedeemed * (loyaltySettings.discount_per_point || 1)) : 0;
-                        const customDiscountValue = parseFloat(customDiscount) || 0;
-                        const total = Math.max(0, baseTotal - loyaltyDiscountValue - customDiscountValue);
-                        setSplitCash(Math.max(0, total - val).toString());
-                      }}
-                    />
-                  </div>
-                </div>
-                <button
-                  disabled={!!closingId}
-                  onClick={() => handleCloseSession(showPaymentModal, 'split', printBillOnClear)}
-                  className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold mt-2 hover:bg-primary/90 disabled:opacity-50 transition-all"
-                >
-                  Confirm Split
-                </button>
-              </div>
-            )}
-
-            <p className="text-[10px] text-muted-foreground text-center px-4 leading-tight">
-              Selecting a payment method will irreversibly close this session and commit it to today's sales report.
-            </p>
-          </motion.div>
-        </div>
-      )}
       {/* Add Modals Here */}
       {openTableState && (
         <TableOpenModal

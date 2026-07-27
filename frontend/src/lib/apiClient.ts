@@ -967,6 +967,39 @@ export async function apiPayDue(
   return data;
 }
 
+export async function apiCompleteOrderPayment(
+  orderId: string,
+  paymentMethod: string = "counter",
+  splitCash: number = 0,
+  splitUpi: number = 0,
+  customerPhone?: string,
+  pointsRedeemed?: number,
+  couponCode?: string,
+  customDiscountAmount?: number
+): Promise<{ message: string; order: any }> {
+  if (!isApiMode()) {
+    throw new Error("Complete payment only supported in API mode");
+  }
+
+  const res = await authFetch(`${API_URL}/dashboard/orders/${orderId}/complete-payment`, {
+    method: "POST",
+    headers: dashHeaders(dashboardPassword),
+    body: JSON.stringify({
+      paymentMethod,
+      splitCash,
+      splitUpi,
+      customerPhone,
+      pointsRedeemed,
+      couponCode,
+      customDiscountAmount
+    }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to complete payment");
+  return data;
+}
+
 // ─── Customer Pay Due (no admin auth) ────
 
 export async function apiCustomerPayDue(

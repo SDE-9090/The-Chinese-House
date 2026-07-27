@@ -418,7 +418,10 @@ router.patch("/orders/:id/pay-due", auth, async (req, res) => {
     );
 
     const io = req.app.get("io");
-    io.emit("payment-updated", { id });
+    if (io) {
+      io.emit("payment-updated", { id });
+      io.emit("orders-updated");
+    }
 
     await invalidateDashboardCache(req.business_id);
 
@@ -432,6 +435,167 @@ router.patch("/orders/:id/pay-due", auth, async (req, res) => {
   } catch (err) {
     console.error("Pay due error:", err);
     res.status(500).json({ error: "Failed to pay due" });
+  }
+});
+
+// ======================================================
+// ---------------- COMPLETE PAYMENT (WITH DISCOUNTS) ---
+// ======================================================
+router.post("/orders/:id/complete-payment", auth, async (req, res) => {
+  const { id } = req.params;
+  const { paymentMethod = "counter", splitCash = 0, splitUpi = 0, customerPhone, pointsRedeemed, couponCode, customDiscountAmount = 0 } = req.body;
+  
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const orderRes = await client.query(
+      "SELECT total, paid_amount FROM orders WHERE id=$1 AND business_id=$2 AND status != 'cancelled'",
+      [id, req.business_id]
+    );
+
+    if (!orderRes.rows.length) {
+      throw new Error("Order not found or cancelled");
+    }
+
+    let orderTotal = parseFloat(orderRes.rows[0].total || 0);
+
+    // 1. Coupon Discount
+    let couponDiscount = 0;
+    if (couponCode) {
+      const normalizedCode = couponCode.trim().toUpperCase();
+      const couponResult = await client.query(
+        "SELECT * FROM coupons WHERE code = $1 AND business_id = $2 FOR UPDATE",
+        [normalizedCode, req.business_id]
+      );
+      if (couponResult.rows.length > 0) {
+        const coupon = couponResult.rows[0];
+        if (coupon.active && (!coupon.expiry_date || new Date(coupon.expiry_date) >= new Date()) && coupon.used_count < coupon.usage_limit) {
+          if (coupon.discount_type === "percent") {
+            couponDiscount = (orderTotal * parseFloat(coupon.value)) / 100;
+          } else {
+            couponDiscount = parseFloat(coupon.value);
+          }
+          if (couponDiscount > orderTotal) couponDiscount = orderTotal;
+
+          await client.query("UPDATE coupons SET used_count = used_count + 1 WHERE code = $1 AND business_id = $2", [normalizedCode, req.business_id]);
+          
+          await client.query(`
+            UPDATE orders 
+            SET total = GREATEST(0, total - $1),
+                discount = COALESCE(discount, 0) + $1,
+                coupon_code = $2
+            WHERE id = $3
+          `, [couponDiscount, normalizedCode, id]);
+          
+          orderTotal = Math.max(0, orderTotal - couponDiscount);
+        }
+      }
+    }
+
+    // 2. Loyalty Discount
+    let loyaltyDiscount = 0;
+    const requestedPoints = parseFloat(pointsRedeemed) || 0;
+    const finalPhone = customerPhone && customerPhone.length === 10 ? customerPhone : null;
+    let actualPointsRedeemed = 0;
+
+    if (finalPhone) {
+      await client.query("UPDATE orders SET customer_phone = $1 WHERE id = $2", [finalPhone, id]);
+
+      const settingsRes = await client.query(
+        "SELECT loyalty_enabled, loyalty_discount_per_point, loyalty_points_per_100 FROM business_settings WHERE business_id = $1",
+        [req.business_id]
+      );
+      const settings = settingsRes.rows[0];
+
+      if (settings && settings.loyalty_enabled) {
+        // Redemptions
+        if (requestedPoints > 0) {
+          const customerRes = await client.query(
+            "SELECT points_balance FROM customers WHERE business_id = $1 AND phone = $2 FOR UPDATE",
+            [req.business_id, finalPhone]
+          );
+          if (customerRes.rows.length > 0) {
+            actualPointsRedeemed = Math.min(requestedPoints, customerRes.rows[0].points_balance);
+            loyaltyDiscount = actualPointsRedeemed * parseFloat(settings.loyalty_discount_per_point);
+            if (loyaltyDiscount > orderTotal) loyaltyDiscount = orderTotal;
+
+            // Deduct points
+            await client.query(
+              "UPDATE customers SET points_balance = points_balance - $1 WHERE business_id = $2 AND phone = $3",
+              [actualPointsRedeemed, req.business_id, finalPhone]
+            );
+
+            await client.query(`
+              UPDATE orders 
+              SET total = GREATEST(0, total - $1),
+                  discount = COALESCE(discount, 0) + $1,
+                  points_redeemed = $2
+              WHERE id = $3
+            `, [loyaltyDiscount, actualPointsRedeemed, id]);
+          }
+        }
+
+        // Earnings
+        const totalAfterDiscount = Math.max(0, orderTotal - loyaltyDiscount);
+        const pointsEarned = parseFloat(((totalAfterDiscount / 100) * settings.loyalty_points_per_100).toFixed(2));
+
+        if (pointsEarned > 0) {
+          await client.query("UPDATE orders SET points_earned = $1 WHERE id = $2", [pointsEarned, id]);
+
+          await client.query(`
+            INSERT INTO customers (business_id, phone, name, points_balance, total_spent, last_visit)
+            VALUES ($1, $2, 'Guest', $3, $4, CURRENT_TIMESTAMP)
+            ON CONFLICT (business_id, phone)
+            DO UPDATE SET 
+              points_balance = customers.points_balance + $3,
+              total_spent = customers.total_spent + $4,
+              last_visit = CURRENT_TIMESTAMP
+          `, [req.business_id, finalPhone, pointsEarned, totalAfterDiscount]);
+        }
+      }
+    }
+
+    // 3. Custom Ad-hoc Discount
+    let customDiscount = parseFloat(customDiscountAmount) || 0;
+    if (customDiscount > orderTotal) customDiscount = orderTotal;
+
+    if (customDiscount > 0) {
+      await client.query(`
+        UPDATE orders 
+        SET total = GREATEST(0, total - $1),
+            discount = COALESCE(discount, 0) + $1
+        WHERE id = $2
+      `, [customDiscount, id]);
+      
+      orderTotal = Math.max(0, orderTotal - customDiscount);
+    }
+
+    // 4. Mark order as settled
+    await client.query(
+      `UPDATE orders
+       SET payment_status = 'paid', paid_amount = total, payment_method = $2, split_cash = $3, split_upi = $4
+       WHERE id = $1 AND payment_status != 'paid'`,
+      [id, paymentMethod, splitCash || 0, splitUpi || 0]
+    );
+
+    await client.query("COMMIT");
+
+    const io = req.app.get("io");
+    if (io) { 
+      io.emit("payment-updated", { id });
+      io.emit("orders-updated"); 
+    }
+
+    await invalidateDashboardCache(req.business_id);
+
+    res.json({ success: true, message: "Payment completed successfully" });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Complete payment error:", err);
+    res.status(500).json({ error: err.message || "Failed to complete payment" });
+  } finally {
+    client.release();
   }
 });
 

@@ -55,6 +55,7 @@ import type { EditItem } from "@/components/dashboard/EditOrderModal";
 import OrderCard from "@/components/dashboard/OrderCard";
 import StatsBar from "@/components/dashboard/StatsBar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import PaymentCollectionModal from "@/components/PaymentCollectionModal";
 
 // Lazy-loaded heavy sub-components
 const SalesReportUI = lazy(() => import("@/components/dashboard/SalesReportUI"));
@@ -647,6 +648,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
   }, [soundEnabled]);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
   const [editingOrderIds, setEditingOrderIds] = useState<Set<string>>(new Set());
+  const [payingOrder, setPayingOrder] = useState<Order | null>(null);
   const [orderWorkflow, setOrderWorkflow] = useState<"multi-step" | "quick-complete">("quick-complete");
 
   useEffect(() => {
@@ -850,6 +852,42 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
     }
   };
 
+  const handleOrderPaymentSuccess = async (printBill: boolean, method: string) => {
+    if (!payingOrder) return;
+    
+    if (printBill) {
+      console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL BILL for Order #${payingOrder.token} (Payment Collected)`);
+      const rd = {
+        token: payingOrder.token,
+        customerName: payingOrder.customerName || "Guest",
+        customerPhone: payingOrder.customerPhone || "",
+        items: payingOrder.items.map(i => ({
+          id: String(i.id),
+          name: i.name,
+          quantity: i.quantity,
+          price: i.price,
+          priceLabel: `₹${i.price}`,
+          note: ""
+        })),
+        total: payingOrder.total,
+        paymentMethod: method as any,
+        createdAt: new Date().toISOString(),
+        orderType: payingOrder.orderType as any,
+        tableSessionId: null,
+        subtotal: payingOrder.total,
+        discount: payingOrder.discount || 0,
+        cgst: 0,
+        sgst: 0,
+        gst: 0,
+        paidAmount: payingOrder.total,
+      };
+      printQueue.enqueue(`auto-receipt-${Date.now()}`, "receipt", rd);
+    }
+    
+    setPayingOrder(null);
+    await refreshOrders();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <EditOrderModal
@@ -1012,6 +1050,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                           onAdvanceStatus={handleAdvanceStatus}
                           onCancelOrder={handleCancelOrder}
                           onEdit={setEditOrder}
+                          onInitiatePayment={setPayingOrder}
                           onRefresh={refreshOrders}
                           isUpdating={!!updatingOrders[order.id]}
                           orderWorkflow={orderWorkflow}
@@ -1170,6 +1209,17 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
           <StaffManager />
         ) : null}
       </Suspense>
+
+      <PaymentCollectionModal
+        isOpen={!!payingOrder}
+        onClose={() => setPayingOrder(null)}
+        onSuccess={handleOrderPaymentSuccess}
+        type="order"
+        id={payingOrder?.id || ""}
+        baseTotal={payingOrder ? (payingOrder.total + (payingOrder.discount || 0)) : 0}
+        initialCustomerPhone={payingOrder?.customerPhone}
+        title="Complete Payment"
+      />
     </div>
   );
 };

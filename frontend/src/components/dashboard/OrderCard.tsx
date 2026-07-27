@@ -113,6 +113,7 @@ interface OrderCardProps {
   ) => Promise<void>;
   onCancelOrder: (orderId: string) => Promise<void>;
   onEdit: (order: Order) => void;
+  onInitiatePayment?: (order: Order) => void;
   onRefresh: () => Promise<void>;
   isUpdating: boolean;
   orderWorkflow?: "multi-step" | "quick-complete";
@@ -125,6 +126,7 @@ const OrderCard = ({
   onAdvanceStatus,
   onCancelOrder,
   onEdit,
+  onInitiatePayment,
   onRefresh,
   isUpdating,
   orderWorkflow = "quick-complete",
@@ -186,27 +188,8 @@ const OrderCard = ({
   };
 
   const handlePayDue = async () => {
-    try {
-      setLoadingPayment(true);
-      await apiPayDue(order.id);
-
-      // [AUTO-PRINT LOGIC] Automatically print final bill when payment is marked received
-      console.log(`🧾 [PRINTER] AUTO-PRINTING FINAL BILL for Order #${order.token} (Payment Collected)`);
-      console.log(`   --> Amount Paid: ₹${dueAmount.toFixed(2)}`);
-
-      await onRefresh();
-      toast({
-        title: "Payment Updated",
-        description: `Due ₹${dueAmount} marked as paid`,
-      });
-    } catch {
-      toast({
-        title: "Payment Failed",
-        description: "Unable to update payment",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingPayment(false);
+    if (onInitiatePayment) {
+      onInitiatePayment(order);
     }
   };
 
