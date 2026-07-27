@@ -131,10 +131,11 @@ function authHeaders(extra?: Record<string, string>): Record<string, string> {
   return headers;
 }
 
-function dashHeaders(password?: string): Record<string, string> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+function dashHeaders(password?: string, omitContentType?: boolean): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (!omitContentType) {
+    headers["Content-Type"] = "application/json";
+  }
   if (password) headers["x-dashboard-password"] = password;
   const token = getActiveToken();
   if (token) {
