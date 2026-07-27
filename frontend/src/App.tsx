@@ -11,6 +11,7 @@ import ThemeInjector from "@/components/ThemeInjector";
 import AiChatbot from "@/components/AiChatbot";
 import { KeepAwake } from '@capacitor-community/keep-awake';
 import { Capacitor } from '@capacitor/core';
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
 
 const Index = lazy(() => import("./pages/Index"));
 const OrderPage = lazy(() => import("./pages/OrderPage"));
@@ -39,6 +40,7 @@ function ThemeInit() {
     // Keep tablet screen awake indefinitely
     if (Capacitor.isNativePlatform()) {
       KeepAwake.keepAwake().catch(err => console.error("KeepAwake failed:", err));
+      CapacitorUpdater.notifyAppReady().catch(err => console.error("CapacitorUpdater notify failed:", err));
     }
   }, []);
   return null;

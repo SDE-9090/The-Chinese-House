@@ -25,7 +25,9 @@ const reportsRoutes = require("./routes/reports");
 const customersRoutes = require("./routes/customers");
 const aiRoutes = require("./routes/ai");
 const webauthnRoutes = require("./routes/webauthn");
+const updateRoutes = require("./routes/updates");
 const { tenantEnforcer } = require("./middleware/tenantEnforcer");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -44,6 +46,9 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
+// Serve static updates files
+app.use("/public/updates", express.static(path.join(__dirname, "../public/updates")));
 
 // ---- System Cron Routes ----
 // These must come before tenant enforcer since they run system-wide
@@ -144,6 +149,7 @@ app.use("/api/staff", staffRoutes);
 app.use("/api/customers", customersRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/webauthn", webauthnRoutes);
+app.use("/api/updates", updateRoutes);
 
 // ---- Start Server ----
 server.listen(PORT, () => {

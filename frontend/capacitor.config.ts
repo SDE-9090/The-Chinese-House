@@ -7,6 +7,11 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://the-chinese-house.vercel.app/dashboard',
     cleartext: true
+  },
+  plugins: {
+    CapacitorUpdater: {
+      autoUpdate: false
+    }
   }
 };
 

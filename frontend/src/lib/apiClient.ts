@@ -2131,3 +2131,31 @@ export async function apiGetSettledSessions(page: number = 1, limit: number = 25
 }
 
 export type { Order, OrderItem, Review, ReviewSummary } from "./orderStore";
+
+// ============================================================================
+// APP UPDATES (OTA)
+// ============================================================================
+
+export async function apiCheckForUpdates(): Promise<{ updateAvailable: boolean; update?: any }> {
+  const res = await fetch(`${API_URL}/updates/latest`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to check for updates");
+  return data;
+}
+
+export async function apiUploadUpdate(file: File, version: string, releaseNotes: string): Promise<any> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("version", version);
+  formData.append("release_notes", releaseNotes);
+
+  const res = await authFetch(`${API_URL}/updates/upload`, {
+    method: "POST",
+    headers: dashHeaders(dashboardPassword, true), // Passing true to omit Content-Type for FormData
+    body: formData,
+  });
+  
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to upload update");
+  return data;
+}

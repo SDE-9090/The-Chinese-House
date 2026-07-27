@@ -46,6 +46,7 @@ import {
   Users,
   Fingerprint,
   RefreshCw,
+  DownloadCloud,
 } from "lucide-react";
 
 import { Loader2 } from "lucide-react";
@@ -56,6 +57,7 @@ import OrderCard from "@/components/dashboard/OrderCard";
 import StatsBar from "@/components/dashboard/StatsBar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import PaymentCollectionModal from "@/components/PaymentCollectionModal";
+import AppUpdatesManager from "@/components/dashboard/AppUpdatesManager";
 
 // Lazy-loaded heavy sub-components
 const SalesReportUI = lazy(() => import("@/components/dashboard/SalesReportUI"));
@@ -1183,6 +1185,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                 { key: "business" as const, label: "Business & GST", icon: Settings },
                 { key: "account" as const, label: "Security", icon: ShieldCheck },
                 { key: "security" as const, label: "Login Logs", icon: Shield },
+                { key: "updates" as const, label: "App Updates", icon: DownloadCloud },
               ].map((st) => (
                 <button
                   key={st.key}
@@ -1201,8 +1204,10 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               <BusinessSettingsManager user={user} />
             ) : settingsSubTab === "account" ? (
               <AccountSecurity />
-            ) : (
+            ) : settingsSubTab === "security" ? (
               <SecurityLogs />
+            ) : (
+              <AppUpdatesManager />
             )}
           </div>
         ) : tab === "staff" ? (
