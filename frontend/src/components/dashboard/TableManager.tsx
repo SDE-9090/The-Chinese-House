@@ -698,7 +698,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
               const baseTotal = billsMap[showPaymentModal].totalAmount;
               const loyaltyDiscountValue = loyaltySettings?.enabled ? (pointsRedeemed * (loyaltySettings.discount_per_point || 1)) : 0;
               const couponDiscountValue = appliedCoupon ? appliedCoupon.discount : 0;
-              const finalTotal = Math.max(0, baseTotal - couponDiscountValue - loyaltyDiscountValue);
+              const customDiscountValue = parseFloat(customDiscount) || 0;
+              const finalTotal = Math.max(0, baseTotal - couponDiscountValue - loyaltyDiscountValue - customDiscountValue);
 
               return (
                 <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl mb-6 text-center space-y-2">
@@ -716,6 +717,12 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                     <div className="flex justify-between text-sm text-primary font-bold px-4">
                       <span>Loyalty Reward</span>
                       <span>-₹{loyaltyDiscountValue.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {customDiscountValue > 0 && (
+                    <div className="flex justify-between text-sm text-amber-600 font-bold px-4">
+                      <span>Custom Discount</span>
+                      <span>-₹{customDiscountValue.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="pt-2 border-t border-primary/10">
