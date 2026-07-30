@@ -1883,12 +1883,13 @@ export interface Table {
 
 export interface TableSession {
   id: string;
-  customerName: string;
-  customerPhone: string;
-  otp: string;
-  isVerified: boolean;
+  customerName?: string;
+  customerPhone?: string;
+  otp?: string;
+  isVerified?: boolean;
+  isClaimed?: boolean;
   status: "active" | "billing" | "completed";
-  startTime: string;
+  startTime?: string;
 }
 
 export async function apiAdminGetTables(): Promise<Table[]> {
@@ -1942,6 +1943,18 @@ export async function apiReserveTable(tableId: string, customerName: string, cus
   if (!res.ok) {
     const data = await res.json();
     throw new Error(data.error || "Failed to reserve table");
+  }
+  return res.json();
+}
+
+export async function apiClaimSession(sessionId: string): Promise<{ success: boolean; session: TableSession }> {
+  const res = await fetch(`${API_URL}/tables/sessions/${sessionId}/claim`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Failed to claim table session");
   }
   return res.json();
 }

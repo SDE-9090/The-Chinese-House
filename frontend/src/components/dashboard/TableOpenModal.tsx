@@ -137,7 +137,7 @@ export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, ta
                   disabled={loading}
                   className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-md disabled:opacity-50"
                 >
-                  {loading ? <Loader2 className="animate-spin" size={18} /> : "Start Session"}
+                  {loading ? <Loader2 className="animate-spin" size={18} /> : "Start"}
                 </button>
               </div>
             </form>

@@ -179,7 +179,7 @@ router.get("/qr/:qrCode", async (req, res) => {
     // Also fetch the current active/billing session if any
     const tableId = rows[0].id;
     const sessionRes = await pool.query(
-      `SELECT id, customer_name, customer_phone, otp, is_verified, status, start_time 
+      `SELECT id, customer_name, customer_phone, otp, is_verified, is_claimed, status, start_time 
        FROM table_sessions 
        WHERE table_id = $1 AND status != 'completed' AND business_id = $2
        ORDER BY start_time DESC LIMIT 1`,
@@ -201,6 +201,7 @@ router.get("/qr/:qrCode", async (req, res) => {
         customerPhone: sessionData.customer_phone,
         otp: sessionData.otp,
         isVerified: sessionData.is_verified,
+        isClaimed: sessionData.is_claimed,
         status: sessionData.status,
         startTime: sessionData.start_time
       } : null
@@ -254,10 +255,10 @@ router.post("/:tableId/reserve", async (req, res) => {
       [tableId, req.business_id]
     );
 
-    // Create an auto-verified session (no OTP required)
+    // Create an auto-verified session (no OTP required). Since user scanned directly, it's claimed.
     const sessionRes = await client.query(
-      `INSERT INTO table_sessions (table_id, customer_name, customer_phone, otp, status, is_verified, business_id)
-       VALUES ($1, $2, $3, '000000', 'active', true, $4)
+      `INSERT INTO table_sessions (table_id, customer_name, customer_phone, otp, status, is_verified, is_claimed, business_id)
+       VALUES ($1, $2, $3, '000000', 'active', true, true, $4)
        RETURNING *`,
       [tableId, finalName, finalPhone, req.business_id]
     );
@@ -278,6 +279,7 @@ router.post("/:tableId/reserve", async (req, res) => {
       customerName: sr.customer_name,
       customerPhone: sr.customer_phone,
       isVerified: true,
+      isClaimed: true,
       status: sr.status,
       startTime: sr.start_time
     });
@@ -433,6 +435,49 @@ router.post("/sessions/:sessionId/done", async (req, res) => {
   } catch (err) {
     console.error("Session done error:", err);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+// POST /api/tables/sessions/:sessionId/claim (Customer)
+// Customer claims a session that was opened by the admin
+router.post("/sessions/:sessionId/claim", async (req, res) => {
+  const { sessionId } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    
+    const sessionRes = await client.query(
+      "SELECT is_claimed FROM table_sessions WHERE id = $1 AND status = 'active' AND business_id = $2 FOR UPDATE",
+      [sessionId, req.business_id]
+    );
+
+    if (!sessionRes.rows.length) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Active session not found" });
+    }
+
+    if (sessionRes.rows[0].is_claimed) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({ error: "Table already occupied by another device" });
+    }
+
+    const updateRes = await client.query(
+      "UPDATE table_sessions SET is_claimed = true WHERE id = $1 AND business_id = $2 RETURNING *",
+      [sessionId, req.business_id]
+    );
+
+    await client.query("COMMIT");
+
+    const io = req.app.get("io");
+    if (io) io.emit("tables-updated");
+
+    res.json({ success: true, session: updateRes.rows[0] });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Session claim error:", err);
+    res.status(500).json({ error: "Server error" });
+  } finally {
+    client.release();
   }
 });
 

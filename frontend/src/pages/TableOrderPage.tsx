@@ -5,13 +5,13 @@ import {
   apiGetSessionBill, apiSessionPay, apiGetBusinessSettings,
   apiCancelSession, apiApplySessionCoupon, apiRemoveSessionCoupon,
   setTenantSlug as setGlobalTenantSlug,
-  type Table, type SessionBill,
+  type Table, type SessionBill, apiClaimSession,
 } from "@/lib/apiClient";
 import { socket } from "@/lib/socket";
 import OrderPage from "./OrderPage";
 import { validateName, validateMobile } from "@/lib/validators";
 import BillDocument, { downloadBillPrint } from "@/components/BillDocument";
-import { Loader2, QrCode, CheckCircle, CreditCard, Banknote, Download, ArrowLeft, Tag, X } from "lucide-react";
+import { Loader2, QrCode, CheckCircle, CreditCard, Banknote, Download, ArrowLeft, Tag, X, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,14 +53,14 @@ export default function TableOrderPage() {
   useEffect(() => {
     if (!qrCode) return;
     fetchTable();
-    
+
     const handleTableUpdate = () => {
       if (payStepRef.current !== "done") fetchTable();
     };
 
     socket.on("tables-updated", handleTableUpdate);
     socket.on("orders-updated", handleTableUpdate);
-    
+
     return () => {
       socket.off("tables-updated", handleTableUpdate);
       socket.off("orders-updated", handleTableUpdate);
@@ -141,7 +141,8 @@ export default function TableOrderPage() {
 
     setReserving(true);
     try {
-      await apiReserveTable(table!.id, name, phone);
+      const newSession = await apiReserveTable(table!.id, name, phone);
+      localStorage.setItem("tableSessionId", newSession.id);
       await fetchTable();
     } catch (err: any) {
       toast({ title: err.message || "Failed to reserve", variant: "destructive" });
@@ -226,6 +227,20 @@ export default function TableOrderPage() {
       fetchBill(table.activeSession.id, table.activeSession);
     } catch (err: any) {
       toast({ title: "Failed to remove coupon", variant: "destructive" });
+    }
+  };
+
+  const handleClaimTable = async () => {
+    if (!table?.activeSession) return;
+    setReserving(true);
+    try {
+      const res = await apiClaimSession(table.activeSession.id);
+      localStorage.setItem("tableSessionId", res.session.id);
+      await fetchTable();
+    } catch (err: any) {
+      toast({ title: "Failed to join table", description: err.message, variant: "destructive" });
+    } finally {
+      setReserving(false);
     }
   };
 
@@ -337,7 +352,7 @@ export default function TableOrderPage() {
             </div>
             <Button type="submit" disabled={reserving} className="w-full">
               {reserving ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-              Start Session
+              Start
             </Button>
           </form>
         </div>
@@ -552,6 +567,45 @@ export default function TableOrderPage() {
         </div>
       </div>
     );
+  }
+
+  // ─── DEVICE LOCK CHECK ───
+  const storedSessionId = localStorage.getItem("tableSessionId");
+  if (session.status !== "billing" && session.status !== "completed") {
+    if (storedSessionId !== session.id) {
+      // If not stored but it's UNCLAIMED, show a "Join Table" button!
+      if (!session.isClaimed) {
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-br from-background to-muted/20">
+            <div className="w-full max-w-sm bg-card p-8 rounded-2xl shadow-xl border border-border text-center">
+              <div className="w-16 h-16 bg-primary/10 text-primary flex items-center justify-center rounded-full mx-auto mb-4">
+                <UtensilsCrossed size={32} />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Table {table.tableNumber}</h2>
+              <p className="text-muted-foreground text-sm mb-6">
+                Your table is ready! Join the session to start ordering.
+              </p>
+              <Button onClick={handleClaimTable} disabled={reserving} className="w-full py-6 text-lg font-bold shadow-md hover:shadow-lg transition-all rounded-xl">
+                {reserving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : null}
+                Join Table
+              </Button>
+            </div>
+          </div>
+        );
+      }
+
+      // If it IS claimed and doesn't match localStorage, block them.
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-background to-muted/20">
+          <div className="w-full max-w-sm bg-card p-8 rounded-2xl shadow-xl border border-border">
+            <h2 className="text-2xl font-bold mb-3 text-destructive">Table Occupied</h2>
+            <p className="text-muted-foreground text-sm font-medium leading-relaxed">
+              This table is currently reserved and in use by another customer.
+            </p>
+          </div>
+        </div>
+      );
+    }
   }
 
   // ─── State 5: Active & verified → Render full menu ───

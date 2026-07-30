@@ -503,6 +503,7 @@ CREATE TABLE public.table_sessions (
     customer_phone character varying(15) NOT NULL,
     otp character varying(10),
     is_verified boolean DEFAULT false,
+    is_claimed boolean DEFAULT false,
     status character varying(20) DEFAULT 'active'::character varying,
     start_time timestamp with time zone DEFAULT now(),
     end_time timestamp with time zone,
