@@ -53,7 +53,7 @@ import {
   apiEditingStart,
   apiEditingEnd,
   apiGetOrderHistory,
-  apiGetEstimate,
+
   type Order,
   type CouponValidation,
   type BusinessSettings,
@@ -116,7 +116,7 @@ function OrderPageContent({
   const [isPlacing, setIsPlacing] = useState(false);
   const [search, setSearch] = useState("");
   const [orderHistory, setOrderHistory] = useState<any[]>([]);
-  const [estimatedTime, setEstimatedTime] = useState<number | null>(null);
+
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
   const { settings: businessSettings, loading: settingsLoading } = useBusinessSettings();
@@ -582,12 +582,7 @@ function OrderPageContent({
         undefined,
         pointsRedeemed
       );
-      // fetch estimated wait time in background
-      apiGetEstimate().then(estimateData => {
-        setEstimatedTime(estimateData.estimatedMinutes);
-      }).catch(err => {
-        console.error("Failed to fetch estimated time:", err);
-      });
+
 
       setConfirmedOrder(order);
       clearCart();
@@ -781,22 +776,20 @@ function OrderPageContent({
               #{confirmedOrder.token}
             </p>
             <AnimatePresence>
-              {estimatedTime !== null && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="mt-4"
-                >
-                  <p className="text-sm text-muted-foreground mb-1">
-                    Estimated Wait Time
-                  </p>
-                  <p className="font-semibold text-lg text-secondary">
-                    {estimatedTime - 2} - {estimatedTime + 3} mins
-                  </p>
-                </motion.div>
-              )}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: 0.4 }}
+                className="mt-4"
+              >
+                <p className="text-sm text-muted-foreground mb-1">
+                  Estimated Wait Time
+                </p>
+                <p className="font-semibold text-lg text-secondary">
+                  20 - 25 mins
+                </p>
+              </motion.div>
             </AnimatePresence>
           </motion.div>
 
