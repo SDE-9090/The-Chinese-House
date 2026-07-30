@@ -556,6 +556,14 @@ export default function TableOrderPage() {
   }
 
   // ─── DEVICE LOCK CHECK ───
+  const searchParams = new URLSearchParams(window.location.search);
+  const joinSessionId = searchParams.get("join");
+  
+  if (joinSessionId && session && joinSessionId === session.id) {
+    localStorage.setItem("tableSessionId", session.id);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
   const storedSessionId = localStorage.getItem("tableSessionId");
   if (session && session.status !== "billing" && session.status !== "completed") {
     if (storedSessionId !== session.id) {
