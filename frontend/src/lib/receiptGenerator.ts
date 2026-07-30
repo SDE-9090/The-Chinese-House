@@ -7,7 +7,7 @@ export interface ReceiptData {
   token: number;
   customerName: string;
   customerPhone: string;
-  items: { name: string; price: number; quantity: number }[];
+  items: { name: string; price: number; quantity: number; note?: string }[];
   subtotal?: number;
   discount?: number;
   couponCode?: string | null;
@@ -116,12 +116,13 @@ export function buildReceiptCanvas(data: ReceiptData): HTMLCanvasElement {
   const maxItemTextW = W - PAD * 2 - 80; // leave room for amount
 
   let itemTotalLines = 0;
-  const wrappedItems: { lines: string[]; amount: string }[] = [];
+  const wrappedItems: { lines: string[]; amount: string; noteLines: string[] }[] = [];
   for (const item of data.items) {
     const label = `${item.name} × ${item.quantity}`;
     const lines = wrapText(ctx, label, maxItemTextW);
-    wrappedItems.push({ lines, amount: fmt(item.price * item.quantity) });
-    itemTotalLines += lines.length;
+    const noteLines = item.note ? wrapText(ctx, `* Note: ${item.note}`, maxItemTextW) : [];
+    wrappedItems.push({ lines, amount: fmt(item.price * item.quantity), noteLines });
+    itemTotalLines += lines.length + noteLines.length;
   }
 
   const hasOrderType = !!data.orderType;
@@ -234,7 +235,7 @@ export function buildReceiptCanvas(data: ReceiptData): HTMLCanvasElement {
   // ─── Items with wrapping ───
   ctx.font = `13px ${FONT}`;
   ctx.fillStyle = "#111827";
-  for (const { lines, amount } of wrappedItems) {
+  for (const { lines, amount, noteLines } of wrappedItems) {
     for (let i = 0; i < lines.length; i++) {
       ctx.textAlign = "left";
       ctx.fillText(lines[i], PAD, y);
@@ -243,6 +244,16 @@ export function buildReceiptCanvas(data: ReceiptData): HTMLCanvasElement {
         ctx.fillText(amount, W - PAD, y);
       }
       y += LINE_H;
+    }
+    if (noteLines && noteLines.length > 0) {
+      ctx.font = `italic 11px ${FONT}`;
+      ctx.fillStyle = "#6b7280";
+      for (const nl of noteLines) {
+        ctx.fillText(nl, PAD + 10, y);
+        y += 16;
+      }
+      ctx.font = `13px ${FONT}`;
+      ctx.fillStyle = "#111827";
     }
   }
 
@@ -365,11 +376,12 @@ export function buildKotCanvas(data: ReceiptData): HTMLCanvasElement {
   const maxItemTextW = W - PAD * 2 - 40; // leave room for quantity
 
   let itemTotalLines = 0;
-  const wrappedItems: { lines: string[]; qty: string }[] = [];
+  const wrappedItems: { lines: string[]; qty: string; noteLines: string[] }[] = [];
   for (const item of data.items) {
     const lines = wrapText(ctx, item.name, maxItemTextW);
-    wrappedItems.push({ lines, qty: `x${item.quantity}` });
-    itemTotalLines += lines.length;
+    const noteLines = item.note ? wrapText(ctx, `* Note: ${item.note}`, maxItemTextW) : [];
+    wrappedItems.push({ lines, qty: `x${item.quantity}`, noteLines });
+    itemTotalLines += lines.length + noteLines.length;
   }
 
   const instrLines = data.specialInstructions ? wrapText(ctx, `NOTE: ${data.specialInstructions}`, W - PAD * 2) : [];
@@ -426,7 +438,7 @@ export function buildKotCanvas(data: ReceiptData): HTMLCanvasElement {
   // Items
   ctx.fillStyle = "#000000";
   ctx.font = `bold 18px ${FONT}`;
-  for (const { lines, qty } of wrappedItems) {
+  for (const { lines, qty, noteLines } of wrappedItems) {
     for (let i = 0; i < lines.length; i++) {
       ctx.textAlign = "left";
       ctx.fillText(lines[i], PAD, y);
@@ -435,6 +447,16 @@ export function buildKotCanvas(data: ReceiptData): HTMLCanvasElement {
         ctx.fillText(qty, W - PAD, y);
       }
       y += 30;
+    }
+    if (noteLines && noteLines.length > 0) {
+      ctx.font = `bold italic 15px ${FONT}`;
+      ctx.textAlign = "left";
+      for (const nl of noteLines) {
+        ctx.fillText(nl, PAD + 10, y - 5);
+        y += 24;
+      }
+      ctx.font = `bold 18px ${FONT}`;
+      y += 6; // Extra padding after notes
     }
   }
 
