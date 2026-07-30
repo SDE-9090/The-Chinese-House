@@ -90,7 +90,6 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [openTableState, setOpenTableState] = useState<{ id: string, number: string } | null>(null);
   const [orderTableState, setOrderTableState] = useState<{ sessionId: string, number: string, customerName?: string, customerPhone?: string } | null>(null);
   const [transferTableState, setTransferTableState] = useState<{ sessionId: string, number: string } | null>(null);
-  const [shareTableState, setShareTableState] = useState<{ sessionId: string, qrCode: string, number: string } | null>(null);
 
   const [now, setNow] = useState(Date.now());
 
@@ -431,25 +430,18 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
                           )}
                         </div>
                       ) : (
-                        <div className="flex gap-2 flex-wrap">
+                        <div className="flex gap-2">
                           <button
                             onClick={() => setOrderTableState({ sessionId: session.id, number: table.tableNumber, customerName: session.customerName, customerPhone: session.customerPhone })}
-                            className="flex-1 min-w-[70px] bg-secondary text-secondary-foreground hover:bg-secondary/90 py-2 px-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition shadow-sm leading-tight"
+                            className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 py-2 px-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition shadow-sm leading-tight"
                           >
-                            <Plus size={14} className="shrink-0" /> <span className="text-center">Add</span>
+                            <Plus size={14} className="shrink-0" /> <span className="text-center">Add Items</span>
                           </button>
                           <button
                             onClick={() => setSelectedTable(table)}
-                            className="flex-1 min-w-[70px] bg-muted text-foreground hover:bg-muted/80 py-2 px-2 flex items-center justify-center rounded-xl text-xs font-bold border border-border transition shadow-sm leading-tight text-center"
+                            className="flex-1 bg-muted text-foreground hover:bg-muted/80 py-2 px-2 flex items-center justify-center rounded-xl text-xs font-bold border border-border transition shadow-sm leading-tight text-center"
                           >
                             View Bill
-                          </button>
-                          <button
-                            onClick={() => setShareTableState({ sessionId: session.id, qrCode: table.qrCode, number: table.tableNumber })}
-                            className="flex-1 min-w-[70px] bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border border-blue-500/20 py-2 px-2 flex items-center justify-center rounded-xl text-xs font-bold transition shadow-sm leading-tight text-center"
-                            title="Share Session with Customer"
-                          >
-                            <QrCode size={14} className="mr-1 shrink-0" /> Share
                           </button>
                         </div>
                       )}
@@ -710,33 +702,6 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           availableTables={tables.filter(t => t.status === "available")}
           onSuccess={handleModalSuccess}
         />
-      )}
-
-      {shareTableState && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setShareTableState(null)}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-card border border-border rounded-3xl w-full max-w-sm shadow-2xl p-6 text-center relative"
-            onClick={e => e.stopPropagation()}
-          >
-            <button onClick={() => setShareTableState(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-2 rounded-full hover:bg-muted"><X size={20} /></button>
-            <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-500/10 rounded-full mb-3">
-              <QrCode className="w-7 h-7 text-blue-600" />
-            </div>
-            <h3 className="text-xl font-bold mb-1">Share Table {shareTableState.number}</h3>
-            <p className="text-sm text-muted-foreground mb-6">Ask the customer to scan this QR code to join the session from their phone.</p>
-            
-            <div className="bg-white p-4 rounded-xl inline-block border border-border/50 shadow-sm mb-4">
-              <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(window.location.origin + "/table/" + shareTableState.qrCode + "?join=" + shareTableState.sessionId)}`}
-                alt="Share QR Code"
-                className="w-48 h-48"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">This grants full access to order items and view the bill.</p>
-          </motion.div>
-        </div>
       )}
 
       {showSettledBills && (
