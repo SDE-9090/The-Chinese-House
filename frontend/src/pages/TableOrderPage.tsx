@@ -141,7 +141,8 @@ export default function TableOrderPage() {
 
     setReserving(true);
     try {
-      await apiReserveTable(table!.id, name, phone);
+      const newSession = await apiReserveTable(table!.id, name, phone);
+      localStorage.setItem("tableSessionId", newSession.id);
       await fetchTable();
     } catch (err: any) {
       toast({ title: err.message || "Failed to reserve", variant: "destructive" });
@@ -552,6 +553,23 @@ export default function TableOrderPage() {
         </div>
       </div>
     );
+  }
+
+  // ─── DEVICE LOCK CHECK ───
+  const storedSessionId = localStorage.getItem("tableSessionId");
+  if (session && session.status !== "billing" && session.status !== "completed") {
+    if (storedSessionId !== session.id) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-background to-muted/20">
+          <div className="w-full max-w-sm bg-card p-8 rounded-2xl shadow-xl border border-border">
+            <h2 className="text-2xl font-bold mb-3 text-destructive">Table Occupied</h2>
+            <p className="text-muted-foreground text-sm font-medium leading-relaxed">
+              This table is currently reserved and in use by another customer.
+            </p>
+          </div>
+        </div>
+      );
+    }
   }
 
   // ─── State 5: Active & verified → Render full menu ───
