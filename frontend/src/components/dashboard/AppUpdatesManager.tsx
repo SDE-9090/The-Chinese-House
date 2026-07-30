@@ -89,8 +89,12 @@ export default function AppUpdatesManager({ user }: AppUpdatesManagerProps) {
       
       toast({ title: "Downloading Update..." });
       
+      const downloadUrl = latestUpdate.url.startsWith("http") 
+        ? latestUpdate.url 
+        : window.location.origin + latestUpdate.url;
+
       const downloadedVersion = await CapacitorUpdater.download({
-        url: window.location.origin + latestUpdate.url,
+        url: downloadUrl,
         version: latestUpdate.version
       });
       
