@@ -571,41 +571,39 @@ export default function TableOrderPage() {
 
   // ─── DEVICE LOCK CHECK ───
   const storedSessionId = localStorage.getItem("tableSessionId");
-  if (session.status !== "billing" && session.status !== "completed") {
-    if (storedSessionId !== session.id) {
-      // If not stored but it's UNCLAIMED, show a "Join Table" button!
-      if (!session.isClaimed) {
-        return (
-          <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-br from-background to-muted/20">
-            <div className="w-full max-w-sm bg-card p-8 rounded-2xl shadow-xl border border-border text-center">
-              <div className="w-16 h-16 bg-primary/10 text-primary flex items-center justify-center rounded-full mx-auto mb-4">
-                <UtensilsCrossed size={32} />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">Table {table.tableNumber}</h2>
-              <p className="text-muted-foreground text-sm mb-6">
-                Your table is ready! Join the session to start ordering.
-              </p>
-              <Button onClick={handleClaimTable} disabled={reserving} className="w-full py-6 text-lg font-bold shadow-md hover:shadow-lg transition-all rounded-xl">
-                {reserving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : null}
-                Join Table
-              </Button>
-            </div>
-          </div>
-        );
-      }
-
-      // If it IS claimed and doesn't match localStorage, block them.
+  if (storedSessionId !== session.id) {
+    // If not stored but it's UNCLAIMED, show a "Join Table" button!
+    if (!session.isClaimed) {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-background to-muted/20">
-          <div className="w-full max-w-sm bg-card p-8 rounded-2xl shadow-xl border border-border">
-            <h2 className="text-2xl font-bold mb-3 text-destructive">Table Occupied</h2>
-            <p className="text-muted-foreground text-sm font-medium leading-relaxed">
-              This table is currently reserved and in use by another customer.
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-br from-background to-muted/20">
+          <div className="w-full max-w-sm bg-card p-8 rounded-2xl shadow-xl border border-border text-center">
+            <div className="w-16 h-16 bg-primary/10 text-primary flex items-center justify-center rounded-full mx-auto mb-4">
+              <UtensilsCrossed size={32} />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Table {table.tableNumber}</h2>
+            <p className="text-muted-foreground text-sm mb-6">
+              Your table is ready! Join the session to start ordering.
             </p>
+            <Button onClick={handleClaimTable} disabled={reserving} className="w-full py-6 text-lg font-bold shadow-md hover:shadow-lg transition-all rounded-xl">
+              {reserving ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : null}
+              Join Table
+            </Button>
           </div>
         </div>
       );
     }
+
+    // If it IS claimed and doesn't match localStorage, block them.
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-background to-muted/20">
+        <div className="w-full max-w-sm bg-card p-8 rounded-2xl shadow-xl border border-border">
+          <h2 className="text-2xl font-bold mb-3 text-destructive">Table Occupied</h2>
+          <p className="text-muted-foreground text-sm font-medium leading-relaxed">
+            This table is currently reserved and in use by another customer.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   // ─── State 5: Active & verified → Render full menu ───
