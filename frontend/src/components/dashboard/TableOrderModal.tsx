@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2, X, Plus, Minus, Search, ShoppingCart, Trash2, MessageSquarePlus, LayoutGrid, List } from "lucide-react";
 import VariantSelectionModal from "@/components/VariantSelectionModal";
 import ItemNoteModal from "./ItemNoteModal";
+import { printQueue } from "@/lib/printQueue";
 
 interface CartItem extends OrderItem {
   note?: string;
@@ -35,6 +36,7 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
     localStorage.setItem("table_pos_view_mode", viewMode);
   }, [viewMode]);
   const [placing, setPlacing] = useState(false);
+  const [printKOT, setPrintKOT] = useState(true);
   const [variantModalItem, setVariantModalItem] = useState<DynamicMenuItem | null>(null);
   const [noteModalItem, setNoteModalItem] = useState<{ id: string | number; name: string; note: string } | null>(null);
 
@@ -122,7 +124,7 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
     if (cart.length === 0) return;
     setPlacing(true);
     try {
-      await apiPlaceOrder(
+      const order = await apiPlaceOrder(
         customerName || "Table Guest",
         customerPhone || "0000000000",
         cart,
@@ -133,6 +135,21 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
         "table",
         tableSessionId
       );
+
+      if (printKOT && order) {
+        printQueue.enqueue(`kot-${order.id || Date.now()}`, "kot", {
+          token: order.token || 0,
+          customerName: customerName || "Table Guest",
+          customerPhone: customerPhone || "0000000000",
+          tableNumber: tableNumber,
+          orderType: "dine-in",
+          items: cart.map(i => ({ name: i.name, price: i.price, quantity: i.quantity, note: i.note })),
+          createdAt: order.createdAt || new Date().toISOString(),
+          total: cartTotal,
+          paymentMethod: "counter",
+        });
+      }
+
       toast.success("Items added to " + tableNumber);
       setCart([]);
       onSuccess();
@@ -347,6 +364,19 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
               <div className="flex justify-between items-center text-base md:text-lg font-black">
                 <span>Total</span>
                 <span className="text-primary">₹{cartTotal.toFixed(0)}</span>
+              </div>
+
+              <div className="flex items-center gap-2 pb-1">
+                <input
+                  type="checkbox"
+                  id="printKOT"
+                  checked={printKOT}
+                  onChange={(e) => setPrintKOT(e.target.checked)}
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-primary cursor-pointer"
+                />
+                <label htmlFor="printKOT" className="text-sm font-semibold text-muted-foreground cursor-pointer select-none">
+                  Print KOT automatically
+                </label>
               </div>
 
               <button
