@@ -28,6 +28,7 @@ export interface ReceiptData {
   };
   orderType?: string;
   specialInstructions?: string;
+  tableNumber?: string | null;
   tableSessionId?: string | null;
   isUpdatedKOT?: boolean;
 }
