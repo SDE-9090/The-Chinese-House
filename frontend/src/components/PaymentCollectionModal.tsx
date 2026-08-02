@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { X, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -51,6 +51,22 @@ export default function PaymentCollectionModal({
 
   const [printBill, setPrintBill] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSplitMode(false);
+      setSplitCash("");
+      setSplitUpi("");
+      setCustomDiscount("");
+      setCouponCode("");
+      setAppliedCoupon(null);
+      setCouponError("");
+      setPointsRedeemed(0);
+      setLoyaltyPhone(initialCustomerPhone);
+      setPrintBill(true);
+      setIsProcessing(false);
+    }
+  }, [isOpen, id, initialCustomerPhone]);
 
   if (!isOpen) return null;
 
