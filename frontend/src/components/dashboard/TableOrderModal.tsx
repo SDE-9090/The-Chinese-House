@@ -168,7 +168,7 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-background border border-border shadow-2xl rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row"
+          className="bg-background border border-border shadow-2xl rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col landscape:flex-row md:flex-row"
         >
           {/* LEFT: Menu Selection */}
           <div className="flex-1 flex flex-col bg-card overflow-hidden">
@@ -295,7 +295,7 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
           </div>
 
           {/* RIGHT: Cart & Checkout */}
-          <div className="w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-border bg-card flex flex-col shrink-0 max-h-[45vh] md:max-h-none md:h-auto">
+          <div className="w-full landscape:w-80 md:w-80 lg:w-96 border-t landscape:border-t-0 landscape:border-l md:border-t-0 md:border-l border-border bg-card flex flex-col shrink-0 max-h-[45vh] landscape:max-h-none md:max-h-none landscape:h-auto md:h-auto">
             <div className="p-3 md:p-4 border-b border-border bg-muted/20">
               <h3 className="font-bold text-base md:text-lg">Current Cart</h3>
               <p className="text-xs text-muted-foreground">{cart.reduce((s, i) => s + i.quantity, 0)} items selected</p>
