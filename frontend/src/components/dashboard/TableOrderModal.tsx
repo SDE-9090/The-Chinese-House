@@ -136,18 +136,12 @@ export default function TableOrderModal({ isOpen, onClose, onSuccess, tableSessi
         tableSessionId
       );
 
-      if (printKOT && order) {
-        printQueue.enqueue(`kot-${order.id || Date.now()}`, "kot", {
-          token: order.token || 0,
-          customerName: customerName || "Table Guest",
-          customerPhone: customerPhone || "0000000000",
-          tableNumber: tableNumber,
-          orderType: "dine-in",
-          items: cart.map(i => ({ name: i.name, price: i.price, quantity: i.quantity, note: i.note })),
-          createdAt: order.createdAt || new Date().toISOString(),
-          total: cartTotal,
-          paymentMethod: "counter",
-        });
+      if (!printKOT && order && order.id) {
+        // Add to global ignore list so useAutoPrint skips it
+        if (!(window as any).skippedAutoPrintIds) {
+          (window as any).skippedAutoPrintIds = new Set();
+        }
+        (window as any).skippedAutoPrintIds.add(order.id);
       }
 
       toast.success("Items added to " + tableNumber);

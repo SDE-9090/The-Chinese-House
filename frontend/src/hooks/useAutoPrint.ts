@@ -74,6 +74,12 @@ export function useAutoPrint(orders: Order[], isInitialLoading: boolean = false)
     for (const order of orders) {
       if (!printedNewRef.current.has(order.id)) {
         printedNewRef.current.add(order.id);
+        
+        // Skip auto-printing if this order was manually disabled via UI
+        if ((window as any).skippedAutoPrintIds?.has(order.id)) {
+          continue;
+        }
+
         printQueue.enqueue(`new:${order.id}`, "kot", orderToReceiptData(order));
       }
     }
