@@ -940,23 +940,23 @@ const OrderHistory = () => {
 
                 <OrderItemsList items={order.items} />
 
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between text-sm gap-2 mt-2">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-bold">₹{order.total.toFixed(2)}</span>
                     {due === 0 ? (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-bold whitespace-nowrap shrink-0">
                         Paid
                       </span>
                     ) : (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive font-medium">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-bold whitespace-nowrap shrink-0">
                         Due ₹{due}
                       </span>
                     )}
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground shrink-0">
                       {order.paymentMethod === "counter" ? "Counter" : "Online"}
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-[11px] text-muted-foreground">
                     {new Date(order.createdAt).toLocaleString("en-IN", {
                       day: "2-digit",
                       month: "short",
