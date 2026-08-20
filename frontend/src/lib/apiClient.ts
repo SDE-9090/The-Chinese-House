@@ -2136,8 +2136,12 @@ export interface SettledSessionsResponse {
   limit: number;
 }
 
-export async function apiGetSettledSessions(page: number = 1, limit: number = 25): Promise<SettledSessionsResponse> {
-  const res = await authFetch(`${API_URL}/tables/sessions/history?page=${page}&limit=${limit}`, {
+export async function apiGetSettledSessions(page: number = 1, limit: number = 25, startDate?: string, endDate?: string): Promise<SettledSessionsResponse> {
+  let url = `${API_URL}/tables/sessions/history?page=${page}&limit=${limit}`;
+  if (startDate && endDate) {
+    url += `&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
+  }
+  const res = await authFetch(url, {
     headers: dashHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch settled sessions");

@@ -1007,19 +1007,41 @@ router.get("/sessions/history", adminAuth, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 25;
     const offset = (page - 1) * limit;
+    
+    const { startDate, endDate } = req.query;
+
+    let dateFilterCount = "";
+    let dateFilterData = "";
+    const queryParamsCount = [req.business_id];
+    const queryParamsData = [req.business_id];
+    let paramIndexCount = 2;
+    let paramIndexData = 2;
+
+    if (startDate && endDate) {
+      dateFilterCount = `AND ts.end_time >= $${paramIndexCount} AND ts.end_time <= $${paramIndexCount + 1}`;
+      queryParamsCount.push(startDate, endDate);
+      
+      dateFilterData = `AND ts.end_time >= $${paramIndexData} AND ts.end_time <= $${paramIndexData + 1}`;
+      queryParamsData.push(startDate, endDate);
+      
+      paramIndexData += 2;
+    }
 
     // Get total count
     const countRes = await pool.query(
       `SELECT COUNT(*) FROM table_sessions ts
        WHERE ts.status = 'completed' AND ts.business_id = $1
+       ${dateFilterCount}
        AND (
          SELECT COALESCE(SUM(o.total), 0) FROM orders o 
          WHERE o.table_session_id = ts.id AND o.status != 'cancelled'
        ) > 0`,
-      [req.business_id]
+      queryParamsCount
     );
     const totalCount = parseInt(countRes.rows[0].count);
     const totalPages = Math.ceil(totalCount / limit);
+
+    queryParamsData.push(limit, offset);
 
     const { rows } = await pool.query(`
       SELECT ts.id as session_id, ts.customer_name, ts.customer_phone, ts.start_time, ts.end_time, ts.discount_amount,
@@ -1028,13 +1050,14 @@ router.get("/sessions/history", adminAuth, async (req, res) => {
       FROM table_sessions ts
       LEFT JOIN tables t ON ts.table_id = t.id
       WHERE ts.status = 'completed' AND ts.business_id = $1
+        ${dateFilterData}
         AND (
           SELECT COALESCE(SUM(o.total), 0) FROM orders o 
           WHERE o.table_session_id = ts.id AND o.status != 'cancelled'
         ) > 0
       ORDER BY ts.end_time DESC
-      LIMIT $2 OFFSET $3
-    `, [req.business_id, limit, offset]);
+      LIMIT $${paramIndexData} OFFSET $${paramIndexData + 1}
+    `, queryParamsData);
 
     res.json({
       data: rows,

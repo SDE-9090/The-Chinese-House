@@ -24,17 +24,47 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
   const [detailBill, setDetailBill] = useState<SessionBill | null>(null);
   const [loadingBill, setLoadingBill] = useState(false);
 
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   useEffect(() => {
     if (isOpen) {
-      fetchSessions(page);
+      if ((!startDate && !endDate) || (startDate && endDate)) {
+        fetchSessions(page);
+      }
     }
-  }, [isOpen, page]);
+  }, [isOpen, page, startDate, endDate]);
+
+  const handleDateChange = (type: "start" | "end", value: string) => {
+    if (type === "start") setStartDate(value);
+    else setEndDate(value);
+    setPage(1); // Reset pagination on filter change
+  };
+
+  const clearFilters = () => {
+    setStartDate("");
+    setEndDate("");
+    setPage(1);
+  };
 
   const fetchSessions = async (p: number) => {
     try {
       setLoading(true);
       setError("");
-      const res = await apiGetSettledSessions(p, 25);
+      
+      let finalStart = undefined;
+      let finalEnd = undefined;
+      if (startDate && endDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        finalStart = start.toISOString();
+        
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        finalEnd = end.toISOString();
+      }
+      
+      const res = await apiGetSettledSessions(p, 25, finalStart, finalEnd);
       setSessions(res.data);
       setTotalPages(res.totalPages || 1);
       setTotalCount(res.total || 0);
@@ -104,19 +134,46 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
           className="bg-card w-full max-w-4xl border border-border shadow-2xl rounded-2xl overflow-hidden flex flex-col max-h-[90vh]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 md:p-6 border-b border-border bg-muted/20 shrink-0">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 border-b border-border bg-muted/20 shrink-0 gap-4">
             <div>
               <h2 className="text-xl md:text-2xl font-black text-foreground flex items-center gap-2">
                 <FileText className="text-primary" /> Settled Bills History
               </h2>
               <p className="text-xs text-muted-foreground mt-1">Total completed sessions: {totalCount}</p>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground rounded-full transition"
-            >
-              <X size={20} />
-            </button>
+            
+            {/* Filters */}
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="flex items-center gap-2 flex-1 md:flex-initial bg-background border border-border rounded-lg p-1.5 shadow-sm">
+                <input 
+                  type="date" 
+                  value={startDate}
+                  onChange={(e) => handleDateChange("start", e.target.value)}
+                  className="bg-transparent text-sm focus:outline-none flex-1 max-w-[130px]"
+                />
+                <span className="text-muted-foreground text-xs font-semibold">TO</span>
+                <input 
+                  type="date" 
+                  value={endDate}
+                  onChange={(e) => handleDateChange("end", e.target.value)}
+                  className="bg-transparent text-sm focus:outline-none flex-1 max-w-[130px]"
+                />
+              </div>
+              {(startDate || endDate) && (
+                <button 
+                  onClick={clearFilters}
+                  className="text-xs font-semibold text-destructive hover:bg-destructive/10 px-2 py-1.5 rounded-md transition"
+                >
+                  Clear
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 ml-2 bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground rounded-full transition hidden md:block"
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0">
