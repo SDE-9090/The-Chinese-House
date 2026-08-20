@@ -16,8 +16,14 @@ const crypto = require("crypto");
 const rpName = "The Chinese House Admin";
 
 function getRPInfo(req) {
-  // Use the origin header sent by the browser, fallback to env variable or localhost
-  const clientOrigin = req.headers.origin || process.env.CORS_ORIGIN || "http://localhost:8080";
+  // Use the origin header sent by the browser
+  let clientOrigin = req.headers.origin;
+  
+  if (!clientOrigin) {
+    const corsEnv = process.env.CORS_ORIGIN || "http://localhost:8080";
+    clientOrigin = corsEnv.includes(",") ? corsEnv.split(",")[0].trim() : corsEnv;
+  }
+  
   let rpID;
   try {
     rpID = new URL(clientOrigin).hostname;

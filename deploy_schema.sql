@@ -1343,8 +1343,15 @@ ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON TABL
 -- ==========================================
 
 -- 1. Create default business
-INSERT INTO public.businesses (id, name, slug, subscription_tier, is_active) 
-VALUES ('00000000-0000-0000-0000-000000000001', 'The Chinese House', 'the-chinese-house', 'premium', true)
+INSERT INTO public.businesses (id, name, slug, subscription_tier, is_active, features) 
+VALUES (
+  '00000000-0000-0000-0000-000000000001', 
+  'The Chinese House', 
+  'the-chinese-house', 
+  'premium', 
+  true, 
+  '{"pos_system": true, "kitchen_display": true, "manual_table_orders": true, "qr_digital_ordering": true, "advanced_analytics": true, "website_cms": true, "coupon_engine": true, "customer_reviews": true}'::jsonb
+)
 ON CONFLICT DO NOTHING;
 
 -- 2. Create default business settings

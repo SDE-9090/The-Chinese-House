@@ -9,5 +9,11 @@ const pool = new Pool({
     : false,
 });
 
-module.exports = pool;
+// Force search_path to public on every connection checkout
+// This prevents issues with PgBouncer returning cached connections
+// that might have had their search_path altered by schema.sql scripts.
+pool.on("connect", (client) => {
+  client.query("SET search_path TO public");
+});
 
+module.exports = pool;
