@@ -35,9 +35,13 @@ const PORT = process.env.PORT || 4000;
 // 🔥 VERY IMPORTANT FOR RENDER / PROXY
 app.set("trust proxy", 1);
 
+const corsOrigin = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) 
+  : "http://localhost:8080";
+
 // ---- CORS ----
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:8080",
+  origin: corsOrigin,
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "x-dashboard-password", "Authorization"],
   credentials: true
@@ -63,7 +67,7 @@ const server = http.createServer(app);
 // ---- Attach Socket.IO ----
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || "http://localhost:8080",
+    origin: corsOrigin,
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"]
   }
 });
