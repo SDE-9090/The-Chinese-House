@@ -29,10 +29,11 @@ function getRPInfo(req) {
 
 // Helpers for auth
 const REFRESH_TOKEN_EXPIRY_SECONDS = 30 * 24 * 60 * 60; // 30 days
+const isProduction = process.env.NODE_ENV === "production";
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: true,
-  sameSite: "none",
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
   maxAge: REFRESH_TOKEN_EXPIRY_SECONDS * 1000,
   path: "/",
 };

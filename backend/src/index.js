@@ -36,8 +36,22 @@ const PORT = process.env.PORT || 4000;
 app.set("trust proxy", 1);
 
 // ---- CORS ----
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173,http://127.0.0.1:5173")
+  .split(",")
+  .map(o => o.trim());
+
+const corsOriginDelegate = (origin, callback) => {
+  if (!origin || allowedOrigins.includes(origin)) {
+    callback(null, true);
+  } else if (process.env.NODE_ENV !== "production") {
+    callback(null, true);
+  } else {
+    callback(new Error("CORS policy violation"));
+  }
+};
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:8080",
+  origin: corsOriginDelegate,
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "x-dashboard-password", "Authorization"],
   credentials: true
@@ -63,8 +77,9 @@ const server = http.createServer(app);
 // ---- Attach Socket.IO ----
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || "http://localhost:8080",
-    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"]
+    origin: corsOriginDelegate,
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
+    credentials: true
   }
 });
 

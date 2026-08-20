@@ -26,8 +26,8 @@ const isProduction = process.env.NODE_ENV === "production";
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: true,
-  sameSite: "none",
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
   maxAge: REFRESH_TOKEN_EXPIRY_SECONDS * 1000,
   path: "/",
 };
