@@ -1,4 +1,5 @@
 const pool = require("../db/pool");
+const { tenantContext } = require("./tenantContext");
 
 /**
  * Multi-Tenant Middleware
@@ -12,7 +13,7 @@ async function tenantEnforcer(req, res, next) {
   // 1. If already authenticated (admin/staff JWT), use the JWT's business_id
   if (req.admin && req.admin.business_id) {
     req.business_id = req.admin.business_id;
-    return next();
+    return tenantContext.run(req.business_id, () => next());
   }
 
   // 2. Extract slug from Origin or Header
@@ -69,7 +70,12 @@ async function tenantEnforcer(req, res, next) {
   // 7. Attach tenant context to the request
   req.business_id = tenant.id;
   req.tenant_slug = slug;
-  return next();
+  
+  // Wrap the rest of the request inside the AsyncLocalStorage context
+  // This allows the connection pool to automatically inject PostgreSQL RLS variables
+  return tenantContext.run(tenant.id, () => {
+    next();
+  });
 }
 
 module.exports = { tenantEnforcer, tenantCache };

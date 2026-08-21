@@ -4,8 +4,14 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const pool = require("../db/pool");
 const { adminAuth, authorizeRole, JWT_SECRET } = require("../middleware/adminAuth");
+const { tenantContext } = require("../middleware/tenantContext");
 
 const BCRYPT_ROUNDS = 12;
+
+// Middleware to inject 'super_admin' context for RLS bypass
+router.use((req, res, next) => {
+  tenantContext.run('super_admin', next);
+});
 
 // ======================================================
 // LOGIN (Super Admin)

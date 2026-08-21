@@ -55,9 +55,11 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 // Serve static updates files
 app.use("/public/updates", express.static(path.join(__dirname, "../public/updates")));
 
+const { tenantContext } = require("./middleware/tenantContext");
+
 // ---- System Cron Routes ----
 // These must come before tenant enforcer since they run system-wide
-app.use("/api/reports", reportsRoutes);
+app.use("/api/reports", (req, res, next) => tenantContext.run('super_admin', next), reportsRoutes);
 
 // ---- Public Tenant Verification ----
 app.get("/api/verify-tenant/:slug", async (req, res) => {
