@@ -20,6 +20,24 @@ import {
 
 export const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 
+
+export function getTenantSlug(): string {
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+      return hostname.split('.')[0];
+    }
+  }
+  return "the-chinese-house"; // Fallback for local development
+}
+
+/** Wrapper around fetch that automatically attaches the tenant slug header */
+async function tenantFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(options.headers);
+  headers.set("X-Tenant-Slug", getTenantSlug());
+  return fetch(url, { ...options, headers });
+}
+
 function isApiMode(): boolean {
   return !!API_URL;
 }
@@ -71,7 +89,7 @@ async function refreshAccessToken(): Promise<string | null> {
   isRefreshing = true;
   refreshPromise = (async () => {
     try {
-      const res = await fetch(`${API_URL}/admin/refresh`, {
+      const res = await tenantFetch(`${API_URL}/admin/refresh`, {
         method: "POST",
         credentials: "include",
       });
@@ -98,7 +116,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
 /** Wrapper around fetch that auto-refreshes on 401 */
 async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const res = await fetch(url, options);
+  const res = await tenantFetch(url, options);
 
   if (res.status === 401 && isApiMode()) {
     // If a staff token was being used and returned 401, it is expired/invalid. 
@@ -112,7 +130,7 @@ async function authFetch(url: string, options: RequestInit = {}): Promise<Respon
       // Retry with new token
       const newHeaders = new Headers(options.headers);
       newHeaders.set("Authorization", `Bearer ${newToken}`);
-      return fetch(url, { ...options, headers: newHeaders });
+      return tenantFetch(url, { ...options, headers: newHeaders });
     }
   }
 
@@ -146,9 +164,7 @@ function dashHeaders(password?: string, omitContentType?: boolean): Record<strin
 
 // Kept as no-op for compatibility with components that still call it
 export function setTenantSlug(_slug: string | null) {}
-export function getTenantSlug() {
-  return null;
-}
+
 
 let dashboardPassword = "";
 export function setDashboardPassword(pw: string) {
@@ -163,7 +179,7 @@ export function getDashboardPassword() {
 // ─── Admin Auth APIs (Bearer token-based) ────────────────
 
 export async function apiAdminLogin(username: string, password: string): Promise<{ message: string, user: AuthUser, features?: Record<string, any> }> {
-  const res = await fetch(`${API_URL}/admin/login`, {
+  const res = await tenantFetch(`${API_URL}/admin/login`, {
     method: "POST",
     headers: authHeaders(),
     credentials: "include",
@@ -177,7 +193,7 @@ export async function apiAdminLogin(username: string, password: string): Promise
 
 // ─── WebAuthn APIs ────────────────
 export async function apiWebAuthnGenerateRegistration() {
-  const res = await fetch(`${API_URL}/webauthn/generate-registration-options`, {
+  const res = await tenantFetch(`${API_URL}/webauthn/generate-registration-options`, {
     headers: authHeaders(),
   });
   const data = await res.json();
@@ -186,7 +202,7 @@ export async function apiWebAuthnGenerateRegistration() {
 }
 
 export async function apiWebAuthnVerifyRegistration(response: any) {
-  const res = await fetch(`${API_URL}/webauthn/verify-registration`, {
+  const res = await tenantFetch(`${API_URL}/webauthn/verify-registration`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(response),
@@ -197,14 +213,14 @@ export async function apiWebAuthnVerifyRegistration(response: any) {
 }
 
 export async function apiWebAuthnGenerateAuthentication() {
-  const res = await fetch(`${API_URL}/webauthn/generate-authentication-options`);
+  const res = await tenantFetch(`${API_URL}/webauthn/generate-authentication-options`);
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to generate auth options");
   return data;
 }
 
 export async function apiWebAuthnVerifyAuthentication(body: any, authSessionId: string): Promise<{ message: string, user: AuthUser, features?: Record<string, any> }> {
-  const res = await fetch(`${API_URL}/webauthn/verify-authentication`, {
+  const res = await tenantFetch(`${API_URL}/webauthn/verify-authentication`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -258,7 +274,7 @@ export async function apiAdminCheckAuth(): Promise<{ authenticated: boolean; use
   }
 
   try {
-    const res = await fetch(`${API_URL}/admin/me`, {
+    const res = await tenantFetch(`${API_URL}/admin/me`, {
       headers: { "Authorization": `Bearer ${token}` },
     });
     if (!res.ok) {
@@ -296,7 +312,7 @@ export async function apiAdminLogout(): Promise<void> {
   const token = getAdminToken();
   clearAdminToken();
   try {
-    await fetch(`${API_URL}/admin/logout`, {
+    await tenantFetch(`${API_URL}/admin/logout`, {
       method: "POST",
       credentials: "include",
       headers: token ? { "Authorization": `Bearer ${token}` } : {},
@@ -305,7 +321,7 @@ export async function apiAdminLogout(): Promise<void> {
 }
 
 export async function apiAdminRequestReset(username: string): Promise<{ message: string; mobile: string; email: string }> {
-  const res = await fetch(`${API_URL}/admin/request-reset`, {
+  const res = await tenantFetch(`${API_URL}/admin/request-reset`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ username }),
@@ -316,7 +332,7 @@ export async function apiAdminRequestReset(username: string): Promise<{ message:
 }
 
 export async function apiAdminResetPassword(username: string, otp: string, newPassword: string): Promise<{ message: string }> {
-  const res = await fetch(`${API_URL}/admin/reset-password`, {
+  const res = await tenantFetch(`${API_URL}/admin/reset-password`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ username, otp, newPassword }),
@@ -330,7 +346,7 @@ export async function apiAdminResetPassword(username: string, otp: string, newPa
 // ─── Staff Auth APIs ─────────────────────────────────────
 
 export async function apiStaffLogin(pin: string): Promise<{ message: string; user: AuthUser, features?: Record<string,any> }> {
-  const res = await fetch(`${API_URL}/staff/login`, {
+  const res = await tenantFetch(`${API_URL}/staff/login`, {
     method: "POST",
     headers: authHeaders(),
     credentials: "include",
@@ -563,7 +579,7 @@ export async function apiGetBusinessSettings(): Promise<BusinessSettings> {
     return localGetBusinessSettings();
   }
 
-  const res = await fetch(`${API_URL}/business-settings`, {
+  const res = await tenantFetch(`${API_URL}/business-settings`, {
     headers: authHeaders(),
   });
   const data = await res.json();
@@ -628,7 +644,7 @@ export interface EditOrderItem {
 
 
 export async function apiGetTableSessionBill(sessionId: string): Promise<SessionBill> {
-  const res = await fetch(`${API_URL}/tables/sessions/${sessionId}/bill`, {
+  const res = await tenantFetch(`${API_URL}/tables/sessions/${sessionId}/bill`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch bill");
@@ -657,7 +673,7 @@ export async function apiPlaceOrder(
     );
   }
 
-  const res = await fetch(`${API_URL}/orders`, {
+  const res = await tenantFetch(`${API_URL}/orders`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({
@@ -681,7 +697,7 @@ export async function apiPlaceOrder(
 
 export async function apiGetTokens(): Promise<{ id: string; token: number; status: string; customerName?: string }[]> {
   try {
-    const res = await fetch(`${API_URL}/orders/tokens`, { 
+    const res = await tenantFetch(`${API_URL}/orders/tokens`, { 
       cache: 'no-store',
       headers: authHeaders(),
     });
@@ -717,7 +733,7 @@ export async function apiGetItemReviews(
     return localGetItemReviews(itemName, limit, offset);
   }
 
-  const res = await fetch(
+  const res = await tenantFetch(
     `${API_URL}/reviews?item=${encodeURIComponent(itemName)}&limit=${limit}&offset=${offset}`,
     { headers: authHeaders() }
   );
@@ -728,7 +744,7 @@ export async function apiGetItemReviews(
 export async function apiGetReviewSummary(): Promise<Record<string, ReviewSummary>> {
   if (!isApiMode()) return localGetReviewSummary();
 
-  const res = await fetch(`${API_URL}/reviews/summary`, {
+  const res = await tenantFetch(`${API_URL}/reviews/summary`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch review summary");
@@ -745,7 +761,7 @@ export async function apiAddReview(
     return localAddReview(itemName, reviewerName, rating, reviewText);
   }
 
-  const res = await fetch(`${API_URL}/reviews`, {
+  const res = await tenantFetch(`${API_URL}/reviews`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ itemName, reviewerName, rating, reviewText }),
@@ -796,7 +812,7 @@ export async function apiAdminBulkDeleteReviews(ids: number[]): Promise<{ delete
 }
 
 export async function apiGetLatestReviews(limit = 8): Promise<Review[]> {
-  const res = await fetch(`${API_URL}/reviews/latest?limit=${limit}`, {
+  const res = await tenantFetch(`${API_URL}/reviews/latest?limit=${limit}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch latest reviews");
@@ -1011,7 +1027,7 @@ export async function apiCustomerPayDue(
     throw new Error("Pay due only supported in API mode");
   }
 
-  const res = await fetch(`${API_URL}/orders/${orderId}/pay-due`, {
+  const res = await tenantFetch(`${API_URL}/orders/${orderId}/pay-due`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify({ customerPhone }),
@@ -1023,7 +1039,7 @@ export async function apiCustomerPayDue(
 }
 
 export async function apiGetOrderHistory(phone: string) {
-  const res = await fetch(`${API_URL}/orders/history/${phone}`, {
+  const res = await tenantFetch(`${API_URL}/orders/history/${phone}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch history");
@@ -1031,7 +1047,7 @@ export async function apiGetOrderHistory(phone: string) {
 }
 
 export async function apiGetActiveOrdersByPhone(phone: string) {
-  const res = await fetch(`${API_URL}/orders/active/${phone}`, {
+  const res = await tenantFetch(`${API_URL}/orders/active/${phone}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch active orders");
@@ -1039,7 +1055,7 @@ export async function apiGetActiveOrdersByPhone(phone: string) {
 }
 
 export async function apiGetEstimate() {
-  const res = await fetch(`${API_URL}/orders/estimate`, {
+  const res = await tenantFetch(`${API_URL}/orders/estimate`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch estimate");
@@ -1053,7 +1069,7 @@ export async function apiCustomerEditOrder(
   items: { id: number; name: string; price: number; priceLabel: string; quantity: number; image?: string }[],
   customerPhone: string,
 ): Promise<{ message: string; order: Partial<Order> }> {
-  const res = await fetch(`${API_URL}/orders/${orderId}/customer-edit`, {
+  const res = await tenantFetch(`${API_URL}/orders/${orderId}/customer-edit`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify({ items, customerPhone }),
@@ -1067,7 +1083,7 @@ export async function apiCustomerEditOrder(
 
 export async function apiEditingStart(orderId: string, customerPhone: string): Promise<void> {
   if (!isApiMode()) return;
-  fetch(`${API_URL}/orders/${orderId}/editing-start`, {
+  tenantFetch(`${API_URL}/orders/${orderId}/editing-start`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ customerPhone }),
@@ -1076,7 +1092,7 @@ export async function apiEditingStart(orderId: string, customerPhone: string): P
 
 export async function apiEditingEnd(orderId: string): Promise<void> {
   if (!isApiMode()) return;
-  fetch(`${API_URL}/orders/${orderId}/editing-end`, {
+  tenantFetch(`${API_URL}/orders/${orderId}/editing-end`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
   }).catch(() => {});
@@ -1102,7 +1118,7 @@ export async function apiValidateCoupon(
   code: string,
   orderTotal: number,
 ): Promise<CouponValidation> {
-  const res = await fetch(`${API_URL}/coupons/validate`, {
+  const res = await tenantFetch(`${API_URL}/coupons/validate`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ code, orderTotal }),
@@ -1118,7 +1134,7 @@ export async function apiCreatePaidVoucher(
   phone: string,
   customCode?: string,
 ): Promise<{ code: string; value: number; usageLimit: number }> {
-  const res = await fetch(`${API_URL}/coupons/create-paid`, {
+  const res = await tenantFetch(`${API_URL}/coupons/create-paid`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ amount, phone, customCode: customCode || undefined }),
@@ -1246,7 +1262,7 @@ export interface MenuItem {
 // ─── Get Menu ────────────────────────────────
 
 export async function apiGetMenuItems(): Promise<MenuItem[]> {
-  const res = await fetch(`${API_URL}/menu`, {
+  const res = await tenantFetch(`${API_URL}/menu`, {
     headers: authHeaders(),
   });
 
@@ -1418,7 +1434,7 @@ export interface MenuCategory {
 // ─── Get Categories ────────────────────────────────
 
 export async function apiGetCategories(): Promise<MenuCategory[]> {
-  const res = await fetch(`${API_URL}/categories`, {
+  const res = await tenantFetch(`${API_URL}/categories`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch categories");
@@ -1614,7 +1630,7 @@ export interface HeroContent {
 }
 
 export async function apiGetHeroContent(): Promise<HeroContent> {
-  const res = await fetch(`${API_URL}/hero`, {
+  const res = await tenantFetch(`${API_URL}/hero`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch hero content");
@@ -1657,7 +1673,7 @@ export interface GalleryImage {
 }
 
 export async function apiGetGalleryImages(): Promise<GalleryImage[]> {
-  const res = await fetch(`${API_URL}/gallery`, {
+  const res = await tenantFetch(`${API_URL}/gallery`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch gallery");
@@ -1722,7 +1738,7 @@ export interface LocationContent {
 /* ---------- GET LOCATION ---------- */
 
 export async function apiGetLocationContent(): Promise<LocationContent> {
-  const res = await fetch(`${API_URL}/location`, {
+  const res = await tenantFetch(`${API_URL}/location`, {
     headers: authHeaders(),
   });
 
@@ -1771,7 +1787,7 @@ export async function apiResolveMapUrl(url: string): Promise<string> {
 // ─── Promotions APIs ─────────────────────────────────────
 
 export async function apiGetActivePromotion() {
-  const res = await fetch(`${API_URL}/promotions/active`, {
+  const res = await tenantFetch(`${API_URL}/promotions/active`, {
     headers: authHeaders(),
   });
   if (!res.ok) return null;
@@ -1837,7 +1853,7 @@ export interface KitchenOrder {
 }
 
 export async function apiKitchenVerifyPin(pin: string): Promise<{ success: boolean; user?: AuthUser; token?: string }> {
-  const res = await fetch(`${API_URL}/kitchen/verify-pin`, {
+  const res = await tenantFetch(`${API_URL}/kitchen/verify-pin`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ pin }),
@@ -1847,7 +1863,7 @@ export async function apiKitchenVerifyPin(pin: string): Promise<{ success: boole
 }
 
 export async function apiKitchenGetOrders(): Promise<KitchenOrder[]> {
-  const res = await fetch(`${API_URL}/kitchen/orders`, {
+  const res = await tenantFetch(`${API_URL}/kitchen/orders`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch kitchen orders");
@@ -1855,7 +1871,7 @@ export async function apiKitchenGetOrders(): Promise<KitchenOrder[]> {
 }
 
 export async function apiKitchenMarkReady(orderId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/kitchen/orders/${orderId}/ready`, {
+  const res = await tenantFetch(`${API_URL}/kitchen/orders/${orderId}/ready`, {
     method: "PATCH",
     headers: authHeaders(),
   });
@@ -1863,7 +1879,7 @@ export async function apiKitchenMarkReady(orderId: string): Promise<void> {
 }
 
 export async function apiKitchenMarkItemReady(itemId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/kitchen/order-items/${itemId}/ready`, {
+  const res = await tenantFetch(`${API_URL}/kitchen/order-items/${itemId}/ready`, {
     method: "PATCH",
     headers: authHeaders(),
   });
@@ -1927,7 +1943,7 @@ export async function apiAdminUpdateTable(id: string, tableNumber: string): Prom
 }
 
 export async function apiGetTableByQr(qrCode: string): Promise<Table> {
-  const res = await fetch(`${API_URL}/tables/qr/${qrCode}`, {
+  const res = await tenantFetch(`${API_URL}/tables/qr/${qrCode}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Table not found");
@@ -1935,7 +1951,7 @@ export async function apiGetTableByQr(qrCode: string): Promise<Table> {
 }
 
 export async function apiReserveTable(tableId: string, customerName: string, customerPhone: string): Promise<TableSession> {
-  const res = await fetch(`${API_URL}/tables/${tableId}/reserve`, {
+  const res = await tenantFetch(`${API_URL}/tables/${tableId}/reserve`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ customerName, customerPhone }),
@@ -1948,7 +1964,7 @@ export async function apiReserveTable(tableId: string, customerName: string, cus
 }
 
 export async function apiClaimSession(sessionId: string): Promise<{ success: boolean; session: TableSession }> {
-  const res = await fetch(`${API_URL}/tables/sessions/${sessionId}/claim`, {
+  const res = await tenantFetch(`${API_URL}/tables/sessions/${sessionId}/claim`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -1972,7 +1988,7 @@ export async function apiDeleteTable(id: string): Promise<void> {
 
 
 export async function apiCancelSession(sessionId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/tables/sessions/${sessionId}/cancel`, {
+  const res = await tenantFetch(`${API_URL}/tables/sessions/${sessionId}/cancel`, {
     method: "POST",
     headers: { "Content-Type": "application/json" }
   });
@@ -1981,7 +1997,7 @@ export async function apiCancelSession(sessionId: string): Promise<void> {
 }
 
 export async function apiSessionDone(sessionId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/tables/sessions/${sessionId}/done`, {
+  const res = await tenantFetch(`${API_URL}/tables/sessions/${sessionId}/done`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -2080,7 +2096,7 @@ export interface SessionBill {
 }
 
 export async function apiGetSessionBill(sessionId: string): Promise<SessionBill> {
-  const res = await fetch(`${API_URL}/tables/sessions/${sessionId}/bill`, {
+  const res = await tenantFetch(`${API_URL}/tables/sessions/${sessionId}/bill`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch bill");
@@ -2088,7 +2104,7 @@ export async function apiGetSessionBill(sessionId: string): Promise<SessionBill>
 }
 
 export async function apiSessionPay(sessionId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/tables/sessions/${sessionId}/pay`, {
+  const res = await tenantFetch(`${API_URL}/tables/sessions/${sessionId}/pay`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -2096,7 +2112,7 @@ export async function apiSessionPay(sessionId: string): Promise<void> {
 }
 
 export async function apiApplySessionCoupon(sessionId: string, code: string): Promise<{ success: boolean; message: string }> {
-  const res = await fetch(`${API_URL}/tables/sessions/${sessionId}/apply-coupon`, {
+  const res = await tenantFetch(`${API_URL}/tables/sessions/${sessionId}/apply-coupon`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ code }),
@@ -2109,7 +2125,7 @@ export async function apiApplySessionCoupon(sessionId: string, code: string): Pr
 }
 
 export async function apiRemoveSessionCoupon(sessionId: string): Promise<{ success: boolean; message: string }> {
-  const res = await fetch(`${API_URL}/tables/sessions/${sessionId}/remove-coupon`, {
+  const res = await tenantFetch(`${API_URL}/tables/sessions/${sessionId}/remove-coupon`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -2155,7 +2171,7 @@ export type { Order, OrderItem, Review, ReviewSummary } from "./orderStore";
 // ============================================================================
 
 export async function apiCheckForUpdates(): Promise<{ updateAvailable: boolean; update?: any }> {
-  const res = await fetch(`${API_URL}/updates/latest`);
+  const res = await tenantFetch(`${API_URL}/updates/latest`);
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to check for updates");
   return data;

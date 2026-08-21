@@ -1,37 +1,75 @@
 const pool = require("../db/pool");
 
 /**
- * Single-Tenant Middleware
- * Automatically resolves the single business_id for every request.
- * Caches the ID in-memory after the first DB lookup.
+ * Multi-Tenant Middleware
+ * Resolves the business_id dynamically based on the request's origin or X-Tenant-Slug header.
  */
-let cachedBusinessId = null;
+
+// In-memory cache mapping slug -> { id, status, is_active }
+const tenantCache = new Map();
 
 async function tenantEnforcer(req, res, next) {
-  // If already authenticated (admin/staff JWT), use the JWT's business_id
+  // 1. If already authenticated (admin/staff JWT), use the JWT's business_id
   if (req.admin && req.admin.business_id) {
     req.business_id = req.admin.business_id;
     return next();
   }
 
-  // Use cached business ID if available
-  if (cachedBusinessId) {
-    req.business_id = cachedBusinessId;
-    return next();
-  }
-
-  // Fetch the single business from DB and cache it
-  try {
-    const result = await pool.query("SELECT id FROM businesses WHERE is_active = true LIMIT 1");
-    if (result.rows.length) {
-      cachedBusinessId = result.rows[0].id;
-      req.business_id = cachedBusinessId;
+  // 2. Extract slug from Origin or Header
+  let slug = req.headers["x-tenant-slug"]; // Frontend fallback for mobile/dev
+  
+  if (!slug && req.headers.origin) {
+    try {
+      const url = new URL(req.headers.origin);
+      const hostname = url.hostname;
+      // If hostname is e.g. "momskitchen.thechinesehouse.app", extract "momskitchen"
+      // If it's localhost, we default to "the-chinese-house" or what X-Tenant-Slug sent
+      if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+        slug = hostname.split('.')[0];
+      }
+    } catch (e) {
+      // Ignore invalid origin parsing errors
     }
-  } catch (err) {
-    console.error("Failed to resolve business:", err);
+  }
+  
+  if (!slug) {
+    slug = "the-chinese-house"; // Ultimate fallback for local dev if headers are missing
   }
 
+  // 3. Check Cache
+  let tenant = tenantCache.get(slug);
+
+  // 4. Fetch from DB if not in cache
+  if (!tenant) {
+    try {
+      const result = await pool.query(
+        "SELECT id, status, is_active FROM businesses WHERE slug = $1", 
+        [slug]
+      );
+      if (result.rows.length) {
+        tenant = result.rows[0];
+        tenantCache.set(slug, tenant);
+      }
+    } catch (err) {
+      console.error("Failed to resolve tenant from DB:", err);
+      return res.status(500).json({ error: "Internal server error during tenant resolution" });
+    }
+  }
+
+  // 5. Tenant Not Found
+  if (!tenant) {
+    return res.status(404).json({ error: `Tenant '${slug}' not found` });
+  }
+
+  // 6. Validate Status (Supports both legacy is_active and new status columns during migration)
+  if (tenant.status !== 'active' && tenant.is_active !== true) {
+    return res.status(403).json({ error: "Tenant account is suspended or inactive" });
+  }
+
+  // 7. Attach tenant context to the request
+  req.business_id = tenant.id;
+  req.tenant_slug = slug;
   return next();
 }
 
-module.exports = { tenantEnforcer };
+module.exports = { tenantEnforcer, tenantCache };
