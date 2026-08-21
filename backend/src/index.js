@@ -26,6 +26,7 @@ const customersRoutes = require("./routes/customers");
 const aiRoutes = require("./routes/ai");
 const webauthnRoutes = require("./routes/webauthn");
 const updateRoutes = require("./routes/updates");
+const superAdminRoutes = require("./routes/superAdmin");
 const { tenantEnforcer } = require("./middleware/tenantEnforcer");
 const path = require("path");
 
@@ -57,6 +58,10 @@ app.use("/public/updates", express.static(path.join(__dirname, "../public/update
 // ---- System Cron Routes ----
 // These must come before tenant enforcer since they run system-wide
 app.use("/api/reports", reportsRoutes);
+
+// ---- Super Admin Portal ----
+// Global routes that should not be scoped to a specific restaurant
+app.use("/api/super", superAdminRoutes);
 
 // ---- Single-Tenant Enforcer ----
 app.use(tenantEnforcer);

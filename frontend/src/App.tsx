@@ -21,6 +21,7 @@ const ItemReviewsPage = lazy(() => import("./pages/ItemReviewsPage"));
 const GiftVoucher = lazy(() => import("./pages/GiftVoucher"));
 const KitchenDisplay = lazy(() => import("./pages/KitchenDisplay"));
 const TableOrderPage = lazy(() => import("./pages/TableOrderPage"));
+const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const PageLoader = () => (
@@ -64,6 +65,7 @@ function AnimatedRoutes() {
             <Route path="/table/:qrCode" element={<PageTransition><TableOrderPage /></PageTransition>} />
             <Route path="/kitchen" element={<PageTransition><KitchenDisplay /></PageTransition>} />
             <Route path="/dashboard" element={<PageTransition><Dashboard /></PageTransition>} />
+            <Route path="/super" element={<PageTransition><SuperAdmin /></PageTransition>} />
             
             <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Routes>
