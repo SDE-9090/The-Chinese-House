@@ -21,20 +21,36 @@ import {
 export const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 
 
-export function getTenantSlug(): string {
+import { Capacitor } from '@capacitor/core';
+
+export function getTenantSlug(): string | null {
   if (typeof window !== "undefined") {
+    // 1. Check local storage first (Highest priority - for Mobile App Master Build)
+    const savedSlug = localStorage.getItem("tenant_slug");
+    if (savedSlug) return savedSlug;
+
+    // 2. Check hostname for web deployments (e.g. hotelpatil.thechinesehouse.app)
     const hostname = window.location.hostname;
     if (hostname !== "localhost" && hostname !== "127.0.0.1") {
       return hostname.split('.')[0];
     }
+
+    // 3. Fallback for Local Web Development ONLY. 
+    // If we are native (Capacitor), do NOT fallback, return null so we hit the onboarding screen.
+    if (!Capacitor.isNativePlatform()) {
+      return "the-chinese-house";
+    }
   }
-  return "the-chinese-house"; // Fallback for local development
+  return null;
 }
 
 /** Wrapper around fetch that automatically attaches the tenant slug header */
 async function tenantFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const headers = new Headers(options.headers);
-  headers.set("X-Tenant-Slug", getTenantSlug());
+  const slug = getTenantSlug();
+  if (slug) {
+    headers.set("X-Tenant-Slug", slug);
+  }
   return fetch(url, { ...options, headers });
 }
 

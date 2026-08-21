@@ -59,6 +59,23 @@ app.use("/public/updates", express.static(path.join(__dirname, "../public/update
 // These must come before tenant enforcer since they run system-wide
 app.use("/api/reports", reportsRoutes);
 
+// ---- Public Tenant Verification ----
+app.get("/api/verify-tenant/:slug", async (req, res) => {
+  try {
+    const pool = require("./db/pool");
+    const result = await pool.query(
+      "SELECT name FROM businesses WHERE slug = $1 AND status = 'active' LIMIT 1",
+      [req.params.slug.trim().toLowerCase()]
+    );
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "Restaurant code not found or inactive" });
+    }
+    res.json({ valid: true, name: result.rows[0].name });
+  } catch(err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // ---- Super Admin Portal ----
 // Global routes that should not be scoped to a specific restaurant
 app.use("/api/super", superAdminRoutes);

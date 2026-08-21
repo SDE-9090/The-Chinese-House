@@ -22,6 +22,7 @@ const GiftVoucher = lazy(() => import("./pages/GiftVoucher"));
 const KitchenDisplay = lazy(() => import("./pages/KitchenDisplay"));
 const TableOrderPage = lazy(() => import("./pages/TableOrderPage"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
+const MobileSetup = lazy(() => import("./pages/MobileSetup"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const PageLoader = () => (
@@ -48,6 +49,16 @@ function ThemeInit() {
 }
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { getTenantSlug } from "@/lib/apiClient";
+import { Navigate } from "react-router-dom";
+
+function TenantGuard({ children }: { children: React.ReactNode }) {
+  const slug = getTenantSlug();
+  if (!slug) {
+    return <Navigate to="/setup" replace />;
+  }
+  return <>{children}</>;
+}
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -56,16 +67,19 @@ function AnimatedRoutes() {
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes location={location} key={location.pathname}>
-            {/* Direct Chinese House Routes */}
-            <Route path="/" element={<PageTransition><Index /></PageTransition>} />
-            <Route path="/order" element={<PageTransition><OrderPage /></PageTransition>} />
-            <Route path="/reviews" element={<PageTransition><ItemReviewsPage /></PageTransition>} />
-            <Route path="/token-display" element={<PageTransition><TokenDisplay /></PageTransition>} />
-            <Route path="/gift-voucher" element={<PageTransition><GiftVoucher /></PageTransition>} />
-            <Route path="/table/:qrCode" element={<PageTransition><TableOrderPage /></PageTransition>} />
-            <Route path="/kitchen" element={<PageTransition><KitchenDisplay /></PageTransition>} />
-            <Route path="/dashboard" element={<PageTransition><Dashboard /></PageTransition>} />
+            {/* Global Routes (No Tenant Required) */}
             <Route path="/super" element={<PageTransition><SuperAdmin /></PageTransition>} />
+            <Route path="/setup" element={<PageTransition><MobileSetup /></PageTransition>} />
+
+            {/* Tenant Protected Routes */}
+            <Route path="/" element={<TenantGuard><PageTransition><Index /></PageTransition></TenantGuard>} />
+            <Route path="/order" element={<TenantGuard><PageTransition><OrderPage /></PageTransition></TenantGuard>} />
+            <Route path="/reviews" element={<TenantGuard><PageTransition><ItemReviewsPage /></PageTransition></TenantGuard>} />
+            <Route path="/token-display" element={<TenantGuard><PageTransition><TokenDisplay /></PageTransition></TenantGuard>} />
+            <Route path="/gift-voucher" element={<TenantGuard><PageTransition><GiftVoucher /></PageTransition></TenantGuard>} />
+            <Route path="/table/:qrCode" element={<TenantGuard><PageTransition><TableOrderPage /></PageTransition></TenantGuard>} />
+            <Route path="/kitchen" element={<TenantGuard><PageTransition><KitchenDisplay /></PageTransition></TenantGuard>} />
+            <Route path="/dashboard" element={<TenantGuard><PageTransition><Dashboard /></PageTransition></TenantGuard>} />
             
             <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Routes>
