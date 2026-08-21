@@ -17,13 +17,29 @@ function adminAuth(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    // Allow 'admin' (Owner) and all staff roles
-    const validRoles = ["admin", "manager", "waiter", "kitchen"];
+    
+    // Allow 'admin' (Owner), 'super_admin' and all staff roles
+    const validRoles = ["admin", "manager", "waiter", "kitchen", "super_admin"];
     if (!validRoles.includes(decoded.role)) {
       return res.status(403).json({ error: "Forbidden" });
     }
+
     req.admin = decoded;
-    req.business_id = decoded.business_id;
+
+    // CROSS-TENANT ACCESS PREVENTION
+    // If a request targets a specific tenant (req.business_id from tenantEnforcer)
+    // we must ensure the JWT's business_id matches it exactly.
+    // Super admins bypass this check.
+    if (decoded.role !== "super_admin" && req.business_id && req.business_id !== decoded.business_id) {
+      return res.status(403).json({ error: "Cross-tenant access forbidden. Please login again for this restaurant." });
+    }
+
+    // Always prefer the token's business_id if no specific tenant was targeted
+    // or if the user is a super admin acting globally.
+    if (decoded.business_id) {
+      req.business_id = decoded.business_id;
+    }
+
     next();
   } catch (err) {
     return res.status(401).json({ error: "Invalid or expired token" });

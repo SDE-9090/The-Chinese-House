@@ -97,9 +97,9 @@ router.post("/login", loginLimiter, async (req, res) => {
       `SELECT a.id, a.password_hash, a.business_id, b.features, b.name as business_name
        FROM admin_account a
        JOIN businesses b ON a.business_id = b.id
-       WHERE a.mobile_number = $1
+       WHERE a.mobile_number = $1 AND a.business_id = $2
        LIMIT 1`,
-      [username.trim().toLowerCase()]
+      [username.trim().toLowerCase(), req.business_id]
     );
 
     if (!result.rows.length) {
@@ -370,7 +370,7 @@ router.post("/request-reset", resetLimiter, async (req, res) => {
   if (!username) return res.status(400).json({ error: "Username (mobile number) is required" });
 
   try {
-    const result = await pool.query("SELECT * FROM admin_account WHERE mobile_number = $1", [username.trim()]);
+    const result = await pool.query("SELECT * FROM admin_account WHERE mobile_number = $1 AND business_id = $2", [username.trim(), req.business_id]);
 
     if (!result.rows.length) {
       return res.status(500).json({ error: "Admin account not configured" });
@@ -432,7 +432,7 @@ router.post("/reset-password", resetLimiter, async (req, res) => {
   }
 
   try {
-    const result = await pool.query("SELECT * FROM admin_account WHERE mobile_number = $1", [username.trim()]);
+    const result = await pool.query("SELECT * FROM admin_account WHERE mobile_number = $1 AND business_id = $2", [username.trim(), req.business_id]);
     if (!result.rows.length) return res.status(404).json({ error: "Account not found" });
     
     const admin = result.rows[0];
