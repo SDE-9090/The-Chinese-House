@@ -103,8 +103,8 @@ router.post("/businesses", async (req, res) => {
     // 2. Create Admin Account (Owner)
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     await client.query(
-      `INSERT INTO admin_account (mobile_number, password_hash, business_id) 
-       VALUES ($1, $2, $3)`,
+      `INSERT INTO admin_account (mobile_number, password_hash, business_id, webauthn_user_id) 
+       VALUES ($1, $2, $3, gen_random_uuid())`,
       [phone, passwordHash, businessId]
     );
 
