@@ -14,15 +14,16 @@ router.get("/", async (req, res) => {
     
     // Fetch features and slug from tenant record
     const businessRes = await pool.query(
-      "SELECT slug, features, is_active, layout_theme FROM businesses WHERE id = $1", 
+      "SELECT slug, features, is_active, layout_theme, logo_url FROM businesses WHERE id = $1", 
       [req.business_id]
     );
 
-    const business = businessRes.rows[0] || { slug: "", features: {}, is_active: true, layout_theme: "classic" };
+    const business = businessRes.rows[0] || { slug: "", features: {}, is_active: true, layout_theme: "classic", logo_url: "" };
 
     res.json({
       businessId: req.business_id,
       slug: business.slug,
+      logoUrl: business.logo_url,
       features: business.features,
       isActive: business.is_active,
       restaurantName: settings.restaurantName,

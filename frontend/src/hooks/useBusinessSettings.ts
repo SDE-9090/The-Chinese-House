@@ -5,6 +5,7 @@ import { socket } from "@/lib/socket";
 export const useBusinessSettings = () => {
   const DEFAULT_SETTINGS: BusinessSettings = {
     restaurantName: "The Chinese House",
+    logoUrl: "/favicon.png",
     gstin: null,
     address: "Vishal Nagar, Pune",
     phone: "+91 7045339273",

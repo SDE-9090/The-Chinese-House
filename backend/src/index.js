@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ override: true });
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
@@ -34,24 +34,42 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // 🔥 VERY IMPORTANT FOR RENDER / PROXY
-app.set("trust proxy", 1);
+// ---- CORS Configuration ----
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
 
-const corsOrigin = process.env.CORS_ORIGIN 
-  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) 
-  : "http://localhost:8080";
+    const allowedOrigins = process.env.CORS_ORIGIN 
+      ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) 
+      : ["http://localhost:8080", "http://localhost:5173", "http://127.0.0.1:8080"];
 
-// ---- CORS ----
-app.use(cors({
-  origin: corsOrigin,
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+
+    if (origin.endsWith('.localhost:8080') || origin.endsWith('.localhost:5173')) {
+      return callback(null, true);
+    }
+    
+    const isProduction = process.env.NODE_ENV === "production";
+    if (isProduction && origin.endsWith('.thechinesehouse.app')) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('CORS not allowed for origin: ' + origin), false);
+  },
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "x-dashboard-password", "Authorization"],
+  allowedHeaders: ["Content-Type", "x-dashboard-password", "Authorization", "X-Tenant-Slug"],
   credentials: true
-}));
+};
 
-app.use(cookieParser());
+// Global Middleware
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(cookieParser());
 
+app.use(tenantEnforcer);
 // Serve static updates files
 app.use("/public/updates", express.static(path.join(__dirname, "../public/updates")));
 
@@ -79,21 +97,19 @@ app.get("/api/verify-tenant/:slug", async (req, res) => {
 });
 
 // ---- Super Admin Portal ----
+const publicRoutes = require("./routes/public");
+
 // Global routes that should not be scoped to a specific restaurant
+app.use("/api/public", publicRoutes);
 app.use("/api/super", superAdminRoutes);
 
 // ---- Single-Tenant Enforcer ----
-app.use(tenantEnforcer);
-
 // ---- Create HTTP Server ----
 const server = http.createServer(app);
 
 // ---- Attach Socket.IO ----
 const io = new Server(server, {
-  cors: {
-    origin: corsOrigin,
-    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"]
-  }
+  cors: corsOptions
 });
 
 // Make io accessible inside routes

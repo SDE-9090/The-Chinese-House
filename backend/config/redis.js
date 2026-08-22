@@ -2,6 +2,10 @@ const { createClient } = require("redis");
 
 const redisClient = createClient({
   url: process.env.REDIS_URL || "redis://localhost:6379",
+  socket: {
+    connectTimeout: 5000,
+    keepAlive: 5000
+  }
 });
 
 redisClient.on("error", (err) =>

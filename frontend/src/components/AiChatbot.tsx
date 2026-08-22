@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import { API_URL } from "@/lib/apiClient";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 interface Message {
   role: "user" | "assistant";
@@ -11,9 +12,11 @@ interface Message {
 }
 
 const AiChatbot = () => {
+  const { settings } = useBusinessSettings();
+  const restaurantName = settings?.restaurantName || "Restaurant";
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hi! I'm the digital assistant for The Chinese House. How can I help you today?" }
+    { role: "assistant", content: `Hi! I'm the digital assistant for ${restaurantName}. How can I help you today?` }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -132,7 +135,7 @@ const AiChatbot = () => {
                   <Bot size={18} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm">Chinese House AI</h3>
+                  <h3 className="font-bold text-sm">{restaurantName} AI</h3>
                   <p className="text-xs text-primary-foreground/80">Online and ready to help</p>
                 </div>
               </div>

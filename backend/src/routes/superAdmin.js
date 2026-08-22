@@ -62,7 +62,7 @@ router.use(adminAuth, authorizeRole(['super_admin']));
 router.get("/businesses", async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT b.id, b.name, b.slug, b.status, b.is_active, b.created_at, a.mobile_number as owner_phone
+      SELECT b.id, b.name, b.slug, b.status, b.is_active, b.created_at, b.features, a.mobile_number as owner_phone
       FROM businesses b
       LEFT JOIN admin_account a ON a.business_id = b.id
       ORDER BY b.created_at DESC
@@ -70,6 +70,34 @@ router.get("/businesses", async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error("Error fetching businesses:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ======================================================
+// UPDATE BUSINESS FEATURES
+// ======================================================
+router.patch("/businesses/:id/features", async (req, res) => {
+  const { id } = req.params;
+  const { features } = req.body;
+
+  if (typeof features !== 'object' || Array.isArray(features)) {
+    return res.status(400).json({ error: "Features must be a JSON object" });
+  }
+
+  try {
+    const result = await pool.query(
+      "UPDATE businesses SET features = $1 WHERE id = $2 RETURNING id, features",
+      [JSON.stringify(features), id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "Business not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error updating business features:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -116,12 +144,9 @@ router.post("/businesses", async (req, res) => {
 
     // 3. Create Default Business Settings
     await client.query(
-      `INSERT INTO business_settings (
-        business_id, gst_number, gst_percentage, sst_percentage, include_gst_in_price,
-        store_address, contact_number, fssai_number, working_hours,
-        order_modes, delivery_radius_km, minimum_order_value, tax_type
-      ) VALUES ($1, '', 5, 0, false, '', '', '', '{}', '["dine-in", "takeaway", "delivery"]', 5, 0, 'none')`,
-      [businessId]
+      `INSERT INTO business_settings (business_id, restaurant_name) 
+       VALUES ($1, $2)`,
+      [businessId, name]
     );
 
     await client.query("COMMIT");

@@ -588,6 +588,9 @@ const Dashboard = () => {
         setUser(auth.user);
       }
       setChecking(false);
+    }).catch((err) => {
+      console.error("Dashboard auth check failed:", err);
+      setChecking(false);
     });
   }, [navigate]);
 

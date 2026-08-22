@@ -3,7 +3,10 @@ import { API_URL } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Power, ShieldAlert } from "lucide-react";
+import { Loader2, Plus, Power, ShieldAlert, Settings2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function SuperAdmin() {
   const [token, setToken] = useState<string | null>(localStorage.getItem("super_token"));
@@ -21,6 +24,20 @@ export default function SuperAdmin() {
   const [newSlug, setNewSlug] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newPassword, setNewPassword] = useState("");
+
+  const [featuresModal, setFeaturesModal] = useState<{ isOpen: boolean, business: any }>({ isOpen: false, business: null });
+  const [savingFeatures, setSavingFeatures] = useState(false);
+  const [editingFeatures, setEditingFeatures] = useState<any>({});
+
+  const ALL_FEATURES = [
+    { key: 'manual_table_orders', label: 'Manual Table Orders', desc: 'Allow staff to create orders assigned to tables manually.' },
+    { key: 'qr_digital_ordering', label: 'QR Digital Ordering', desc: 'Enable customers to scan QR codes and order directly from their phone.' },
+    { key: 'pos_system', label: 'POS System', desc: 'Enable the counter POS interface for direct orders.' },
+    { key: 'advanced_analytics', label: 'Advanced Analytics', desc: 'Unlock detailed sales and performance charts.' },
+    { key: 'website_cms', label: 'Website CMS', desc: 'Allow the tenant to manage their landing page, gallery, and promotions.' },
+    { key: 'coupon_engine', label: 'Coupon Engine', desc: 'Enable the creation and redemption of discount coupons.' },
+    { key: 'customer_reviews', label: 'Customer Reviews', desc: 'Allow customers to submit reviews and feedback.' }
+  ];
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +105,36 @@ export default function SuperAdmin() {
       fetchBusinesses();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const openFeaturesModal = (business: any) => {
+    setEditingFeatures(business.features || {});
+    setFeaturesModal({ isOpen: true, business });
+  };
+
+  const handleSaveFeatures = async () => {
+    if (!featuresModal.business || !token) return;
+    setSavingFeatures(true);
+    try {
+      const res = await fetch(`${API_URL}/super/businesses/${featuresModal.business.id}/features`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ features: editingFeatures }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save features");
+      
+      setBusinesses(businesses.map(b => b.id === featuresModal.business.id ? { ...b, features: data.features } : b));
+      toast({ title: "Features saved successfully" });
+      setFeaturesModal({ isOpen: false, business: null });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingFeatures(false);
     }
   };
 
@@ -225,7 +272,15 @@ export default function SuperAdmin() {
                         {b.status.toUpperCase()}
                       </span>
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="p-4 text-right space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openFeaturesModal(b)}
+                      >
+                        <Settings2 className="w-4 h-4 mr-2" />
+                        Features
+                      </Button>
                       <Button 
                         variant={b.status === 'active' ? "destructive" : "default"} 
                         size="sm"
@@ -247,6 +302,36 @@ export default function SuperAdmin() {
           )}
         </div>
       </div>
+
+      <Dialog open={featuresModal.isOpen} onOpenChange={(open) => !open && setFeaturesModal({ isOpen: false, business: null })}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Features for {featuresModal.business?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            {ALL_FEATURES.map((feature) => (
+              <div key={feature.key} className="flex items-start space-x-4 border-b border-border pb-4 last:border-0 last:pb-0">
+                <Switch 
+                  id={feature.key}
+                  checked={editingFeatures[feature.key] === true}
+                  onCheckedChange={(checked) => setEditingFeatures({ ...editingFeatures, [feature.key]: checked })}
+                />
+                <div className="grid gap-1">
+                  <Label htmlFor={feature.key} className="font-semibold text-base cursor-pointer">{feature.label}</Label>
+                  <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFeaturesModal({ isOpen: false, business: null })}>Cancel</Button>
+            <Button onClick={handleSaveFeatures} disabled={savingFeatures}>
+              {savingFeatures ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Save Features
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

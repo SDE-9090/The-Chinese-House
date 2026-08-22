@@ -108,9 +108,14 @@ const Navbar = () => {
               onClick={() =>
                 window.scrollTo({ top: 0, behavior: "smooth" })
               }
-              className="font-heading text-xl font-bold text-primary"
+              className="flex items-center gap-2"
             >
-              {settings?.restaurantName || "The Chinese House"}
+              {settings?.logoUrl && settings.logoUrl !== "/favicon.png" && (
+                <img src={settings.logoUrl} alt="Logo" className="h-8 w-auto object-contain rounded-md" />
+              )}
+              <span className="font-heading text-xl font-bold text-primary hidden sm:block">
+                {settings?.restaurantName || "The Chinese House"}
+              </span>
             </a>
 
             {/* Desktop */}

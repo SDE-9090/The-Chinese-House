@@ -516,6 +516,7 @@ export interface LandingPageContent {
 export interface BusinessSettings {
   businessId?: string;
   slug?: string;
+  logoUrl?: string;
   features?: Record<string, any>;
   isActive?: boolean;
   restaurantName: string;
@@ -656,10 +657,19 @@ export interface EditOrderItem {
 
 // ─── Public APIs ──────────────────────────────────────────
 
+export interface PublicBusinessInfo {
+  name: string;
+  logo_url: string;
+  theme: string;
+  layout_theme: string;
+  status: string;
+}
 
-
-
-export async function apiGetTableSessionBill(sessionId: string): Promise<SessionBill> {
+export async function apiGetPublicBusinessInfo(): Promise<PublicBusinessInfo> {
+  const res = await tenantFetch(`${API_URL}/public/business-info`);
+  if (!res.ok) throw new Error("Failed to fetch public business info");
+  return res.json();
+}export async function apiGetTableSessionBill(sessionId: string): Promise<SessionBill> {
   const res = await tenantFetch(`${API_URL}/tables/sessions/${sessionId}/bill`, {
     headers: authHeaders(),
   });
