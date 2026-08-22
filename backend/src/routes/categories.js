@@ -45,7 +45,7 @@ router.post("/", adminAuth, async (req, res) => {
     );
 
     const io = req.app.get("io");
-    if (io) io.emit("menu-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
 
     await invalidateCategoryCache(req.business_id);
 
@@ -80,7 +80,7 @@ router.put("/:id", adminAuth, async (req, res) => {
     // No need to update menu_items - they reference category_id (FK)
 
     const io = req.app.get("io");
-    if (io) io.emit("menu-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
 
     await invalidateCategoryCache(req.business_id);
 
@@ -125,7 +125,7 @@ router.delete("/:id", adminAuth, async (req, res) => {
     }
 
     const io = req.app.get("io");
-    if (io) io.emit("menu-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
     await invalidateCategoryCache(req.business_id);
     res.json({ message: "Category deleted" });
   } catch (err) {

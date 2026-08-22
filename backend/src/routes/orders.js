@@ -351,7 +351,7 @@ Thank you!`;
     };
 
     const io = req.app.get("io");
-    io.emit("new-order", responseData);
+    io.to(`tenant:${req.business_id}`).emit("new-order", responseData);
 
     res.status(201).json(responseData);
   } catch (err) {
@@ -638,8 +638,8 @@ router.patch("/:id/customer-edit", async (req, res) => {
     await client.query("COMMIT");
 
     const io = req.app.get("io");
-    io.emit("order-updated", { id });
-    io.emit("order-editing", { id, editing: false });
+    io.to(`tenant:${req.business_id}`).emit("order-updated", { id });
+    io.to(`tenant:${req.business_id}`).emit("order-editing", { id, editing: false });
 
     await invalidateDashboardCache();
 
@@ -712,7 +712,7 @@ router.patch("/:id/pay-due", async (req, res) => {
     );
 
     const io = req.app.get("io");
-    io.emit("payment-updated", { id });
+    io.to(`tenant:${req.business_id}`).emit("payment-updated", { id });
 
     await invalidateDashboardCache();
 
@@ -748,7 +748,7 @@ router.post("/:id/editing-start", async (req, res) => {
     }
 
     const io = req.app.get("io");
-    io.emit("order-editing", { id, editing: true });
+    io.to(`tenant:${req.business_id}`).emit("order-editing", { id, editing: true });
 
     res.json({ message: "Editing started" });
   } catch (err) {
@@ -761,7 +761,7 @@ router.post("/:id/editing-end", async (req, res) => {
   const { id } = req.params;
 
   const io = req.app.get("io");
-  io.emit("order-editing", { id, editing: false });
+  io.to(`tenant:${req.business_id}`).emit("order-editing", { id, editing: false });
 
   res.json({ message: "Editing ended" });
 });

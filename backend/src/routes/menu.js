@@ -69,7 +69,7 @@ router.put("/reorder", adminAuth, authorizeRole(['admin', 'manager']), async (re
     await invalidateMenuItemsCache(req.business_id);
 
     const io = req.app.get("io");
-    if (io) io.emit("menu-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
 
     res.json({ message: "Menu reordered successfully" });
 
@@ -170,7 +170,7 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuImage
     await invalidateMenuItemsCache(req.business_id);
 
     const io = req.app.get("io");
-    if (io) io.emit("menu-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
 
     res.status(201).json(rows[0]);
 
@@ -266,7 +266,7 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuIma
     await invalidateMenuItemsCache(req.business_id);
 
     const io = req.app.get("io");
-    if (io) io.emit("menu-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
 
     res.json(rows[0]);
 
@@ -312,7 +312,7 @@ router.delete("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req
     await invalidateMenuItemsCache(req.business_id);
 
     const io = req.app.get("io");
-    if (io) io.emit("menu-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
 
     res.json({ message: "Menu item deleted" });
 
@@ -362,7 +362,7 @@ router.post("/bulk-delete-menu-items", adminAuth, authorizeRole(['admin', 'manag
     await invalidateMenuItemsCache(req.business_id);
 
     const io = req.app.get("io");
-    if (io) io.emit("menu-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
 
     res.json({ message: "Menu items deleted" });
 
@@ -397,7 +397,7 @@ router.patch("/:id/toggle", adminAuth, authorizeRole(['admin', 'manager']), asyn
     await invalidateMenuItemsCache(req.business_id);
 
     const io = req.app.get("io");
-    if (io) io.emit("menu-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
 
     res.json(rows[0]);
 

@@ -99,9 +99,42 @@ const io = new Server(server, {
 // Make io accessible inside routes
 app.set("io", io);
 
-// Socket connection logging
-io.on("connection", (socket) => {
+// Socket connection logging & Tenant Room Assignment
+io.on("connection", async (socket) => {
   console.log("🔌 Socket connected:", socket.id);
+
+  const slug = socket.handshake.query.slug;
+  if (slug) {
+    try {
+      const pool = require("./db/pool");
+      const { tenantCache } = require("./middleware/tenantEnforcer");
+      
+      let tenant = tenantCache.get(slug);
+      if (!tenant) {
+        const result = await pool.query(
+          "SELECT id, status FROM businesses WHERE slug = $1 LIMIT 1",
+          [slug]
+        );
+        if (result.rows.length) {
+          tenant = result.rows[0];
+          tenantCache.set(slug, tenant);
+        }
+      }
+
+      if (tenant && tenant.status === 'active') {
+        const roomName = `tenant:${tenant.id}`;
+        socket.join(roomName);
+        socket.business_id = tenant.id; // Attach for later reference
+        console.log(`🏠 Socket ${socket.id} joined room: ${roomName}`);
+      } else {
+        console.log(`⚠️ Socket ${socket.id} tried to join invalid/inactive tenant: ${slug}`);
+      }
+    } catch (err) {
+      console.error("Socket tenant resolution error:", err);
+    }
+  } else {
+    console.log(`⚠️ Socket ${socket.id} connected without a tenant slug`);
+  }
 
   socket.on("disconnect", () => {
     console.log("❌ Socket disconnected:", socket.id);

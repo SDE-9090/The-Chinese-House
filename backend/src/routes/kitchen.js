@@ -100,7 +100,7 @@ router.patch("/orders/:id/ready", async (req, res) => {
     );
 
     const io = req.app.get("io");
-    if (io) io.emit("order-updated", { orderId: id, status: "ready" });
+    if (io) io.to(`tenant:${req.business_id}`).emit("order-updated", { orderId: id, status: "ready" });
 
     await invalidateDashboardCache(req.business_id);
 
@@ -124,7 +124,7 @@ router.patch("/order-items/:id/ready", async (req, res) => {
     }
 
     const io = req.app.get("io");
-    if (io) io.emit("order-updated", { orderId: rows[0].order_id, itemId: id, status: "ready" });
+    if (io) io.to(`tenant:${req.business_id}`).emit("order-updated", { orderId: rows[0].order_id, itemId: id, status: "ready" });
 
     res.json({ message: "Order item marked as ready", item: rows[0] });
   } catch (err) {

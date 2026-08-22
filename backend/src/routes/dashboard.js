@@ -172,7 +172,7 @@ router.patch("/orders/:id/status", auth, async (req, res) => {
     }
 
     const io = req.app.get("io");
-    io.emit("order-updated", {
+    io.to(`tenant:${req.business_id}`).emit("order-updated", {
       id: update.rows[0].id,
       token: update.rows[0].token,
       status: update.rows[0].status,
@@ -246,7 +246,7 @@ router.patch("/orders/:id/payment", auth, async (req, res) => {
     );
 
     const io = req.app.get("io");
-    io.emit("payment-updated", { id: req.params.id });
+    io.to(`tenant:${req.business_id}`).emit("payment-updated", { id: req.params.id });
 
     await invalidateDashboardCache(req.business_id);
     res.json({ success: true });
@@ -373,7 +373,7 @@ router.patch("/orders/:id/items", auth, async (req, res) => {
     await client.query("COMMIT");
 
     const io = req.app.get("io");
-    io.emit("order-updated", { id });
+    io.to(`tenant:${req.business_id}`).emit("order-updated", { id });
 
     await invalidateDashboardCache(req.business_id);
 
@@ -419,8 +419,8 @@ router.patch("/orders/:id/pay-due", auth, async (req, res) => {
 
     const io = req.app.get("io");
     if (io) {
-      io.emit("payment-updated", { id });
-      io.emit("orders-updated");
+      io.to(`tenant:${req.business_id}`).emit("payment-updated", { id });
+      io.to(`tenant:${req.business_id}`).emit("orders-updated");
     }
 
     await invalidateDashboardCache(req.business_id);
@@ -583,8 +583,8 @@ router.post("/orders/:id/complete-payment", auth, async (req, res) => {
 
     const io = req.app.get("io");
     if (io) { 
-      io.emit("payment-updated", { id });
-      io.emit("orders-updated"); 
+      io.to(`tenant:${req.business_id}`).emit("payment-updated", { id });
+      io.to(`tenant:${req.business_id}`).emit("orders-updated"); 
     }
 
     await invalidateDashboardCache(req.business_id);
@@ -619,7 +619,7 @@ router.delete("/orders/:id", auth, async (req, res) => {
     await client.query("COMMIT");
 
     const io = req.app.get("io");
-    io.emit("order-updated", { id, deleted: true });
+    io.to(`tenant:${req.business_id}`).emit("order-updated", { id, deleted: true });
     await invalidateDashboardCache(req.business_id);
 
     res.json({ message: "Order deleted", id });
@@ -1657,7 +1657,7 @@ router.patch("/orders/:id/claim", auth, async (req, res) => {
     }
 
     const io = req.app.get("io");
-    if (io) io.emit("orders-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("orders-updated");
     await invalidateDashboardCache();
 
     res.json({ message: "Order claimed successfully", orderId });

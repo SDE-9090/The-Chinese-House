@@ -197,7 +197,7 @@ router.put("/", adminAuth, async (req, res) => {
     // Notify frontend via socket
     const io = req.app.get("io");
     if (io) {
-      io.emit("business-settings-updated");
+      io.to(`tenant:${req.business_id}`).emit("business-settings-updated");
     }
 
     res.json(updated);
@@ -253,7 +253,7 @@ router.post("/factory-reset", adminAuth, async (req, res) => {
     // Notify frontend via socket to force reload for any active sessions
     const io = req.app.get("io");
     if (io) {
-      io.emit("business-settings-updated");
+      io.to(`tenant:${req.business_id}`).emit("business-settings-updated");
     }
 
     // Completely wipe Redis cache so old data doesn't linger

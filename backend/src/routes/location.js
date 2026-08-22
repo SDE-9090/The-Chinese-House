@@ -148,7 +148,7 @@ router.put("/", adminAuth, async (req, res) => {
     await invalidateLocationCache(req.business_id);
 
     const io = req.app.get("io");
-    if (io) io.emit("location-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("location-updated");
 
     res.json(rows[0]);
   } catch (err) {

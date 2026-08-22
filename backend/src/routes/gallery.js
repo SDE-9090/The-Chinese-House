@@ -61,7 +61,7 @@ router.post(
 
       
       const io = req.app.get("io");
-      if (io) io.emit("gallery-updated");
+      if (io) io.to(`tenant:${req.business_id}`).emit("gallery-updated");
 
       await invalidateGalleryCache(req.business_id);
 
@@ -88,7 +88,7 @@ router.delete("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req
     await deleteCloudinaryImage(rows[0].image_url);
 
     const io = req.app.get("io");
-    if (io) io.emit("gallery-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("gallery-updated");
 
     await invalidateGalleryCache(req.business_id);
 
@@ -118,7 +118,7 @@ router.put("/reorder", adminAuth, authorizeRole(['admin', 'manager']), async (re
     await client.query("COMMIT");
 
     const io = req.app.get("io");
-    if (io) io.emit("gallery-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("gallery-updated");
 
     await invalidateGalleryCache(req.business_id);
 

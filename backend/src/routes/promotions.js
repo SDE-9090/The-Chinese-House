@@ -80,7 +80,7 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res
 
     await invalidatePromotionsCache(req.business_id);
     const io = req.app.get("io");
-    if (io) io.emit("promotion-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("promotion-updated");
 
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -106,7 +106,7 @@ router.patch("/:id/toggle", adminAuth, authorizeRole(['admin', 'manager']), asyn
 
     await invalidatePromotionsCache(req.business_id);
     const io = req.app.get("io");
-    if (io) io.emit("promotion-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("promotion-updated");
     res.json(rows[0]);
   } catch (err) {
     console.error("Toggle promotion error:", err);
@@ -127,7 +127,7 @@ router.delete("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req
     }
     await invalidatePromotionsCache(req.business_id);
     const io = req.app.get("io");
-    if (io) io.emit("promotion-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("promotion-updated");
 
     res.json({ message: "Deleted" });
   } catch (err) {

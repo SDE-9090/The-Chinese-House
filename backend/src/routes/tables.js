@@ -125,7 +125,7 @@ router.post("/:tableId/admin-open", adminAuth, async (req, res) => {
     await client.query("COMMIT");
 
     const io = req.app.get("io");
-    if (io) io.emit("tables-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("tables-updated");
     await invalidateDashboardCache();
 
     res.status(201).json({ id: sessionRes.rows[0].id, new: true });
@@ -269,7 +269,7 @@ router.post("/:tableId/reserve", async (req, res) => {
     await client.query("COMMIT");
 
     const io = req.app.get("io");
-    if (io) io.emit("tables-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("tables-updated");
     await invalidateDashboardCache();
 
     const sr = sessionRes.rows[0];
@@ -359,7 +359,7 @@ router.post("/sessions/:sessionId/transfer", adminAuth, async (req, res) => {
     await client.query("COMMIT");
 
     const io = req.app.get("io");
-    if (io) io.emit("tables-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("tables-updated");
     await invalidateDashboardCache();
 
     res.json({ message: "Table transferred successfully" });
@@ -402,7 +402,7 @@ router.post("/sessions/:sessionId/cancel", async (req, res) => {
     await client.query("COMMIT");
 
     const io = req.app.get("io");
-    if (io) io.emit("tables-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("tables-updated");
     await invalidateDashboardCache();
 
     res.json({ success: true, message: "Session cancelled successfully" });
@@ -428,7 +428,7 @@ router.post("/sessions/:sessionId/done", async (req, res) => {
     if (!rows.length) return res.status(404).json({ error: "Active session not found" });
 
     const io = req.app.get("io");
-    if (io) io.emit("tables-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("tables-updated");
     await invalidateDashboardCache();
 
     res.json(rows[0]);
@@ -469,7 +469,7 @@ router.post("/sessions/:sessionId/claim", async (req, res) => {
     await client.query("COMMIT");
 
     const io = req.app.get("io");
-    if (io) io.emit("tables-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("tables-updated");
 
     res.json({ success: true, session: updateRes.rows[0] });
   } catch (err) {
@@ -665,7 +665,7 @@ router.post("/sessions/:sessionId/pay", async (req, res) => {
     await client.query("COMMIT");
 
     const io = req.app.get("io");
-    if (io) { io.emit("orders-updated"); io.emit("tables-updated"); }
+    if (io) { io.to(`tenant:${req.business_id}`).emit("orders-updated"); io.to(`tenant:${req.business_id}`).emit("tables-updated"); }
 
     await invalidateDashboardCache();
 
@@ -855,7 +855,7 @@ router.post("/sessions/:sessionId/close", adminAuth, async (req, res) => {
     await client.query("COMMIT");
 
     const io = req.app.get("io");
-    if (io) { io.emit("tables-updated"); io.emit("orders-updated"); }
+    if (io) { io.to(`tenant:${req.business_id}`).emit("tables-updated"); io.to(`tenant:${req.business_id}`).emit("orders-updated"); }
 
     await invalidateDashboardCache();
 
@@ -889,7 +889,7 @@ router.put("/:id", adminAuth, async (req, res) => {
     );
     
     const io = req.app.get("io");
-    if (io) io.emit("tables-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("tables-updated");
     
     res.json(rows[0]);
   } catch (err) {
@@ -913,7 +913,7 @@ router.delete("/:id", adminAuth, async (req, res) => {
     await pool.query("DELETE FROM tables WHERE id = $1 AND business_id = $2", [id, req.business_id]);
     
     const io = req.app.get("io");
-    if (io) io.emit("tables-updated");
+    if (io) io.to(`tenant:${req.business_id}`).emit("tables-updated");
     
     res.json({ success: true, message: "Table deleted successfully" });
   } catch (err) {

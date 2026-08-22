@@ -101,7 +101,7 @@ router.put(
 
       // Emit socket update
       const io = req.app.get("io");
-      if (io) io.emit("hero-updated", rows[0]);
+      if (io) io.to(`tenant:${req.business_id}`).emit("hero-updated", rows[0]);
 
       // Invalidate Redis cache
       await invalidateHeroCache(req.business_id);
