@@ -3,14 +3,17 @@ import { API_URL } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Power, ShieldAlert, Settings2, DownloadCloud, UploadCloud } from "lucide-react";
+import { Loader2, Plus, Power, ShieldAlert, Settings2, DownloadCloud, UploadCloud, MessageSquareWarning } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-import { apiSuperAdminUploadUpdate } from "@/lib/apiClient";
+import { apiSuperAdminUploadUpdate, apiSuperAdminAnalytics, apiSuperAdminImpersonate, apiSuperAdminUpdateTier, apiSuperAdminSendAnnouncement } from "@/lib/apiClient";
+import { useNavigate } from "react-router-dom";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export default function SuperAdmin() {
+  const navigate = useNavigate();
   const [token, setToken] = useState<string | null>(localStorage.getItem("super_token"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +22,17 @@ export default function SuperAdmin() {
 
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [fetching, setFetching] = useState(false);
-  const [activeTab, setActiveTab] = useState<"businesses" | "ota">("businesses");
+  const [activeTab, setActiveTab] = useState<"analytics" | "businesses" | "ota" | "announcements">("analytics");
+  
+  // Analytics State
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [fetchingAnalytics, setFetchingAnalytics] = useState(false);
+
+  // Announcement State
+  const [annTitle, setAnnTitle] = useState("");
+  const [annMessage, setAnnMessage] = useState("");
+  const [annType, setAnnType] = useState("info");
+  const [sendingAnn, setSendingAnn] = useState(false);
 
   // OTA state
   const [otaFile, setOtaFile] = useState<File | null>(null);
@@ -91,9 +104,48 @@ export default function SuperAdmin() {
     }
   };
 
+  const fetchAnalytics = async () => {
+    if (!token) return;
+    setFetchingAnalytics(true);
+    try {
+      const data = await apiSuperAdminAnalytics();
+      setAnalyticsData(data);
+    } catch (err: any) {
+      toast({ title: "Failed to load analytics", description: err.message, variant: "destructive" });
+    } finally {
+      setFetchingAnalytics(false);
+    }
+  };
+
   useEffect(() => {
-    if (token) fetchBusinesses();
+    if (token) {
+      fetchBusinesses();
+      fetchAnalytics();
+    }
   }, [token]);
+
+  const handleImpersonate = async (businessId: string) => {
+    try {
+      const data = await apiSuperAdminImpersonate(businessId);
+      
+      // Store current tokens as backup
+      localStorage.setItem("backup_super_token", localStorage.getItem("super_token") || "");
+      localStorage.setItem("backup_tenant_slug", localStorage.getItem("tenant_slug") || "");
+      
+      // Overwrite primary auth token and tenant slug
+      localStorage.setItem("auth_token", data.token);
+      if (data.slug) {
+        localStorage.setItem("tenant_slug", data.slug);
+      }
+      
+      toast({ title: "Impersonation Started", description: "Redirecting to tenant dashboard..." });
+      
+      // Redirect
+      navigate("/dashboard");
+    } catch (err: any) {
+      toast({ title: "Impersonation Failed", description: err.message, variant: "destructive" });
+    }
+  };
 
   const toggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === "active" ? "suspended" : "active";
@@ -114,6 +166,17 @@ export default function SuperAdmin() {
       fetchBusinesses();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleUpdateTier = async (id: string, newTier: string) => {
+    if (!confirm(`Are you sure you want to change the tier to ${newTier.toUpperCase()}? This will automatically override the tenant's feature flags.`)) return;
+    try {
+      await apiSuperAdminUpdateTier(id, newTier);
+      toast({ title: "Tier Updated", description: "The business tier and features have been updated." });
+      fetchBusinesses();
+    } catch (err: any) {
+      toast({ title: "Failed to update tier", description: err.message, variant: "destructive" });
     }
   };
 
@@ -193,6 +256,22 @@ export default function SuperAdmin() {
     }
   };
 
+  const handleSendAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confirm("Are you sure you want to broadcast this announcement to ALL active tenants globally?")) return;
+    setSendingAnn(true);
+    try {
+      await apiSuperAdminSendAnnouncement(annTitle, annMessage, annType);
+      toast({ title: "Broadcast Sent", description: "The global announcement has been pushed to all active devices." });
+      setAnnTitle("");
+      setAnnMessage("");
+    } catch (err: any) {
+      toast({ title: "Broadcast Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setSendingAnn(false);
+    }
+  };
+
   if (!token) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center p-4">
@@ -233,6 +312,12 @@ export default function SuperAdmin() {
           <div className="flex gap-4 items-center">
             <div className="flex bg-zinc-200 dark:bg-zinc-800 p-1 rounded-lg">
               <button
+                onClick={() => setActiveTab("analytics")}
+                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === "analytics" ? "bg-white dark:bg-zinc-700 shadow" : "text-muted-foreground"}`}
+              >
+                Analytics
+              </button>
+              <button
                 onClick={() => setActiveTab("businesses")}
                 className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === "businesses" ? "bg-white dark:bg-zinc-700 shadow" : "text-muted-foreground"}`}
               >
@@ -243,6 +328,12 @@ export default function SuperAdmin() {
                 className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === "ota" ? "bg-white dark:bg-zinc-700 shadow" : "text-muted-foreground"}`}
               >
                 OTA Updates
+              </button>
+              <button
+                onClick={() => setActiveTab("announcements")}
+                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === "announcements" ? "bg-white dark:bg-zinc-700 shadow" : "text-muted-foreground"}`}
+              >
+                Announcements
               </button>
             </div>
             {activeTab === "businesses" && (
@@ -256,6 +347,52 @@ export default function SuperAdmin() {
             }}>Logout</Button>
           </div>
         </div>
+
+        {activeTab === "analytics" && (
+          <div className="space-y-6 mt-8">
+            {fetchingAnalytics || !analyticsData ? (
+              <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
+                    <p className="text-sm text-gray-500 font-medium">Total Platform GMV</p>
+                    <h3 className="text-3xl font-black mt-2 text-primary">₹{(analyticsData.metrics.totalGmv || 0).toLocaleString()}</h3>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
+                    <p className="text-sm text-gray-500 font-medium">Active Tenants</p>
+                    <h3 className="text-3xl font-black mt-2">{analyticsData.metrics.activeTenants} / {analyticsData.metrics.totalTenants}</h3>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
+                    <p className="text-sm text-gray-500 font-medium">Total Orders</p>
+                    <h3 className="text-3xl font-black mt-2">{(analyticsData.metrics.totalOrders || 0).toLocaleString()}</h3>
+                  </div>
+                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
+                    <p className="text-sm text-gray-500 font-medium">MRR (Estimated)</p>
+                    <h3 className="text-3xl font-black mt-2">₹{(analyticsData.metrics.activeTenants * 999).toLocaleString()}</h3>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
+                  <h3 className="text-lg font-bold mb-6">30-Day Platform Growth</h3>
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={analyticsData.chartData}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                        <XAxis dataKey="date" />
+                        <YAxis yAxisId="left" />
+                        <YAxis yAxisId="right" orientation="right" />
+                        <Tooltip />
+                        <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} name="GMV (₹)" />
+                        <Area yAxisId="right" type="monotone" dataKey="orders" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} name="Orders" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {activeTab === "businesses" ? (
           <>
@@ -299,6 +436,8 @@ export default function SuperAdmin() {
                   <th className="p-4 font-semibold text-sm">Restaurant Name</th>
                   <th className="p-4 font-semibold text-sm">Subdomain (Slug)</th>
                   <th className="p-4 font-semibold text-sm">Owner Phone</th>
+                  <th className="p-4 font-semibold text-sm">Tier</th>
+                  <th className="p-4 font-semibold text-sm">Orders (Mtd)</th>
                   <th className="p-4 font-semibold text-sm">Joined</th>
                   <th className="p-4 font-semibold text-sm">Status</th>
                   <th className="p-4 font-semibold text-sm text-right">Actions</th>
@@ -310,6 +449,22 @@ export default function SuperAdmin() {
                     <td className="p-4 font-medium">{b.name}</td>
                     <td className="p-4 font-mono text-sm">{b.slug}</td>
                     <td className="p-4">{b.owner_phone}</td>
+                    <td className="p-4">
+                      <select 
+                        value={b.subscription_tier || 'free'}
+                        onChange={(e) => handleUpdateTier(b.id, e.target.value)}
+                        className="bg-transparent border border-gray-300 dark:border-zinc-700 rounded px-2 py-1 text-sm outline-none font-medium capitalize"
+                      >
+                        <option value="free">Free</option>
+                        <option value="pro">Pro</option>
+                        <option value="enterprise">Enterprise</option>
+                      </select>
+                    </td>
+                    <td className="p-4">
+                      <span className={`${b.subscription_tier === 'free' && parseInt(b.current_month_orders || 0) > 1000 ? 'text-red-600 font-bold bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded' : 'text-gray-600 dark:text-gray-300'}`}>
+                        {b.current_month_orders || 0} {b.subscription_tier === 'free' ? '/ 1000' : ''}
+                      </span>
+                    </td>
                     <td className="p-4 text-sm text-gray-500">{new Date(b.created_at).toLocaleDateString()}</td>
                     <td className="p-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${b.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
@@ -318,20 +473,29 @@ export default function SuperAdmin() {
                     </td>
                     <td className="p-4 text-right space-x-2">
                       <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => openFeaturesModal(b)}
-                      >
-                        <Settings2 className="w-4 h-4 mr-2" />
-                        Features
-                      </Button>
-                      <Button 
                         variant={b.status === 'active' ? "destructive" : "default"} 
                         size="sm"
                         onClick={() => toggleStatus(b.id, b.status)}
                       >
                         <Power className="w-4 h-4 mr-2" />
                         {b.status === 'active' ? "Suspend" : "Activate"}
+                      </Button>
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        onClick={() => handleImpersonate(b.id)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        Log In As
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openFeaturesModal(b)}
+                        className="opacity-50 hover:opacity-100"
+                        title="Manual Feature Override"
+                      >
+                        <Settings2 className="w-4 h-4" />
                       </Button>
                     </td>
                   </tr>
@@ -346,6 +510,61 @@ export default function SuperAdmin() {
           )}
         </div>
           </>
+        ) : activeTab === "announcements" ? (
+          <div className="bg-white dark:bg-zinc-900 p-8 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 max-w-2xl mt-8">
+            <h2 className="text-xl font-bold mb-2">Global Broadcast</h2>
+            <p className="text-sm text-gray-500 mb-6">Send an instant push notification to all connected tenant dashboards and POS tablets globally.</p>
+            
+            <form onSubmit={handleSendAnnouncement} className="space-y-4">
+              <div>
+                <Label>Announcement Title</Label>
+                <Input 
+                  required 
+                  value={annTitle} 
+                  onChange={e => setAnnTitle(e.target.value)} 
+                  placeholder="e.g. Scheduled Maintenance"
+                  maxLength={50}
+                />
+              </div>
+              
+              <div>
+                <Label>Message</Label>
+                <textarea
+                  required
+                  className="w-full min-h-[100px] border border-gray-300 dark:border-zinc-700 rounded-lg p-3 mt-1 bg-transparent text-sm resize-none"
+                  value={annMessage}
+                  onChange={e => setAnnMessage(e.target.value)}
+                  placeholder="Details of the announcement..."
+                  maxLength={250}
+                />
+              </div>
+
+              <div>
+                <Label>Alert Type</Label>
+                <div className="flex gap-4 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="annType" value="info" checked={annType === "info"} onChange={() => setAnnType("info")} />
+                    <span className="text-sm text-blue-600 font-medium">Info</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="annType" value="warning" checked={annType === "warning"} onChange={() => setAnnType("warning")} />
+                    <span className="text-sm text-amber-600 font-medium">Warning</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="annType" value="critical" checked={annType === "critical"} onChange={() => setAnnType("critical")} />
+                    <span className="text-sm text-red-600 font-medium">Critical</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <Button type="submit" disabled={sendingAnn} className="w-full h-12 text-md">
+                  {sendingAnn ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <MessageSquareWarning className="w-5 h-5 mr-2" />}
+                  {sendingAnn ? "Broadcasting..." : "Send Global Announcement"}
+                </Button>
+              </div>
+            </form>
+          </div>
         ) : (
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 rounded-2xl shadow-sm max-w-2xl mx-auto mt-12">
             <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">

@@ -42,6 +42,7 @@ import {
   ClipboardList,
   ImageIcon,
   Megaphone,
+  MessageSquareWarning,
   QrCode,
   Users,
   Fingerprint,
@@ -645,6 +646,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
     "all",
   );
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [globalAnnouncement, setGlobalAnnouncement] = useState<{ id: string, title: string, message: string, type: string } | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(() => {
     return localStorage.getItem("dashboard_sound_enabled") === "true";
   });
@@ -720,11 +722,20 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
         return next;
       });
     };
+    const handleGlobalAnnouncement = (data: any) => {
+      setGlobalAnnouncement(data);
+      if (soundEnabled && audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => { });
+      }
+    };
     socket.on("new-order", handleNewOrder);
     socket.on("order-editing", handleOrderEditing);
+    socket.on("global-announcement", handleGlobalAnnouncement);
     return () => {
       socket.off("new-order", handleNewOrder);
       socket.off("order-editing", handleOrderEditing);
+      socket.off("global-announcement", handleGlobalAnnouncement);
     };
   }, [refreshOrders, soundEnabled]);
 
@@ -905,6 +916,29 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
       />
 
       <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border/50 pb-3 pt-1 shadow-sm">
+        {globalAnnouncement && (
+          <div className={`
+            flex items-center justify-between p-4 px-6 sticky top-0 z-50 text-white font-medium
+            ${globalAnnouncement.type === 'critical' ? 'bg-red-600' : 
+              globalAnnouncement.type === 'warning' ? 'bg-amber-500' : 'bg-blue-600'}
+          `}>
+            <div className="flex items-center gap-3">
+              <MessageSquareWarning className="w-6 h-6 flex-shrink-0" />
+              <div>
+                <p className="font-bold text-lg">{globalAnnouncement.title}</p>
+                <p className="text-sm opacity-90">{globalAnnouncement.message}</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setGlobalAnnouncement(null)} 
+              className="p-2 hover:bg-white/20 rounded-full transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* DASHBOARD HEADER */}
         <DashboardHeader
           soundEnabled={soundEnabled}
           onToggleSound={() => setSoundEnabled(!soundEnabled)}
@@ -1214,7 +1248,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
             ) : settingsSubTab === "audit_logs" ? (
               <AuditLogs />
             ) : (
-              <AppUpdatesManager user={user} />
+              <AppUpdatesManager />
             )}
           </div>
         ) : tab === "staff" ? (

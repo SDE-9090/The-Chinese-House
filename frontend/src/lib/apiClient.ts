@@ -2230,3 +2230,55 @@ export async function apiSuperAdminUploadUpdate(file: File, version: string, rel
   if (!res.ok) throw new Error(data.error || "Failed to upload update");
   return data;
 }
+
+export async function apiSuperAdminImpersonate(businessId: string): Promise<any> {
+  const res = await fetch(`${API_URL}/super/impersonate/${businessId}`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem("super_token")}`,
+    }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to start impersonation");
+  return data;
+}
+
+export async function apiSuperAdminAnalytics(): Promise<any> {
+  const res = await fetch(`${API_URL}/super/analytics`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem("super_token")}`,
+    }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch global analytics");
+  return data;
+}
+
+export async function apiSuperAdminUpdateTier(businessId: string, tier: string): Promise<any> {
+  const res = await fetch(`${API_URL}/super/businesses/${businessId}/tier`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem("super_token")}`,
+    },
+    body: JSON.stringify({ tier }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to update business tier");
+  return data;
+}
+
+export async function apiSuperAdminSendAnnouncement(title: string, message: string, type: string): Promise<any> {
+  const res = await fetch(`${API_URL}/super/announcements`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem("super_token")}`,
+    },
+    body: JSON.stringify({ title, message, type }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to broadcast announcement");
+  return data;
+}
