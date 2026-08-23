@@ -1,8 +1,9 @@
 const jwt = require("jsonwebtoken");
+const pool = require("../db/pool");
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-this-in-production";
 
-function adminAuth(req, res, next) {
+async function adminAuth(req, res, next) {
   // Support both Authorization header (preferred) and cookie fallback
   let token = null;
   const authHeader = req.headers.authorization;
@@ -38,6 +39,19 @@ function adminAuth(req, res, next) {
     // or if the user is a super admin acting globally.
     if (decoded.business_id) {
       req.business_id = decoded.business_id;
+    }
+
+    // VERIFY BUSINESS IS STILL ACTIVE
+    if (decoded.role !== "super_admin" && req.business_id) {
+      try {
+        const bRes = await pool.query("SELECT status FROM businesses WHERE id = $1", [req.business_id]);
+        if (!bRes.rows.length || bRes.rows[0].status !== 'active') {
+          return res.status(403).json({ error: "Access Denied: Your restaurant account has been suspended by the platform administrator." });
+        }
+      } catch (dbErr) {
+        console.error("Auth DB Error:", dbErr);
+        return res.status(500).json({ error: "Internal server error during authentication" });
+      }
     }
 
     next();

@@ -3,7 +3,7 @@ import { API_URL } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Power, ShieldAlert, Settings2, DownloadCloud, UploadCloud, MessageSquareWarning } from "lucide-react";
+import { Loader2, Plus, Power, ShieldAlert, Settings2, DownloadCloud, UploadCloud, MessageSquareWarning, PieChart, Building2, LogOut, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -50,6 +50,13 @@ export default function SuperAdmin() {
   const [featuresModal, setFeaturesModal] = useState<{ isOpen: boolean, business: any }>({ isOpen: false, business: null });
   const [savingFeatures, setSavingFeatures] = useState(false);
   const [editingFeatures, setEditingFeatures] = useState<any>({});
+
+  const [editModal, setEditModal] = useState<{ isOpen: boolean, business: any }>({ isOpen: false, business: null });
+  const [editName, setEditName] = useState("");
+  const [editSlug, setEditSlug] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const ALL_FEATURES = [
     { key: 'manual_table_orders', label: 'Manual Table Orders', desc: 'Allow staff to create orders assigned to tables manually.' },
@@ -239,6 +246,40 @@ export default function SuperAdmin() {
     }
   };
 
+  const openEditModal = (business: any) => {
+    setEditName(business.name);
+    setEditSlug(business.slug);
+    setEditPhone(business.owner_phone);
+    setEditPassword("");
+    setEditModal({ isOpen: true, business });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editModal.business || !token) return;
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`${API_URL}/super/businesses/${editModal.business.id}`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ name: editName, slug: editSlug, phone: editPhone, password: editPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      toast({ title: "Business Updated Successfully!" });
+      setEditModal({ isOpen: false, business: null });
+      fetchBusinesses();
+    } catch (err: any) {
+      toast({ title: "Failed to update", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const handleUploadOta = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otaFile || !otaVersion) return;
@@ -274,25 +315,45 @@ export default function SuperAdmin() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white dark:bg-zinc-900 p-8 rounded-xl shadow-lg">
-          <div className="flex flex-col items-center mb-8">
-            <ShieldAlert className="w-12 h-12 text-primary mb-4" />
-            <h1 className="text-2xl font-bold text-center">Super Admin Portal</h1>
-            <p className="text-sm text-gray-500 mt-2">Global Platform Management</p>
+      <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 flex items-center justify-center p-4 font-sans relative overflow-hidden">
+        {/* Background Decorative Blobs */}
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div className="max-w-md w-full bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl p-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-white/20 dark:border-zinc-800/50 relative z-10">
+          <div className="flex flex-col items-center mb-10">
+            <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-500/20 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+              <ShieldAlert className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <h1 className="text-3xl font-black text-center bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">Super Admin</h1>
+            <p className="text-sm text-slate-500 font-medium mt-2 tracking-wide uppercase">God View Authentication</p>
           </div>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label className="text-sm font-medium">Email</label>
-              <Input type="email" required value={email} onChange={e => setEmail(e.target.value)} />
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Master Email</label>
+              <Input 
+                type="email" 
+                required 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                className="h-12 bg-slate-50 dark:bg-zinc-950/50 border-slate-200 dark:border-zinc-800 focus:border-indigo-500 focus:ring-indigo-500"
+              />
             </div>
             <div>
-              <label className="text-sm font-medium">Password</label>
-              <Input type="password" required value={password} onChange={e => setPassword(e.target.value)} />
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Master Password</label>
+              <Input 
+                type="password" 
+                required 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                className="h-12 bg-slate-50 dark:bg-zinc-950/50 border-slate-200 dark:border-zinc-800 focus:border-indigo-500 focus:ring-indigo-500"
+              />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Authenticate"}
-            </Button>
+            <div className="pt-4">
+              <Button type="submit" className="w-full h-12 text-md font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 dark:shadow-none transition-all hover:-translate-y-0.5" disabled={loading}>
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Authenticate Identity"}
+              </Button>
+            </div>
           </form>
         </div>
       </div>
@@ -300,91 +361,145 @@ export default function SuperAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <ShieldAlert className="text-primary" /> Master Dashboard
-            </h1>
-            <p className="text-gray-500 mt-1">Manage all multi-tenant restaurants</p>
-          </div>
-          <div className="flex gap-4 items-center">
-            <div className="flex bg-zinc-200 dark:bg-zinc-800 p-1 rounded-lg">
-              <button
-                onClick={() => setActiveTab("analytics")}
-                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === "analytics" ? "bg-white dark:bg-zinc-700 shadow" : "text-muted-foreground"}`}
-              >
-                Analytics
-              </button>
-              <button
-                onClick={() => setActiveTab("businesses")}
-                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === "businesses" ? "bg-white dark:bg-zinc-700 shadow" : "text-muted-foreground"}`}
-              >
-                Businesses
-              </button>
-              <button
-                onClick={() => setActiveTab("ota")}
-                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === "ota" ? "bg-white dark:bg-zinc-700 shadow" : "text-muted-foreground"}`}
-              >
-                OTA Updates
-              </button>
-              <button
-                onClick={() => setActiveTab("announcements")}
-                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === "announcements" ? "bg-white dark:bg-zinc-700 shadow" : "text-muted-foreground"}`}
-              >
-                Announcements
-              </button>
+    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 flex font-sans text-slate-900 dark:text-slate-100">
+      
+      {/* SIDEBAR */}
+      <aside className="w-72 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border-r border-slate-200 dark:border-zinc-800 flex flex-col fixed h-screen z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-none">
+        <div className="p-8 pb-4">
+          <h1 className="text-2xl font-black bg-gradient-to-br from-indigo-600 to-violet-500 bg-clip-text text-transparent flex items-center gap-3 tracking-tight">
+            <ShieldAlert className="text-indigo-600 w-7 h-7" /> God View
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider mt-2 ml-10">Global Admin</p>
+        </div>
+        
+        <nav className="flex-1 px-4 space-y-2 mt-8">
+          <button
+            onClick={() => setActiveTab("analytics")}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === "analytics" ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none scale-[1.02]" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-slate-200"}`}
+          >
+            <PieChart className={`w-5 h-5 ${activeTab === 'analytics' ? 'text-indigo-600 dark:text-indigo-400' : ''}`} /> Analytics
+          </button>
+          
+          <button
+            onClick={() => setActiveTab("businesses")}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === "businesses" ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none scale-[1.02]" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-slate-200"}`}
+          >
+            <Building2 className={`w-5 h-5 ${activeTab === 'businesses' ? 'text-indigo-600 dark:text-indigo-400' : ''}`} /> Businesses
+          </button>
+          
+          <button
+            onClick={() => setActiveTab("announcements")}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === "announcements" ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none scale-[1.02]" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-slate-200"}`}
+          >
+            <MessageSquareWarning className={`w-5 h-5 ${activeTab === 'announcements' ? 'text-indigo-600 dark:text-indigo-400' : ''}`} /> Announcements
+          </button>
+
+          <button
+            onClick={() => setActiveTab("ota")}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === "ota" ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none scale-[1.02]" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-slate-200"}`}
+          >
+            <DownloadCloud className={`w-5 h-5 ${activeTab === 'ota' ? 'text-indigo-600 dark:text-indigo-400' : ''}`} /> OTA Updates
+          </button>
+        </nav>
+        
+        <div className="p-6 border-t border-slate-200 dark:border-zinc-800/50">
+           <button 
+             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+             onClick={() => {
+               localStorage.removeItem("super_token");
+               setToken(null);
+             }}
+           >
+              <LogOut className="w-5 h-5" /> Logout Session
+           </button>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 ml-72 p-10 lg:p-12 h-screen overflow-y-auto bg-gradient-to-br from-slate-50 to-slate-100 dark:from-zinc-950 dark:to-zinc-900">
+        <div className="max-w-6xl mx-auto space-y-8">
+          
+          <div className="flex justify-between items-end mb-10 border-b border-slate-200 dark:border-zinc-800 pb-6">
+            <div>
+              <h2 className="text-4xl font-black capitalize bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
+                {activeTab}
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">
+                {activeTab === 'analytics' && "Platform-wide performance and metrics"}
+                {activeTab === 'businesses' && "Manage tenants, impersonation, and limits"}
+                {activeTab === 'announcements' && "Broadcast instant alerts globally"}
+                {activeTab === 'ota' && "Push live updates to all tablets"}
+              </p>
             </div>
             {activeTab === "businesses" && (
-              <Button onClick={() => setShowAdd(!showAdd)}>
-                <Plus className="w-4 h-4 mr-2" /> New Restaurant
+              <Button 
+                onClick={() => setShowAdd(!showAdd)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none h-11 px-6 font-bold"
+              >
+                <Plus className="w-5 h-5 mr-2" /> Provision Restaurant
               </Button>
             )}
-            <Button variant="outline" onClick={() => {
-              localStorage.removeItem("super_token");
-              setToken(null);
-            }}>Logout</Button>
           </div>
-        </div>
 
         {activeTab === "analytics" && (
-          <div className="space-y-6 mt-8">
+          <div className="space-y-8 mt-4">
             {fetchingAnalytics || !analyticsData ? (
-              <div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+              <div className="flex justify-center p-20"><Loader2 className="w-10 h-10 animate-spin text-indigo-500" /></div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
-                    <p className="text-sm text-gray-500 font-medium">Total Platform GMV</p>
-                    <h3 className="text-3xl font-black mt-2 text-primary">₹{(analyticsData.metrics.totalGmv || 0).toLocaleString()}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="bg-gradient-to-br from-indigo-500 to-violet-600 p-6 rounded-3xl shadow-xl shadow-indigo-500/20 text-white relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-10 -mt-10 transform group-hover:scale-110 transition-transform"></div>
+                    <p className="text-sm font-medium text-indigo-100 flex items-center gap-2"><PieChart className="w-4 h-4 opacity-70" /> Platform GMV</p>
+                    <h3 className="text-4xl font-black mt-3">₹{(analyticsData.metrics.totalGmv || 0).toLocaleString()}</h3>
                   </div>
-                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
-                    <p className="text-sm text-gray-500 font-medium">Active Tenants</p>
-                    <h3 className="text-3xl font-black mt-2">{analyticsData.metrics.activeTenants} / {analyticsData.metrics.totalTenants}</h3>
+                  
+                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-zinc-800 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 opacity-5 rounded-full -mr-10 -mt-10 transform group-hover:scale-110 transition-transform"></div>
+                    <p className="text-sm font-medium text-slate-500 flex items-center gap-2"><Building2 className="w-4 h-4 text-indigo-500" /> Active Tenants</p>
+                    <h3 className="text-4xl font-black mt-3 text-slate-800 dark:text-white">
+                      {analyticsData.metrics.activeTenants} <span className="text-lg text-slate-400 font-semibold">/ {analyticsData.metrics.totalTenants}</span>
+                    </h3>
                   </div>
-                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
-                    <p className="text-sm text-gray-500 font-medium">Total Orders</p>
-                    <h3 className="text-3xl font-black mt-2">{(analyticsData.metrics.totalOrders || 0).toLocaleString()}</h3>
+                  
+                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-zinc-800 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500 opacity-5 rounded-full -mr-10 -mt-10 transform group-hover:scale-110 transition-transform"></div>
+                    <p className="text-sm font-medium text-slate-500 flex items-center gap-2"><Plus className="w-4 h-4 text-violet-500" /> Total Orders</p>
+                    <h3 className="text-4xl font-black mt-3 text-slate-800 dark:text-white">{(analyticsData.metrics.totalOrders || 0).toLocaleString()}</h3>
                   </div>
-                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
-                    <p className="text-sm text-gray-500 font-medium">MRR (Estimated)</p>
-                    <h3 className="text-3xl font-black mt-2">₹{(analyticsData.metrics.activeTenants * 999).toLocaleString()}</h3>
+                  
+                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-zinc-800 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500 opacity-5 rounded-full -mr-10 -mt-10 transform group-hover:scale-110 transition-transform"></div>
+                    <p className="text-sm font-medium text-slate-500 flex items-center gap-2"><ShieldAlert className="w-4 h-4 text-emerald-500" /> MRR (Est)</p>
+                    <h3 className="text-4xl font-black mt-3 text-slate-800 dark:text-white">₹{(analyticsData.metrics.activeTenants * 999).toLocaleString()}</h3>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
-                  <h3 className="text-lg font-bold mb-6">30-Day Platform Growth</h3>
+                <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-zinc-800 mt-6">
+                  <h3 className="text-xl font-bold mb-8 flex items-center gap-2">Platform Growth <span className="text-sm font-medium bg-slate-100 dark:bg-zinc-800 px-3 py-1 rounded-full text-slate-500 ml-2">30 Days</span></h3>
                   <div className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={analyticsData.chartData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                        <XAxis dataKey="date" />
-                        <YAxis yAxisId="left" />
-                        <YAxis yAxisId="right" orientation="right" />
-                        <Tooltip />
-                        <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} name="GMV (₹)" />
-                        <Area yAxisId="right" type="monotone" dataKey="orders" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} name="Orders" />
+                      <AreaChart data={analyticsData.chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorOrd" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-zinc-800" />
+                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dy={10} />
+                        <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dx={-10} />
+                        <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#888' }} dx={10} />
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1)', padding: '16px' }}
+                          itemStyle={{ fontWeight: 'bold' }}
+                        />
+                        <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#8b5cf6" strokeWidth={3} fill="url(#colorRev)" name="GMV (₹)" />
+                        <Area yAxisId="right" type="monotone" dataKey="orders" stroke="#3b82f6" strokeWidth={3} fill="url(#colorOrd)" name="Orders" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -397,112 +512,128 @@ export default function SuperAdmin() {
         {activeTab === "businesses" ? (
           <>
             {showAdd && (
-          <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm mb-8 border border-zinc-200 dark:border-zinc-800">
-            <h2 className="text-xl font-semibold mb-4">Onboard New Restaurant</h2>
-            <form onSubmit={handleCreateBusiness} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl shadow-sm mb-8 border border-slate-200 dark:border-zinc-800 animate-in fade-in slide-in-from-top-4">
+            <h2 className="text-xl font-bold mb-6">Onboard New Restaurant</h2>
+            <form onSubmit={handleCreateBusiness} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="text-sm font-medium mb-1 block">Restaurant Name</label>
-                <Input required value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. The Golden Dragon" />
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">Restaurant Name</label>
+                <Input required value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. The Golden Dragon" className="bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 h-11" />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Subdomain Slug</label>
-                <Input required value={newSlug} onChange={e => setNewSlug(e.target.value)} placeholder="e.g. goldendragon (will be goldendragon.thechinesehouse.app)" pattern="[a-z0-9-]+" />
-                <p className="text-xs text-gray-500 mt-1">Lowercase letters, numbers, hyphens only.</p>
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">Subdomain Slug</label>
+                <Input required value={newSlug} onChange={e => setNewSlug(e.target.value)} placeholder="e.g. goldendragon" pattern="[a-z0-9-]+" className="bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 h-11" />
+                <p className="text-xs text-slate-500 mt-1.5 font-medium">Lowercase letters, numbers, hyphens only.</p>
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Owner Phone Number (Login ID)</label>
-                <Input required value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="10 digit number" pattern="[0-9]{10}" />
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">Owner Phone Number (Login ID)</label>
+                <Input required value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="10 digit number" pattern="[0-9]{10}" className="bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 h-11" />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Initial Password</label>
-                <Input required type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">Initial Password</label>
+                <Input required type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 h-11" />
               </div>
               <div className="md:col-span-2 pt-2">
-                <Button type="submit" disabled={loading}>
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Provision Restaurant"}
+                <Button type="submit" disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-12 text-md font-bold shadow-lg shadow-indigo-200 dark:shadow-none">
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : "Provision Restaurant"}
                 </Button>
               </div>
             </form>
           </div>
         )}
 
-        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm overflow-hidden border border-zinc-200 dark:border-zinc-800">
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-slate-200 dark:border-zinc-800 overflow-hidden">
           {fetching ? (
-            <div className="p-12 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+            <div className="p-20 flex justify-center"><Loader2 className="w-10 h-10 animate-spin text-indigo-500" /></div>
           ) : (
-            <table className="w-full text-left">
-              <thead className="bg-gray-100 dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-slate-50 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800">
                 <tr>
-                  <th className="p-4 font-semibold text-sm">Restaurant Name</th>
-                  <th className="p-4 font-semibold text-sm">Subdomain (Slug)</th>
-                  <th className="p-4 font-semibold text-sm">Owner Phone</th>
-                  <th className="p-4 font-semibold text-sm">Tier</th>
-                  <th className="p-4 font-semibold text-sm">Orders (Mtd)</th>
-                  <th className="p-4 font-semibold text-sm">Joined</th>
-                  <th className="p-4 font-semibold text-sm">Status</th>
-                  <th className="p-4 font-semibold text-sm text-right">Actions</th>
+                  <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Restaurant</th>
+                  <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Domain Slug</th>
+                  <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Owner</th>
+                  <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Tier</th>
+                  <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Orders (Mtd)</th>
+                  <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Status</th>
+                  <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50">
                 {businesses.map(b => (
-                  <tr key={b.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
-                    <td className="p-4 font-medium">{b.name}</td>
-                    <td className="p-4 font-mono text-sm">{b.slug}</td>
-                    <td className="p-4">{b.owner_phone}</td>
-                    <td className="p-4">
+                  <tr key={b.id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/20 transition-all group">
+                    <td className="px-6 py-5 font-bold text-slate-900 dark:text-white">{b.name}</td>
+                    <td className="px-6 py-5 font-mono text-sm text-slate-500"><span className="bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700">{b.slug}</span></td>
+                    <td className="px-6 py-5 font-medium text-slate-700 dark:text-slate-300">{b.owner_phone}</td>
+                    <td className="px-6 py-5">
                       <select 
                         value={b.subscription_tier || 'free'}
                         onChange={(e) => handleUpdateTier(b.id, e.target.value)}
-                        className="bg-transparent border border-gray-300 dark:border-zinc-700 rounded px-2 py-1 text-sm outline-none font-medium capitalize"
+                        className="bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm outline-none font-bold capitalize text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
                       >
                         <option value="free">Free</option>
                         <option value="pro">Pro</option>
                         <option value="enterprise">Enterprise</option>
                       </select>
                     </td>
-                    <td className="p-4">
-                      <span className={`${b.subscription_tier === 'free' && parseInt(b.current_month_orders || 0) > 1000 ? 'text-red-600 font-bold bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded' : 'text-gray-600 dark:text-gray-300'}`}>
-                        {b.current_month_orders || 0} {b.subscription_tier === 'free' ? '/ 1000' : ''}
-                      </span>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-bold ${b.subscription_tier === 'free' && parseInt(b.current_month_orders || 0) > 1000 ? 'text-red-600 bg-red-50 dark:bg-red-500/10 px-3 py-1 rounded-full' : 'text-slate-600 dark:text-slate-300'}`}>
+                          {b.current_month_orders || 0}
+                          {b.subscription_tier === 'free' && <span className="text-slate-400 font-medium ml-1">/ 1k</span>}
+                        </span>
+                        {b.subscription_tier === 'free' && parseInt(b.current_month_orders || 0) > 1000 && (
+                           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                        )}
+                      </div>
                     </td>
-                    <td className="p-4 text-sm text-gray-500">{new Date(b.created_at).toLocaleDateString()}</td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${b.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
+                    <td className="px-6 py-5">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${b.status === 'active' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${b.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                         {b.status.toUpperCase()}
                       </span>
                     </td>
-                    <td className="p-4 text-right space-x-2">
-                      <Button 
-                        variant={b.status === 'active' ? "destructive" : "default"} 
-                        size="sm"
-                        onClick={() => toggleStatus(b.id, b.status)}
-                      >
-                        <Power className="w-4 h-4 mr-2" />
-                        {b.status === 'active' ? "Suspend" : "Activate"}
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm"
-                        onClick={() => handleImpersonate(b.id)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        Log In As
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => openFeaturesModal(b)}
-                        className="opacity-50 hover:opacity-100"
-                        title="Manual Feature Override"
-                      >
-                        <Settings2 className="w-4 h-4" />
-                      </Button>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button 
+                          variant={b.status === 'active' ? "ghost" : "default"} 
+                          size="icon"
+                          onClick={() => toggleStatus(b.id, b.status)}
+                          className={b.status === 'active' ? "text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 h-8 w-8" : "bg-emerald-500 hover:bg-emerald-600 h-8 w-8"}
+                          title={b.status === 'active' ? "Suspend" : "Activate"}
+                        >
+                          <Power className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openEditModal(b)}
+                          title="Edit Tenant Details"
+                          className="text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 h-8 w-8"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openFeaturesModal(b)}
+                          title="Manual Feature Override"
+                          className="text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 h-8 w-8"
+                        >
+                          <Settings2 className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm"
+                          onClick={() => handleImpersonate(b.id)}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 dark:shadow-none h-8"
+                        >
+                          Log In As
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
                 {businesses.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-500">No restaurants provisioned yet.</td>
+                    <td colSpan={7} className="p-12 text-center text-slate-500 font-medium">No restaurants provisioned yet.</td>
                   </tr>
                 )}
               </tbody>
@@ -511,27 +642,28 @@ export default function SuperAdmin() {
         </div>
           </>
         ) : activeTab === "announcements" ? (
-          <div className="bg-white dark:bg-zinc-900 p-8 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 max-w-2xl mt-8">
-            <h2 className="text-xl font-bold mb-2">Global Broadcast</h2>
-            <p className="text-sm text-gray-500 mb-6">Send an instant push notification to all connected tenant dashboards and POS tablets globally.</p>
+          <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-zinc-800 max-w-3xl mt-4 animate-in fade-in slide-in-from-top-4">
+            <h2 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">Global Broadcast</h2>
+            <p className="text-sm text-slate-500 mb-8 font-medium">Send an instant push notification to all connected tenant dashboards and POS tablets globally.</p>
             
-            <form onSubmit={handleSendAnnouncement} className="space-y-4">
+            <form onSubmit={handleSendAnnouncement} className="space-y-6">
               <div>
-                <Label>Announcement Title</Label>
+                <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Announcement Title</Label>
                 <Input 
                   required 
                   value={annTitle} 
                   onChange={e => setAnnTitle(e.target.value)} 
                   placeholder="e.g. Scheduled Maintenance"
                   maxLength={50}
+                  className="mt-2 bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 h-12"
                 />
               </div>
               
               <div>
-                <Label>Message</Label>
+                <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">Message</Label>
                 <textarea
                   required
-                  className="w-full min-h-[100px] border border-gray-300 dark:border-zinc-700 rounded-lg p-3 mt-1 bg-transparent text-sm resize-none"
+                  className="w-full min-h-[120px] border border-slate-200 dark:border-zinc-800 rounded-xl p-4 mt-2 bg-slate-50 dark:bg-zinc-950 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow"
                   value={annMessage}
                   onChange={e => setAnnMessage(e.target.value)}
                   placeholder="Details of the announcement..."
@@ -540,85 +672,91 @@ export default function SuperAdmin() {
               </div>
 
               <div>
-                <Label>Alert Type</Label>
-                <div className="flex gap-4 mt-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="annType" value="info" checked={annType === "info"} onChange={() => setAnnType("info")} />
-                    <span className="text-sm text-blue-600 font-medium">Info</span>
+                <Label className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 block">Alert Severity</Label>
+                <div className="grid grid-cols-3 gap-4 mt-2">
+                  <label className={`flex flex-col items-center gap-2 cursor-pointer p-4 rounded-xl border-2 transition-all ${annType === 'info' ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10' : 'border-slate-100 dark:border-zinc-800 hover:border-slate-200 dark:hover:border-zinc-700'}`}>
+                    <input type="radio" name="annType" value="info" checked={annType === "info"} onChange={() => setAnnType("info")} className="hidden" />
+                    <span className="text-blue-500 bg-blue-100 dark:bg-blue-500/20 p-2 rounded-full"><ShieldAlert className="w-5 h-5" /></span>
+                    <span className="text-sm text-blue-600 font-bold">Info</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="annType" value="warning" checked={annType === "warning"} onChange={() => setAnnType("warning")} />
-                    <span className="text-sm text-amber-600 font-medium">Warning</span>
+                  <label className={`flex flex-col items-center gap-2 cursor-pointer p-4 rounded-xl border-2 transition-all ${annType === 'warning' ? 'border-amber-500 bg-amber-50 dark:bg-amber-500/10' : 'border-slate-100 dark:border-zinc-800 hover:border-slate-200 dark:hover:border-zinc-700'}`}>
+                    <input type="radio" name="annType" value="warning" checked={annType === "warning"} onChange={() => setAnnType("warning")} className="hidden" />
+                    <span className="text-amber-500 bg-amber-100 dark:bg-amber-500/20 p-2 rounded-full"><ShieldAlert className="w-5 h-5" /></span>
+                    <span className="text-sm text-amber-600 font-bold">Warning</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="annType" value="critical" checked={annType === "critical"} onChange={() => setAnnType("critical")} />
-                    <span className="text-sm text-red-600 font-medium">Critical</span>
+                  <label className={`flex flex-col items-center gap-2 cursor-pointer p-4 rounded-xl border-2 transition-all ${annType === 'critical' ? 'border-red-500 bg-red-50 dark:bg-red-500/10' : 'border-slate-100 dark:border-zinc-800 hover:border-slate-200 dark:hover:border-zinc-700'}`}>
+                    <input type="radio" name="annType" value="critical" checked={annType === "critical"} onChange={() => setAnnType("critical")} className="hidden" />
+                    <span className="text-red-500 bg-red-100 dark:bg-red-500/20 p-2 rounded-full"><ShieldAlert className="w-5 h-5" /></span>
+                    <span className="text-sm text-red-600 font-bold">Critical</span>
                   </label>
                 </div>
               </div>
 
-              <div className="pt-4">
-                <Button type="submit" disabled={sendingAnn} className="w-full h-12 text-md">
+              <div className="pt-6 border-t border-slate-100 dark:border-zinc-800">
+                <Button type="submit" disabled={sendingAnn} className="w-full h-14 text-md font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-200 dark:shadow-none transition-all hover:scale-[1.01]">
                   {sendingAnn ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <MessageSquareWarning className="w-5 h-5 mr-2" />}
-                  {sendingAnn ? "Broadcasting..." : "Send Global Announcement"}
+                  {sendingAnn ? "Broadcasting to all nodes..." : "Deploy Global Announcement"}
                 </Button>
               </div>
             </form>
           </div>
         ) : (
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 rounded-2xl shadow-sm max-w-2xl mx-auto mt-12">
-            <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
-              <DownloadCloud className="text-primary" /> Publish Global Update
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-10 rounded-3xl shadow-sm max-w-3xl mt-4 animate-in fade-in slide-in-from-top-4">
+            <h3 className="text-2xl font-bold mb-2 flex items-center gap-2 text-slate-900 dark:text-white">
+              <DownloadCloud className="text-indigo-600" /> Publish Global Update
             </h3>
-            <p className="text-sm text-gray-500 mb-8">
+            <p className="text-sm text-slate-500 mb-10 font-medium">
               Upload a zipped `dist` folder to push a live Over-The-Air update to all tablets across ALL tenants instantly.
             </p>
 
             <form onSubmit={handleUploadOta} className="space-y-6">
               <div>
-                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-1">Version Number (e.g. 1.0.5)</label>
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">Version Number (e.g. 1.0.5)</label>
                 <Input 
                   required
                   type="text" 
                   value={otaVersion}
                   onChange={e => setOtaVersion(e.target.value)}
-                  className="w-full font-semibold"
+                  className="w-full font-bold h-12 bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800"
                   placeholder="1.0.0"
                 />
               </div>
               <div>
-                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-1">Release Notes</label>
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">Release Notes</label>
                 <textarea 
                   value={otaNotes}
                   onChange={e => setOtaNotes(e.target.value)}
-                  className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none min-h-[100px]"
+                  className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl p-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-h-[120px] resize-none"
                   placeholder="What's new in this version?"
                 />
               </div>
               <div>
-                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-1">Select Build (.zip)</label>
-                <input 
-                  required
-                  type="file"
-                  accept=".zip"
-                  onChange={e => setOtaFile(e.target.files?.[0] || null)}
-                  className="w-full file:bg-primary file:text-primary-foreground file:border-none file:px-4 file:py-2 file:rounded-lg file:mr-4 file:font-bold text-sm text-muted-foreground bg-gray-50 dark:bg-zinc-800 p-2 rounded-xl"
-                />
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">Select Build Archive (.zip)</label>
+                <div className="border-2 border-dashed border-slate-200 dark:border-zinc-800 rounded-2xl p-8 text-center bg-slate-50 dark:bg-zinc-950/50 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-colors">
+                  <input 
+                    required
+                    type="file"
+                    accept=".zip"
+                    onChange={e => setOtaFile(e.target.files?.[0] || null)}
+                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-500/10 dark:file:text-indigo-400 cursor-pointer"
+                  />
+                </div>
               </div>
               
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+              <div className="pt-8 border-t border-slate-100 dark:border-zinc-800">
                 <Button 
                   type="submit"
                   disabled={otaUploading || !otaFile || !otaVersion}
-                  className="w-full py-6 text-lg font-bold flex justify-center items-center gap-2"
+                  className="w-full h-14 text-lg font-bold flex justify-center items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-slate-200 transition-all hover:scale-[1.01] shadow-xl shadow-slate-200 dark:shadow-none"
                 >
-                  <UploadCloud size={20} /> {otaUploading ? "Uploading & Broadcasting..." : "Publish Update to All Tablets"}
+                  <UploadCloud size={24} /> {otaUploading ? "Uploading & Broadcasting..." : "Publish Update to All Tablets"}
                 </Button>
               </div>
             </form>
           </div>
         )}
-      </div>
+        </div>
+      </main>
 
       <Dialog open={featuresModal.isOpen} onOpenChange={(open) => !open && setFeaturesModal({ isOpen: false, business: null })}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -647,6 +785,39 @@ export default function SuperAdmin() {
               Save Features
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editModal.isOpen} onOpenChange={(open) => !open && setEditModal({ isOpen: false, business: null })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit {editModal.business?.name}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSaveEdit} className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">Restaurant Name</label>
+              <Input required value={editName} onChange={e => setEditName(e.target.value)} className="bg-slate-50 dark:bg-zinc-950" />
+            </div>
+            <div>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">Subdomain Slug</label>
+              <Input required value={editSlug} onChange={e => setEditSlug(e.target.value)} pattern="[a-z0-9-]+" className="bg-slate-50 dark:bg-zinc-950" />
+            </div>
+            <div>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">Owner Phone Number (Login ID)</label>
+              <Input required value={editPhone} onChange={e => setEditPhone(e.target.value)} pattern="[0-9]{10}" className="bg-slate-50 dark:bg-zinc-950" />
+            </div>
+            <div>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">New Password (Optional)</label>
+              <Input type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Leave blank to keep unchanged" className="bg-slate-50 dark:bg-zinc-950" />
+            </div>
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" onClick={() => setEditModal({ isOpen: false, business: null })}>Cancel</Button>
+              <Button type="submit" disabled={savingEdit} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                {savingEdit ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

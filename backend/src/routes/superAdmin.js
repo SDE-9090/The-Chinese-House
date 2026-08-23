@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const pool = require("../db/pool");
 const { adminAuth, authorizeRole, JWT_SECRET } = require("../middleware/adminAuth");
 const { tenantContext } = require("../middleware/tenantContext");
+const { tenantCache } = require("../middleware/tenantEnforcer");
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("../../config/cloudinary");
@@ -120,6 +121,12 @@ router.patch("/businesses/:id/features", async (req, res) => {
       return res.status(404).json({ error: "Business not found" });
     }
 
+    // Clear tenant cache just in case features are needed in cache later
+    const slugRes = await pool.query("SELECT slug FROM businesses WHERE id = $1", [id]);
+    if (slugRes.rows.length) {
+      tenantCache.delete(slugRes.rows[0].slug);
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error("Error updating business features:", err);
@@ -226,6 +233,71 @@ router.post("/businesses", async (req, res) => {
 });
 
 // ======================================================
+// EDIT BUSINESS DETAILS
+// ======================================================
+router.put("/businesses/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name, slug, phone, password } = req.body;
+
+  if (!name || !slug || !phone) {
+    return res.status(400).json({ error: "Name, slug, and phone are required" });
+  }
+
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    return res.status(400).json({ error: "Slug must contain only lowercase letters, numbers, and dashes" });
+  }
+  
+  if (!/^[0-9]{10}$/.test(phone)) {
+    return res.status(400).json({ error: "Phone number must be exactly 10 digits." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // 1. Update Business (name, slug)
+    await client.query(
+      "UPDATE businesses SET name = $1, slug = $2 WHERE id = $3",
+      [name, slug, id]
+    );
+
+    // 2. Update Admin Account phone
+    await client.query(
+      "UPDATE admin_account SET mobile_number = $1 WHERE business_id = $2",
+      [phone, id]
+    );
+
+    // 3. Optionally update password
+    if (password && password.trim() !== "") {
+      const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+      await client.query(
+        "UPDATE admin_account SET password_hash = $1 WHERE business_id = $2",
+        [passwordHash, id]
+      );
+    }
+
+    await client.query("COMMIT");
+    
+    // Clear tenant cache
+    tenantCache.delete(slug);
+
+    res.json({ message: "Business updated successfully" });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Error updating business:", err);
+    if (err.constraint === 'businesses_slug_key') {
+      return res.status(400).json({ error: "Slug already in use" });
+    }
+    if (err.constraint === 'admin_account_mobile_business_unique') {
+      return res.status(400).json({ error: "Phone number already exists for another business" });
+    }
+    res.status(500).json({ error: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+// ======================================================
 // TOGGLE BUSINESS STATUS
 // ======================================================
 router.patch("/businesses/:id/status", async (req, res) => {
@@ -246,6 +318,12 @@ router.patch("/businesses/:id/status", async (req, res) => {
     
     if (!result.rows.length) {
       return res.status(404).json({ error: "Business not found" });
+    }
+
+    // Clear tenant cache so tenantEnforcer fetches fresh status
+    const slugRes = await pool.query("SELECT slug FROM businesses WHERE id = $1", [id]);
+    if (slugRes.rows.length) {
+      tenantCache.delete(slugRes.rows[0].slug);
     }
 
     res.json(result.rows[0]);

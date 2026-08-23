@@ -94,7 +94,7 @@ router.post("/login", loginLimiter, async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT a.id, a.password_hash, a.business_id, b.features, b.name as business_name
+      `SELECT a.id, a.password_hash, a.business_id, b.features, b.name as business_name, b.status
        FROM admin_account a
        JOIN businesses b ON a.business_id = b.id
        WHERE a.mobile_number = $1 AND a.business_id = $2
@@ -107,6 +107,10 @@ router.post("/login", loginLimiter, async (req, res) => {
     }
 
     const admin = result.rows[0];
+
+    if (admin.status !== 'active') {
+      return res.status(403).json({ error: "Access Denied: Your restaurant account has been suspended by the platform administrator." });
+    }
 
     // Check account lock
     const locked = await redisClient.get(`admin:lock:${admin.id}`);
