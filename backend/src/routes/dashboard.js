@@ -4,6 +4,7 @@ const pool = require("../db/pool");
 const redisClient = require("../../config/redis");
 const { invalidateDashboardCache, invalidateActiveOrdersHistoryCache } = require("../helpers/cacheHelper");
 const { adminAuth } = require("../middleware/adminAuth");
+const { logAuditAction } = require("../utils/auditLogger");
 const { ensureBusinessSettings } = require("../utils/businessSettings");
 const { calculateOrderTotals } = require("../utils/gst");
 
@@ -211,6 +212,9 @@ router.patch("/orders/:id/status", auth, async (req, res) => {
 
     await invalidateDashboardCache(req.business_id);
     await invalidateActiveOrdersHistoryCache(update.rows[0].customer_phone, req.business_id);
+    
+    await logAuditAction(req, "UPDATE_ORDER_STATUS", "order", update.rows[0].id, { new_status: status });
+    
     res.json({ success: true });
   } catch (err) {
     console.error("Update status error:", err);
@@ -621,6 +625,8 @@ router.delete("/orders/:id", auth, async (req, res) => {
     const io = req.app.get("io");
     io.to(`tenant:${req.business_id}`).emit("order-updated", { id, deleted: true });
     await invalidateDashboardCache(req.business_id);
+
+    await logAuditAction(req, "DELETE_ORDER", "order", id);
 
     res.json({ message: "Order deleted", id });
   } catch (err) {

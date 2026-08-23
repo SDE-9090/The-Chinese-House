@@ -5,6 +5,30 @@ const jwt = require("jsonwebtoken");
 const pool = require("../db/pool");
 const { adminAuth, authorizeRole, JWT_SECRET } = require("../middleware/adminAuth");
 const { tenantContext } = require("../middleware/tenantContext");
+const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../../config/cloudinary");
+
+// Set up multer for handling .zip uploads via Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "app_updates",
+    resource_type: "raw", // Required for non-image/video files like .zip
+    public_id: (req, file) => `update-${Date.now()}-${Math.round(Math.random() * 1e9)}`,
+  },
+});
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === "application/zip" || file.mimetype === "application/x-zip-compressed" || file.originalname.endsWith('.zip')) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only .zip files are allowed for updates"));
+    }
+  },
+});
 
 const BCRYPT_ROUNDS = 12;
 
@@ -193,6 +217,72 @@ router.patch("/businesses/:id/status", async (req, res) => {
   } catch (err) {
     console.error("Error toggling business status:", err);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ======================================================
+// UPLOAD GLOBAL OTA UPDATE
+// ======================================================
+router.post("/ota/upload", upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No update file uploaded" });
+  }
+
+  const { version, release_notes } = req.body;
+  if (!version) {
+    return res.status(400).json({ error: "Version number is required" });
+  }
+
+  const client = await pool.connect();
+  try {
+    const fileUrl = req.file.path;
+    await client.query("BEGIN");
+
+    const insertResult = await client.query(
+      `INSERT INTO app_updates (version, url, release_notes) 
+       VALUES ($1, $2, $3) RETURNING *`,
+      [version, fileUrl, release_notes || ""]
+    );
+
+    // Keep only the latest 3 global updates
+    const oldUpdates = await client.query(
+      `SELECT id, url FROM app_updates ORDER BY created_at DESC OFFSET 3`
+    );
+
+    for (const row of oldUpdates.rows) {
+      try {
+        if (row.url.includes("cloudinary")) {
+          const parts = row.url.split("/");
+          const filename = parts[parts.length - 1];
+          const folder = parts[parts.length - 2];
+          const publicId = `${folder}/${filename}`;
+          await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
+        }
+        await client.query(`DELETE FROM app_updates WHERE id = $1`, [row.id]);
+      } catch (e) {
+        console.error("Failed to delete old update:", e);
+      }
+    }
+
+    await client.query("COMMIT");
+
+    // Broadcast globally to all connected tablets
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("global-ota-update", { version, url: fileUrl, release_notes });
+    }
+
+    res.json({
+      success: true,
+      message: "Update uploaded successfully",
+      update: insertResult.rows[0],
+    });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Error uploading update:", err);
+    res.status(500).json({ error: "Failed to save update to database" });
+  } finally {
+    client.release();
   }
 });
 

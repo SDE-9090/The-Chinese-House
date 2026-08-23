@@ -7,6 +7,7 @@ const deleteCloudinaryImage = require("../utils/cloudinaryDelete");
 const redisClient = require("../../config/redis");
 
 const { invalidateMenuItemsCache } = require("../helpers/cacheHelper");
+const { logAuditAction } = require("../utils/auditLogger");
 
 // Helper: Generate SEO friendly slug
 function generateSlug(text) {
@@ -172,6 +173,8 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuImage
     const io = req.app.get("io");
     if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
 
+    await logAuditAction(req, "CREATE_MENU_ITEM", "menu_item", rows[0].id, { name: rows[0].name });
+
     res.status(201).json(rows[0]);
 
   } catch (err) {
@@ -268,6 +271,8 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuIma
     const io = req.app.get("io");
     if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
 
+    await logAuditAction(req, "UPDATE_MENU_ITEM", "menu_item", rows[0].id, { name: rows[0].name });
+
     res.json(rows[0]);
 
   } catch (err) {
@@ -313,6 +318,8 @@ router.delete("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req
 
     const io = req.app.get("io");
     if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
+
+    await logAuditAction(req, "DELETE_MENU_ITEM", "menu_item", id, { imageUrl });
 
     res.json({ message: "Menu item deleted" });
 
@@ -364,6 +371,8 @@ router.post("/bulk-delete-menu-items", adminAuth, authorizeRole(['admin', 'manag
     const io = req.app.get("io");
     if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
 
+    await logAuditAction(req, "BULK_DELETE_MENU_ITEMS", "menu_item", null, { count: validIds.length, ids: validIds });
+
     res.json({ message: "Menu items deleted" });
 
   } catch (err) {
@@ -398,6 +407,8 @@ router.patch("/:id/toggle", adminAuth, authorizeRole(['admin', 'manager']), asyn
 
     const io = req.app.get("io");
     if (io) io.to(`tenant:${req.business_id}`).emit("menu-updated");
+
+    await logAuditAction(req, "TOGGLE_MENU_ITEM", "menu_item", rows[0].id, { name: rows[0].name, available: rows[0].available });
 
     res.json(rows[0]);
 

@@ -363,6 +363,45 @@ router.get("/login-logs", adminAuth, async (req, res) => {
 
 
 // ======================================================
+// AUDIT LOGS
+// ======================================================
+router.get("/audit-logs", adminAuth, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = (page - 1) * limit;
+
+    const result = await pool.query(
+      `SELECT a.id, a.action, a.entity_type, a.entity_id, a.details, a.ip_address, a.created_at,
+              s.name AS actor_name, s.role AS actor_role
+       FROM audit_logs a
+       LEFT JOIN staff s ON a.actor_id = s.id
+       WHERE a.business_id = $1
+       ORDER BY a.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [req.business_id, limit, offset]
+    );
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM audit_logs WHERE business_id = $1`,
+      [req.business_id]
+    );
+
+    res.json({
+      logs: result.rows,
+      total: parseInt(countResult.rows[0].count),
+      page,
+      limit
+    });
+
+  } catch (err) {
+    console.error("Audit logs error:", err);
+    res.status(500).json({ error: "Failed to fetch audit logs" });
+  }
+});
+
+
+// ======================================================
 // REQUEST RESET
 // ======================================================
 router.post("/request-reset", resetLimiter, async (req, res) => {

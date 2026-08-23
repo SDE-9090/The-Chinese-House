@@ -434,6 +434,15 @@ export async function apiAdminDeleteStaff(id: string): Promise<{ message: string
   return data;
 }
 
+export async function apiAdminGetAuditLogs(page = 1, limit = 50): Promise<{ logs: any[]; total: number; page: number; limit: number }> {
+  const res = await authFetch(`${API_URL}/admin/audit-logs?page=${page}&limit=${limit}`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch audit logs");
+  return data;
+}
+
 export async function apiGetStaffPerformance(): Promise<StaffPerformance[]> {
   const res = await authFetch(`${API_URL}/dashboard/staff/performance`, {
     headers: authHeaders(),
@@ -2203,15 +2212,17 @@ export async function apiCheckForUpdates(): Promise<{ updateAvailable: boolean; 
   return data;
 }
 
-export async function apiUploadUpdate(file: File, version: string, releaseNotes: string): Promise<any> {
+export async function apiSuperAdminUploadUpdate(file: File, version: string, releaseNotes: string): Promise<any> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("version", version);
   formData.append("release_notes", releaseNotes);
 
-  const res = await authFetch(`${API_URL}/updates/upload`, {
+  const res = await fetch(`${API_URL}/super/ota/upload`, {
     method: "POST",
-    headers: dashHeaders(dashboardPassword, true), // Passing true to omit Content-Type for FormData
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem("super_token")}`,
+    },
     body: formData,
   });
   

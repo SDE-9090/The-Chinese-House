@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const pool = require("../db/pool");
 const { adminAuth, authorizeRole, JWT_SECRET } = require("../middleware/adminAuth");
+const { logAuditAction } = require("../utils/auditLogger");
 
 const BCRYPT_ROUNDS = 12;
 
@@ -146,6 +147,9 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res
       "INSERT INTO staff (name, pin_hash, role, phone, business_id, permissions) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, role, phone, permissions",
       [name, pinHash, role, phone || null, req.business_id, permissions || {}]
     );
+
+    await logAuditAction(req, "CREATE_STAFF", "staff", result.rows[0].id, { name: result.rows[0].name, role: result.rows[0].role });
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error("Create staff error:", err);
@@ -191,6 +195,8 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req, r
       return res.status(404).json({ error: "Staff not found" });
     }
 
+    await logAuditAction(req, "UPDATE_STAFF", "staff", result.rows[0].id, { name: result.rows[0].name, role: result.rows[0].role });
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error("Update staff error:", err);
@@ -206,6 +212,9 @@ router.delete("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Staff not found" });
     }
+
+    await logAuditAction(req, "DELETE_STAFF", "staff", id);
+
     res.json({ message: "Staff deleted successfully" });
   } catch (err) {
     console.error("Delete staff error:", err);

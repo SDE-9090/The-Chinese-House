@@ -3,10 +3,12 @@ import { API_URL } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Power, ShieldAlert, Settings2 } from "lucide-react";
+import { Loader2, Plus, Power, ShieldAlert, Settings2, DownloadCloud, UploadCloud } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+
+import { apiSuperAdminUploadUpdate } from "@/lib/apiClient";
 
 export default function SuperAdmin() {
   const [token, setToken] = useState<string | null>(localStorage.getItem("super_token"));
@@ -17,6 +19,13 @@ export default function SuperAdmin() {
 
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [fetching, setFetching] = useState(false);
+  const [activeTab, setActiveTab] = useState<"businesses" | "ota">("businesses");
+
+  // OTA state
+  const [otaFile, setOtaFile] = useState<File | null>(null);
+  const [otaVersion, setOtaVersion] = useState("");
+  const [otaNotes, setOtaNotes] = useState("");
+  const [otaUploading, setOtaUploading] = useState(false);
 
   // New business state
   const [showAdd, setShowAdd] = useState(false);
@@ -167,6 +176,23 @@ export default function SuperAdmin() {
     }
   };
 
+  const handleUploadOta = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otaFile || !otaVersion) return;
+    try {
+      setOtaUploading(true);
+      await apiSuperAdminUploadUpdate(otaFile, otaVersion, otaNotes);
+      toast({ title: "Global OTA Update Published", description: "The update has been broadcasted to all tablets!" });
+      setOtaFile(null);
+      setOtaVersion("");
+      setOtaNotes("");
+    } catch (err: any) {
+      toast({ title: "Upload Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setOtaUploading(false);
+    }
+  };
+
   if (!token) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center p-4">
@@ -204,10 +230,26 @@ export default function SuperAdmin() {
             </h1>
             <p className="text-gray-500 mt-1">Manage all multi-tenant restaurants</p>
           </div>
-          <div className="flex gap-4">
-            <Button onClick={() => setShowAdd(!showAdd)}>
-              <Plus className="w-4 h-4 mr-2" /> New Restaurant
-            </Button>
+          <div className="flex gap-4 items-center">
+            <div className="flex bg-zinc-200 dark:bg-zinc-800 p-1 rounded-lg">
+              <button
+                onClick={() => setActiveTab("businesses")}
+                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === "businesses" ? "bg-white dark:bg-zinc-700 shadow" : "text-muted-foreground"}`}
+              >
+                Businesses
+              </button>
+              <button
+                onClick={() => setActiveTab("ota")}
+                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === "ota" ? "bg-white dark:bg-zinc-700 shadow" : "text-muted-foreground"}`}
+              >
+                OTA Updates
+              </button>
+            </div>
+            {activeTab === "businesses" && (
+              <Button onClick={() => setShowAdd(!showAdd)}>
+                <Plus className="w-4 h-4 mr-2" /> New Restaurant
+              </Button>
+            )}
             <Button variant="outline" onClick={() => {
               localStorage.removeItem("super_token");
               setToken(null);
@@ -215,7 +257,9 @@ export default function SuperAdmin() {
           </div>
         </div>
 
-        {showAdd && (
+        {activeTab === "businesses" ? (
+          <>
+            {showAdd && (
           <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-sm mb-8 border border-zinc-200 dark:border-zinc-800">
             <h2 className="text-xl font-semibold mb-4">Onboard New Restaurant</h2>
             <form onSubmit={handleCreateBusiness} className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -301,6 +345,60 @@ export default function SuperAdmin() {
             </table>
           )}
         </div>
+          </>
+        ) : (
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 rounded-2xl shadow-sm max-w-2xl mx-auto mt-12">
+            <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+              <DownloadCloud className="text-primary" /> Publish Global Update
+            </h3>
+            <p className="text-sm text-gray-500 mb-8">
+              Upload a zipped `dist` folder to push a live Over-The-Air update to all tablets across ALL tenants instantly.
+            </p>
+
+            <form onSubmit={handleUploadOta} className="space-y-6">
+              <div>
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-1">Version Number (e.g. 1.0.5)</label>
+                <Input 
+                  required
+                  type="text" 
+                  value={otaVersion}
+                  onChange={e => setOtaVersion(e.target.value)}
+                  className="w-full font-semibold"
+                  placeholder="1.0.0"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-1">Release Notes</label>
+                <textarea 
+                  value={otaNotes}
+                  onChange={e => setOtaNotes(e.target.value)}
+                  className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none min-h-[100px]"
+                  placeholder="What's new in this version?"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 block mb-1">Select Build (.zip)</label>
+                <input 
+                  required
+                  type="file"
+                  accept=".zip"
+                  onChange={e => setOtaFile(e.target.files?.[0] || null)}
+                  className="w-full file:bg-primary file:text-primary-foreground file:border-none file:px-4 file:py-2 file:rounded-lg file:mr-4 file:font-bold text-sm text-muted-foreground bg-gray-50 dark:bg-zinc-800 p-2 rounded-xl"
+                />
+              </div>
+              
+              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                <Button 
+                  type="submit"
+                  disabled={otaUploading || !otaFile || !otaVersion}
+                  className="w-full py-6 text-lg font-bold flex justify-center items-center gap-2"
+                >
+                  <UploadCloud size={20} /> {otaUploading ? "Uploading & Broadcasting..." : "Publish Update to All Tablets"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
 
       <Dialog open={featuresModal.isOpen} onOpenChange={(open) => !open && setFeaturesModal({ isOpen: false, business: null })}>

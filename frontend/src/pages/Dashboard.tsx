@@ -66,6 +66,7 @@ const OrderHistory = lazy(() => import("@/components/dashboard/OrderHistory"));
 const ReviewManagement = lazy(() => import("@/components/dashboard/ReviewManagement"));
 const TableQRCodes = lazy(() => import("@/components/dashboard/TableQRCodes"));
 const SecurityLogs = lazy(() => import("@/components/dashboard/SecurityLogs"));
+const AuditLogs = lazy(() => import("@/components/dashboard/AuditLogs"));
 const MenuManager = lazy(() => import("@/components/dashboard/MenuManager"));
 const MenuAnalytics = lazy(() => import("@/components/dashboard/MenuAnalytics"));
 const TableAnalytics = lazy(() => import("@/components/dashboard/TableAnalytics"));
@@ -638,7 +639,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
   const [contentSubTab, setContentSubTab] = useState<"menu" | "hero" | "gallery" | "page" | "address" | "promotions">("menu");
   const [managementSubTab, setManagementSubTab] = useState<"coupons" | "reviews" | "qr-codes" | "customers">("qr-codes");
   const [analyticsSubTab, setAnalyticsSubTab] = useState<"menu" | "table">("menu");
-  const [settingsSubTab, setSettingsSubTab] = useState<"security" | "account" | "business" | "updates">("business");
+  const [settingsSubTab, setSettingsSubTab] = useState<"security" | "account" | "business" | "updates" | "audit_logs">("business");
   const [orderSubTab, setOrderSubTab] = useState<"active" | "history" | "counter-order">("active");
   const [statusFilter, setStatusFilter] = useState<Order["status"] | "all">(
     "all",
@@ -1188,6 +1189,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                 { key: "business" as const, label: "Business & GST", icon: Settings },
                 { key: "account" as const, label: "Security", icon: ShieldCheck },
                 { key: "security" as const, label: "Login Logs", icon: Shield },
+                { key: "audit_logs" as const, label: "Audit Logs", icon: History },
                 { key: "updates" as const, label: "App Updates", icon: DownloadCloud },
               ].map((st) => (
                 <button
@@ -1209,6 +1211,8 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               <AccountSecurity />
             ) : settingsSubTab === "security" ? (
               <SecurityLogs />
+            ) : settingsSubTab === "audit_logs" ? (
+              <AuditLogs />
             ) : (
               <AppUpdatesManager user={user} />
             )}
