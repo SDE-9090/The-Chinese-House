@@ -87,10 +87,12 @@ router.use(adminAuth, authorizeRole(['super_admin']));
 router.get("/businesses", async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT b.id, b.name, b.slug, b.status, b.is_active, b.created_at, b.features, b.subscription_tier, a.mobile_number as owner_phone,
+      SELECT b.id, b.name, b.slug, b.status, b.is_active, b.created_at, b.features, b.subscription_tier, 
+             a.mobile_number as owner_phone, t.monthly_order_limit,
              (SELECT COUNT(*) FROM orders o WHERE o.business_id = b.id AND date_trunc('month', o.created_at) = date_trunc('month', CURRENT_DATE)) as current_month_orders
       FROM businesses b
       LEFT JOIN admin_account a ON a.business_id = b.id
+      LEFT JOIN subscription_tiers t ON t.name = b.subscription_tier
       ORDER BY b.created_at DESC
     `);
     res.json(result.rows);
@@ -137,24 +139,60 @@ router.patch("/businesses/:id/features", async (req, res) => {
 // ======================================================
 // UPDATE BUSINESS TIER
 // ======================================================
-const TIER_FEATURES = {
-  free: { pos_system: true, kitchen_display: true, manual_table_orders: true, qr_digital_ordering: false, advanced_analytics: false, website_cms: false, coupon_engine: false, customer_reviews: false },
-  pro: { pos_system: true, kitchen_display: true, manual_table_orders: true, qr_digital_ordering: true, advanced_analytics: true, website_cms: false, coupon_engine: false, customer_reviews: true },
-  enterprise: { pos_system: true, kitchen_display: true, manual_table_orders: true, qr_digital_ordering: true, advanced_analytics: true, website_cms: true, coupon_engine: true, customer_reviews: true }
-};
+// ======================================================
+// MANAGE SUBSCRIPTION TIERS
+// ======================================================
+router.get("/tiers", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT name, monthly_order_limit, monthly_price, included_features FROM subscription_tiers ORDER BY monthly_price ASC");
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching tiers:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/tiers/:name", async (req, res) => {
+  const { name } = req.params;
+  const { monthly_order_limit, monthly_price, included_features } = req.body;
+
+  try {
+    const result = await pool.query(
+      "UPDATE subscription_tiers SET monthly_order_limit = $1, monthly_price = $2, included_features = $3 WHERE name = $4 RETURNING *",
+      [monthly_order_limit, monthly_price, JSON.stringify(included_features || []), name]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "Tier not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error updating tier:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 router.patch("/businesses/:id/tier", async (req, res) => {
   const { id } = req.params;
   const { tier } = req.body;
 
-  if (!TIER_FEATURES[tier]) {
-    return res.status(400).json({ error: "Invalid subscription tier" });
-  }
-
   try {
+    const tierRes = await pool.query("SELECT included_features FROM subscription_tiers WHERE name = $1", [tier]);
+    if (!tierRes.rows.length) {
+      return res.status(400).json({ error: "Invalid subscription tier" });
+    }
+
+    const includedArray = tierRes.rows[0].included_features || [];
+    const newFeaturesObj = {};
+    const ALL_POSSIBLE_FEATURES = ["pos_system", "kitchen_display", "manual_table_orders", "qr_digital_ordering", "advanced_analytics", "website_cms", "coupon_engine", "customer_reviews"];
+    
+    for (const f of ALL_POSSIBLE_FEATURES) {
+      newFeaturesObj[f] = includedArray.includes(f);
+    }
+
     const result = await pool.query(
       "UPDATE businesses SET subscription_tier = $1, features = $2 WHERE id = $3 RETURNING id, subscription_tier, features",
-      [tier, JSON.stringify(TIER_FEATURES[tier]), id]
+      [tier, JSON.stringify(newFeaturesObj), id]
     );
 
     if (!result.rows.length) {
@@ -394,6 +432,88 @@ router.post("/ota/upload", upload.single("file"), async (req, res) => {
     await client.query("ROLLBACK");
     console.error("Error uploading update:", err);
     res.status(500).json({ error: "Failed to save update to database" });
+  } finally {
+    client.release();
+  }
+});
+
+// ======================================================
+// GET TENANT SPECIFIC ANALYTICS
+// ======================================================
+router.get("/businesses/:id/analytics", async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    const businessCheck = await client.query("SELECT name FROM businesses WHERE id = $1", [id]);
+    if (!businessCheck.rows.length) {
+      return res.status(404).json({ error: "Business not found" });
+    }
+
+    // All-time
+    const allTimeRes = await client.query(
+      `SELECT COUNT(*) as total_orders, COALESCE(SUM(total), 0) as total_revenue 
+       FROM orders WHERE business_id = $1 AND status != 'cancelled'`, 
+      [id]
+    );
+
+    // Today (Daily)
+    const dailyRes = await client.query(
+      `SELECT COUNT(*) as total_orders, COALESCE(SUM(total), 0) as total_revenue 
+       FROM orders WHERE business_id = $1 AND status != 'cancelled' 
+       AND (created_at AT TIME ZONE 'Asia/Kolkata')::date = (NOW() AT TIME ZONE 'Asia/Kolkata')::date`, 
+      [id]
+    );
+
+    // This Week (Last 7 Days)
+    const weeklyRes = await client.query(
+      `SELECT COUNT(*) as total_orders, COALESCE(SUM(total), 0) as total_revenue 
+       FROM orders WHERE business_id = $1 AND status != 'cancelled' 
+       AND created_at >= (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '7 days'`, 
+      [id]
+    );
+
+    // This Month
+    const monthlyRes = await client.query(
+      `SELECT COUNT(*) as total_orders, COALESCE(SUM(total), 0) as total_revenue 
+       FROM orders WHERE business_id = $1 AND status != 'cancelled' 
+       AND date_trunc('month', created_at AT TIME ZONE 'Asia/Kolkata') = date_trunc('month', NOW() AT TIME ZONE 'Asia/Kolkata')`, 
+      [id]
+    );
+
+    // This Year
+    const yearlyRes = await client.query(
+      `SELECT COUNT(*) as total_orders, COALESCE(SUM(total), 0) as total_revenue 
+       FROM orders WHERE business_id = $1 AND status != 'cancelled' 
+       AND date_trunc('year', created_at AT TIME ZONE 'Asia/Kolkata') = date_trunc('year', NOW() AT TIME ZONE 'Asia/Kolkata')`, 
+      [id]
+    );
+
+    res.json({
+      allTime: {
+        orders: parseInt(allTimeRes.rows[0].total_orders),
+        revenue: parseFloat(allTimeRes.rows[0].total_revenue)
+      },
+      daily: {
+        orders: parseInt(dailyRes.rows[0].total_orders),
+        revenue: parseFloat(dailyRes.rows[0].total_revenue)
+      },
+      weekly: {
+        orders: parseInt(weeklyRes.rows[0].total_orders),
+        revenue: parseFloat(weeklyRes.rows[0].total_revenue)
+      },
+      monthly: {
+        orders: parseInt(monthlyRes.rows[0].total_orders),
+        revenue: parseFloat(monthlyRes.rows[0].total_revenue)
+      },
+      yearly: {
+        orders: parseInt(yearlyRes.rows[0].total_orders),
+        revenue: parseFloat(yearlyRes.rows[0].total_revenue)
+      }
+    });
+
+  } catch (err) {
+    console.error("Tenant Analytics Error:", err);
+    res.status(500).json({ error: "Failed to fetch analytics for tenant" });
   } finally {
     client.release();
   }

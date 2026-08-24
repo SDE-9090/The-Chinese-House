@@ -98,6 +98,22 @@ router.post("/", async (req, res) => {
       }
     }
 
+    // Check dynamic tier limits
+    if (req.tenant_limit) {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const orderCountRes = await client.query(
+        "SELECT COUNT(*) FROM orders WHERE business_id = $1 AND created_at >= $2",
+        [req.business_id, startOfMonth]
+      );
+      const currentMonthOrders = parseInt(orderCountRes.rows[0].count);
+      if (currentMonthOrders >= req.tenant_limit) {
+        throw new Error(`Monthly order limit of ${req.tenant_limit} exceeded. Please contact admin to upgrade your subscription tier.`);
+      }
+    }
+
     const today = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
     year: "numeric",

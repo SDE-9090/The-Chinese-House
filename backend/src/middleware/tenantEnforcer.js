@@ -44,7 +44,10 @@ async function tenantEnforcer(req, res, next) {
   if (!tenant) {
     try {
       const result = await pool.query(
-        "SELECT id, status, is_active FROM businesses WHERE slug = $1", 
+        `SELECT b.id, b.status, b.is_active, t.monthly_order_limit 
+         FROM businesses b 
+         LEFT JOIN subscription_tiers t ON b.subscription_tier = t.name 
+         WHERE b.slug = $1`, 
         [slug]
       );
       if (result.rows.length) {
@@ -70,6 +73,7 @@ async function tenantEnforcer(req, res, next) {
   // 7. Attach tenant context to the request
   req.business_id = tenant.id;
   req.tenant_slug = slug;
+  req.tenant_limit = tenant.monthly_order_limit;
   
   // Wrap the rest of the request inside the AsyncLocalStorage context
   // This allows the connection pool to automatically inject PostgreSQL RLS variables
