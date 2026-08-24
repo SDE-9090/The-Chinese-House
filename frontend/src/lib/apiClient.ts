@@ -23,22 +23,41 @@ export const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 
 import { Capacitor } from '@capacitor/core';
 
+export const ROOT_DOMAINS = ['localhost', '127.0.0.1', 'classic-chinese.app', 'www.classic-chinese.app'];
+
+export function isRootDomain(): boolean {
+  if (typeof window === "undefined") return false;
+  if (Capacitor.isNativePlatform()) return false;
+  const hostname = window.location.hostname;
+  return ROOT_DOMAINS.includes(hostname);
+}
+
 export function getTenantSlug(): string | null {
   if (typeof window !== "undefined") {
-    // 1. Check local storage first (Highest priority - for Mobile App Master Build)
-    const savedSlug = localStorage.getItem("tenant_slug");
-    if (savedSlug) return savedSlug;
-
-    // 2. Check hostname for web deployments (e.g. hotelpatil.thechinesehouse.app)
     const hostname = window.location.hostname;
-    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-      return hostname.split('.')[0];
+    
+    // If it's explicitly a root domain, return null (SaaS Landing Page or Setup will handle this)
+    if (ROOT_DOMAINS.includes(hostname)) {
+      return null;
     }
 
-    // 3. Fallback for Local Web Development ONLY. 
-    // If we are native (Capacitor), do NOT fallback, return null so we hit the onboarding screen.
-    if (!Capacitor.isNativePlatform()) {
-      return "the-chinese-house";
+    // Extract subdomain
+    const parts = hostname.split('.');
+    
+    // Handle local IP testing (e.g. accessing via 192.168.1.5 from mobile)
+    const isIP = /^[0-9.]+$/.test(hostname);
+    if (isIP) {
+      const savedSlug = localStorage.getItem("tenant_slug");
+      if (savedSlug) return savedSlug;
+    }
+
+    if (parts.length > 0 && parts[0] !== 'www' && !isIP) {
+      return parts[0];
+    }
+    
+    // Native apps rely entirely on local storage
+    if (Capacitor.isNativePlatform()) {
+       return localStorage.getItem("tenant_slug");
     }
   }
   return null;

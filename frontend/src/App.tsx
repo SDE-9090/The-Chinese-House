@@ -24,6 +24,7 @@ const TableOrderPage = lazy(() => import("./pages/TableOrderPage"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const MobileSetup = lazy(() => import("./pages/MobileSetup"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const SaasLanding = lazy(() => import("./pages/SaasLanding"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -38,7 +39,7 @@ function ThemeInit() {
     if (localStorage.getItem("theme") === "dark") {
       document.documentElement.classList.add("dark");
     }
-    
+
     // Keep tablet screen awake indefinitely
     if (Capacitor.isNativePlatform()) {
       KeepAwake.keepAwake().catch(err => console.error("KeepAwake failed:", err));
@@ -49,14 +50,37 @@ function ThemeInit() {
 }
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { getTenantSlug } from "@/lib/apiClient";
+import { getTenantSlug, isRootDomain } from "@/lib/apiClient";
 import { Navigate } from "react-router-dom";
+
+function RootGuard({ children }: { children: React.ReactNode }) {
+  const slug = getTenantSlug();
+  const native = Capacitor.isNativePlatform();
+  const root = isRootDomain();
+
+  if (native && !slug) {
+    return <Navigate to="/setup" replace />;
+  }
+
+  if (root || (!native && !slug)) {
+    return <PageTransition><SaasLanding /></PageTransition>;
+  }
+
+  return <>{children}</>;
+}
 
 function TenantGuard({ children }: { children: React.ReactNode }) {
   const slug = getTenantSlug();
+  const root = isRootDomain();
+
+  if (root || (!Capacitor.isNativePlatform() && !slug)) {
+    return <Navigate to="/" replace />;
+  }
+
   if (!slug) {
     return <Navigate to="/setup" replace />;
   }
+
   return <>{children}</>;
 }
 
@@ -72,7 +96,7 @@ function AnimatedRoutes() {
             <Route path="/setup" element={<PageTransition><MobileSetup /></PageTransition>} />
 
             {/* Tenant Protected Routes */}
-            <Route path="/" element={<TenantGuard><PageTransition><Index /></PageTransition></TenantGuard>} />
+            <Route path="/" element={<RootGuard><PageTransition><Index /></PageTransition></RootGuard>} />
             <Route path="/order" element={<TenantGuard><PageTransition><OrderPage /></PageTransition></TenantGuard>} />
             <Route path="/reviews" element={<TenantGuard><PageTransition><ItemReviewsPage /></PageTransition></TenantGuard>} />
             <Route path="/token-display" element={<TenantGuard><PageTransition><TokenDisplay /></PageTransition></TenantGuard>} />
@@ -80,7 +104,7 @@ function AnimatedRoutes() {
             <Route path="/table/:qrCode" element={<TenantGuard><PageTransition><TableOrderPage /></PageTransition></TenantGuard>} />
             <Route path="/kitchen" element={<TenantGuard><PageTransition><KitchenDisplay /></PageTransition></TenantGuard>} />
             <Route path="/dashboard" element={<TenantGuard><PageTransition><Dashboard /></PageTransition></TenantGuard>} />
-            
+
             <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Routes>
         </Suspense>
@@ -92,10 +116,10 @@ function AnimatedRoutes() {
 function GlobalChatbot() {
   const location = useLocation();
   // Hide chatbot on admin/staff pages
-  const isAdminPage = location.pathname.startsWith('/dashboard') || 
-                      location.pathname.startsWith('/kitchen') || 
-                      location.pathname.startsWith('/token-display');
-                      
+  const isAdminPage = location.pathname.startsWith('/dashboard') ||
+    location.pathname.startsWith('/kitchen') ||
+    location.pathname.startsWith('/token-display');
+
   if (isAdminPage) return null;
   return <AiChatbot />;
 }
