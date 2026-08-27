@@ -135,6 +135,28 @@ function GlobalChatbot() {
   return <AiChatbot />;
 }
 
+function DynamicTitle() {
+  const { settings } = useBusinessSettings();
+  const root = isRootDomain();
+  
+  useEffect(() => {
+    const faviconElement = document.getElementById('favicon') as HTMLLinkElement;
+    
+    if (root) {
+      document.title = "ClassicOS | Restaurant Management Platform";
+      if (faviconElement) faviconElement.href = "/classicos-favicon.svg";
+    } else if (settings?.restaurantName) {
+      document.title = `${settings.restaurantName} | Powered by ClassicOS`;
+      if (faviconElement && settings.logoUrl) faviconElement.href = settings.logoUrl;
+    } else {
+      document.title = "ClassicOS";
+      if (faviconElement) faviconElement.href = "/classicos-favicon.svg";
+    }
+  }, [settings?.restaurantName, settings?.logoUrl, root]);
+
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -143,6 +165,7 @@ const App = () => (
       <Sonner position="top-center" />
       <BrowserRouter>
         <ThemeInjector />
+        <DynamicTitle />
         <GlobalChatbot />
         <AnimatedRoutes />
       </BrowserRouter>
