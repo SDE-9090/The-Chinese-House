@@ -609,7 +609,7 @@ export default function SuperAdmin() {
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 ml-72 p-10 lg:p-12 h-screen overflow-y-auto bg-gradient-to-br from-slate-50 to-slate-100 dark:from-zinc-950 dark:to-zinc-900">
-        <div className="max-w-6xl mx-auto space-y-8">
+        <div className="w-full max-w-[1600px] mx-auto space-y-8">
 
           <div className="flex justify-between items-end mb-10 border-b border-slate-200 dark:border-zinc-800 pb-6">
             <div>
@@ -798,7 +798,9 @@ export default function SuperAdmin() {
                         <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Tier</th>
                         <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Orders (Mtd)</th>
                         <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Status</th>
-                        <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500 text-right">Actions</th>
+                        <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">
+                          <div className="flex justify-end">Actions</div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50">
@@ -860,7 +862,7 @@ export default function SuperAdmin() {
                                   </div>
                                 )}
                               </td>
-                          <td className="px-6 py-5 font-mono text-sm text-slate-500"><span className="bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700">{b.slug}</span></td>
+                          <td className="px-6 py-5 font-mono text-sm text-slate-500"><span className="whitespace-nowrap bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700">{b.slug}</span></td>
                           <td className="px-6 py-5 font-medium text-slate-700 dark:text-slate-300">{b.owner_phone}</td>
                           <td className="px-6 py-5">
                             <select
@@ -946,7 +948,7 @@ export default function SuperAdmin() {
                                     {branch.name}
                                   </div>
                                 </td>
-                                <td className="px-6 py-4 font-mono text-sm text-slate-500"><span className="bg-white dark:bg-zinc-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700 shadow-sm">{branch.slug}</span></td>
+                                <td className="px-6 py-4 font-mono text-sm text-slate-500"><span className="whitespace-nowrap bg-white dark:bg-zinc-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700 shadow-sm">{branch.slug}</span></td>
                                 <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">{branch.owner_phone}</td>
                                 <td className="px-6 py-4">
                                   <select
