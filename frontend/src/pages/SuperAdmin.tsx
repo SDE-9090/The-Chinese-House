@@ -37,7 +37,7 @@ export default function SuperAdmin() {
   const [unreadEnquiriesCount, setUnreadEnquiriesCount] = useState(0);
   const [saasSettings, setSaasSettings] = useState({ contact_email: "", contact_phone: "" });
   const [settingsSaving, setSettingsSaving] = useState(false);
-  const [superAdminProfile, setSuperAdminProfile] = useState({ email: "", password: "" });
+  const [superAdminProfile, setSuperAdminProfile] = useState({ email: "", password: "", oldPassword: "" });
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Analytics State
@@ -255,7 +255,7 @@ export default function SuperAdmin() {
       const res = await fetch(`${API_URL}/super/profile`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (data && data.email) {
-        setSuperAdminProfile({ email: data.email, password: "" });
+        setSuperAdminProfile({ email: data.email, password: "", oldPassword: "" });
       }
     } catch (err) {
       console.error("Failed to fetch profile:", err);
@@ -304,7 +304,7 @@ export default function SuperAdmin() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       toast({ title: "Profile updated successfully!" });
-      setSuperAdminProfile(prev => ({ ...prev, password: "" }));
+      setSuperAdminProfile(prev => ({ ...prev, password: "", oldPassword: "" }));
     } catch (err: any) {
       console.error("Failed to update profile:", err);
       toast({ title: "Failed to update profile", description: err.message, variant: "destructive" });
@@ -1442,6 +1442,19 @@ export default function SuperAdmin() {
                     />
                     <p className="text-xs text-slate-500 mt-1">Leave this blank if you don't want to change your password.</p>
                   </div>
+                  {superAdminProfile.password && superAdminProfile.password.trim() !== "" && (
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                      <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">Current Password</label>
+                      <input
+                        type="password"
+                        value={superAdminProfile.oldPassword || ""}
+                        onChange={(e) => setSuperAdminProfile({ ...superAdminProfile, oldPassword: e.target.value })}
+                        className="w-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 border-rose-200 dark:border-rose-900/50 dark:text-white"
+                        placeholder="Enter current password to verify"
+                      />
+                      <p className="text-xs text-rose-500 mt-1">Required to set a new password.</p>
+                    </div>
+                  )}
                   <Button onClick={handleSaveProfile} disabled={savingProfile} className="w-full sm:w-auto px-8 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-zinc-900 text-white font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all hover:scale-[1.01]">
                     {savingProfile ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                     Update Credentials

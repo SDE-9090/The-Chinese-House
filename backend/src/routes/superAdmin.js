@@ -96,8 +96,14 @@ router.get("/profile", async (req, res) => {
 });
 
 router.put("/profile", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, oldPassword } = req.body;
   if (!email) return res.status(400).json({ error: "Email/Username is required" });
+
+  if (password && password.trim() !== "") {
+    if (!oldPassword) {
+      return res.status(400).json({ error: "Current password is required to set a new password" });
+    }
+  }
 
   const client = await pool.connect();
   try {
@@ -110,12 +116,24 @@ router.put("/profile", async (req, res) => {
       return res.status(400).json({ error: "Username/Email already in use" });
     }
 
-    await client.query("UPDATE super_admins SET email = $1 WHERE id = $2", [email.trim().toLowerCase(), req.admin.id]);
-
     if (password && password.trim() !== "") {
+      const adminRes = await client.query("SELECT password_hash FROM super_admins WHERE id = $1", [req.admin.id]);
+      if (!adminRes.rows.length) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ error: "Super admin not found" });
+      }
+
+      const valid = await bcrypt.compare(oldPassword, adminRes.rows[0].password_hash);
+      if (!valid) {
+        await client.query("ROLLBACK");
+        return res.status(401).json({ error: "Incorrect current password" });
+      }
+
       const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
       await client.query("UPDATE super_admins SET password_hash = $1 WHERE id = $2", [passwordHash, req.admin.id]);
     }
+
+    await client.query("UPDATE super_admins SET email = $1 WHERE id = $2", [email.trim().toLowerCase(), req.admin.id]);
 
     await client.query("COMMIT");
     res.json({ success: true, message: "Profile updated successfully" });
