@@ -37,6 +37,8 @@ export default function SuperAdmin() {
   const [unreadEnquiriesCount, setUnreadEnquiriesCount] = useState(0);
   const [saasSettings, setSaasSettings] = useState({ contact_email: "", contact_phone: "" });
   const [settingsSaving, setSettingsSaving] = useState(false);
+  const [superAdminProfile, setSuperAdminProfile] = useState({ email: "", password: "" });
+  const [savingProfile, setSavingProfile] = useState(false);
 
   // Analytics State
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -64,6 +66,9 @@ export default function SuperAdmin() {
   
   // Filter state for businesses
   const [searchQuery, setSearchQuery] = useState("");
+  const [enquirySearchQuery, setEnquirySearchQuery] = useState("");
+  const [enquiryStatusFilter, setEnquiryStatusFilter] = useState("all");
+  const [enquirySortOrder, setEnquirySortOrder] = useState("desc");
   const [statusFilter, setStatusFilter] = useState("all");
   const [tierFilter, setTierFilter] = useState("all");
   const [hierarchyFilter, setHierarchyFilter] = useState("all");
@@ -211,6 +216,7 @@ export default function SuperAdmin() {
       fetchEnquiries();
       fetchUnreadEnquiriesCount();
       fetchSaasSettings();
+      fetchSuperAdminProfile();
     }
   }, [token]);
 
@@ -244,6 +250,18 @@ export default function SuperAdmin() {
     }
   };
 
+  const fetchSuperAdminProfile = async () => {
+    try {
+      const res = await fetch(`${API_URL}/super/profile`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (data && data.email) {
+        setSuperAdminProfile({ email: data.email, password: "" });
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+    }
+  };
+
   const updateEnquiryStatus = async (id: string, status: string) => {
     try {
       await fetch(`${API_URL}/super/enquiries/${id}/status`, {
@@ -272,6 +290,26 @@ export default function SuperAdmin() {
       toast({ title: "Failed to save settings", variant: "destructive" });
     } finally {
       setSettingsSaving(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    setSavingProfile(true);
+    try {
+      const res = await fetch(`${API_URL}/super/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(superAdminProfile)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast({ title: "Profile updated successfully!" });
+      setSuperAdminProfile(prev => ({ ...prev, password: "" }));
+    } catch (err: any) {
+      console.error("Failed to update profile:", err);
+      toast({ title: "Failed to update profile", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -474,9 +512,9 @@ export default function SuperAdmin() {
           </div>
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Master Email</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Master Email / Username</label>
               <Input
-                type="email"
+                type="text"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -1240,7 +1278,41 @@ export default function SuperAdmin() {
             </div>
           ) : activeTab === "enquiries" ? (
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm">
-              <h3 className="text-xl font-bold mb-6 text-slate-800 dark:text-white">Inbound Enquiries</h3>
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white">Inbound Enquiries</h3>
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                  <div className="relative w-full md:w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input 
+                      placeholder="Search name, email, phone..." 
+                      value={enquirySearchQuery}
+                      onChange={(e) => setEnquirySearchQuery(e.target.value)}
+                      className="pl-9 bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 h-10"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-slate-400" />
+                    <select
+                      value={enquiryStatusFilter}
+                      onChange={(e) => setEnquiryStatusFilter(e.target.value)}
+                      className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none font-medium text-slate-700 dark:text-slate-300 h-10"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="New">New</option>
+                      <option value="Contacted">Contacted</option>
+                      <option value="Resolved">Resolved</option>
+                    </select>
+                    <select
+                      value={enquirySortOrder}
+                      onChange={(e) => setEnquirySortOrder(e.target.value)}
+                      className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none font-medium text-slate-700 dark:text-slate-300 h-10"
+                    >
+                      <option value="desc">Newest First</option>
+                      <option value="asc">Oldest First</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
@@ -1255,71 +1327,126 @@ export default function SuperAdmin() {
                     </tr>
                   </thead>
                   <tbody>
-                    {enquiries.length === 0 ? (
-                       <tr><td colSpan={7} className="text-center py-6 text-slate-500">No enquiries found</td></tr>
-                    ) : enquiries.map((enq) => (
-                      <tr key={enq.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
-                        <td className="py-4 pl-2 text-sm text-slate-600 dark:text-zinc-300">
-                           {new Date(enq.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="py-4 font-bold text-slate-900 dark:text-white text-sm">{enq.name}</td>
-                        <td className="py-4 text-sm text-slate-600 dark:text-zinc-300">{enq.restaurant_name}</td>
-                        <td className="py-4 text-sm text-slate-600 dark:text-zinc-300">
-                           {enq.email}<br/><span className="text-xs opacity-70">{enq.phone}</span>
-                        </td>
-                        <td className="py-4 text-sm text-slate-600 dark:text-zinc-300 max-w-[200px] truncate" title={enq.message}>{enq.message || "-"}</td>
-                        <td className="py-4">
-                           <span className={`px-2 py-1 rounded-full text-xs font-bold ${enq.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : enq.status === 'Contacted' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400'}`}>
-                             {enq.status}
-                           </span>
-                        </td>
-                        <td className="py-4">
-                           <select 
-                             className="bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
-                             value={enq.status}
-                             onChange={(e) => updateEnquiryStatus(enq.id, e.target.value)}
-                           >
-                             <option value="New">New</option>
-                             <option value="Contacted">Contacted</option>
-                             <option value="Resolved">Resolved</option>
-                           </select>
-                        </td>
-                      </tr>
-                    ))}
+                    {(() => {
+                      const filteredEnquiries = enquiries.filter(enq => {
+                        const sq = enquirySearchQuery.toLowerCase();
+                        const matchesSearch = !sq || 
+                          (enq.name && enq.name.toLowerCase().includes(sq)) || 
+                          (enq.email && enq.email.toLowerCase().includes(sq)) || 
+                          (enq.phone && enq.phone.toLowerCase().includes(sq)) || 
+                          (enq.restaurant_name && enq.restaurant_name.toLowerCase().includes(sq));
+                        
+                        const matchesStatus = enquiryStatusFilter === 'all' || enq.status === enquiryStatusFilter;
+                        
+                        return matchesSearch && matchesStatus;
+                      }).sort((a, b) => {
+                        const dateA = new Date(a.created_at).getTime();
+                        const dateB = new Date(b.created_at).getTime();
+                        return enquirySortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+                      });
+
+                      if (filteredEnquiries.length === 0) {
+                        return <tr><td colSpan={7} className="text-center py-6 text-slate-500 font-medium">No enquiries found</td></tr>;
+                      }
+
+                      return filteredEnquiries.map((enq) => (
+                        <tr key={enq.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                          <td className="py-4 pl-2 text-sm text-slate-600 dark:text-zinc-300 whitespace-nowrap">
+                             {new Date(enq.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="py-4 font-bold text-slate-900 dark:text-white text-sm">{enq.name}</td>
+                          <td className="py-4 text-sm text-slate-600 dark:text-zinc-300 font-medium">{enq.restaurant_name}</td>
+                          <td className="py-4 text-sm text-slate-600 dark:text-zinc-300">
+                             {enq.email}<br/><span className="text-xs opacity-70">{enq.phone}</span>
+                          </td>
+                          <td className="py-4 text-sm text-slate-600 dark:text-zinc-300 max-w-[200px] truncate" title={enq.message}>{enq.message || "-"}</td>
+                          <td className="py-4">
+                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${enq.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : enq.status === 'Contacted' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400'}`}>
+                               {enq.status}
+                             </span>
+                          </td>
+                          <td className="py-4">
+                             <select 
+                               className="bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white cursor-pointer hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
+                               value={enq.status}
+                               onChange={(e) => updateEnquiryStatus(enq.id, e.target.value)}
+                             >
+                               <option value="New">New</option>
+                               <option value="Contacted">Contacted</option>
+                               <option value="Resolved">Resolved</option>
+                             </select>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>
             </div>
           ) : activeTab === "settings" ? (
-            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm max-w-2xl">
-              <h3 className="text-xl font-bold mb-6 text-slate-800 dark:text-white">Platform Public Settings</h3>
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">Public Support Email</label>
-                  <input
-                    type="email"
-                    value={saasSettings.contact_email}
-                    onChange={(e) => setSaasSettings({ ...saasSettings, contact_email: e.target.value })}
-                    className="w-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
-                    placeholder="support@classicos.com"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">This email will be displayed on the public landing page in the Contact Us section.</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl">
+              <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm">
+                <h3 className="text-xl font-bold mb-6 text-slate-800 dark:text-white">Platform Public Settings</h3>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">Public Support Email</label>
+                    <input
+                      type="email"
+                      value={saasSettings.contact_email}
+                      onChange={(e) => setSaasSettings({ ...saasSettings, contact_email: e.target.value })}
+                      className="w-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                      placeholder="support@classicos.com"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">This email will be displayed on the public landing page in the Contact Us section.</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">Public Contact Phone</label>
+                    <input
+                      type="text"
+                      value={saasSettings.contact_phone}
+                      onChange={(e) => setSaasSettings({ ...saasSettings, contact_phone: e.target.value })}
+                      className="w-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                      placeholder="+91 9876543210"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">This phone number will be displayed alongside the email.</p>
+                  </div>
+                  <Button onClick={handleSaveSettings} disabled={settingsSaving} className="w-full sm:w-auto px-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                    {settingsSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                    Save Settings
+                  </Button>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">Public Contact Phone</label>
-                  <input
-                    type="text"
-                    value={saasSettings.contact_phone}
-                    onChange={(e) => setSaasSettings({ ...saasSettings, contact_phone: e.target.value })}
-                    className="w-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
-                    placeholder="+91 9876543210"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">This phone number will be displayed alongside the email.</p>
+              </div>
+
+              <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm">
+                <h3 className="text-xl font-bold mb-6 text-slate-800 dark:text-white">Super Admin Credentials</h3>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">Username / Email</label>
+                    <input
+                      type="text"
+                      value={superAdminProfile.email}
+                      onChange={(e) => setSuperAdminProfile({ ...superAdminProfile, email: e.target.value })}
+                      className="w-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                      placeholder="admin@classicos.com"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">This is the email or username you use to log in to this dashboard.</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">New Password</label>
+                    <input
+                      type="password"
+                      value={superAdminProfile.password}
+                      onChange={(e) => setSuperAdminProfile({ ...superAdminProfile, password: e.target.value })}
+                      className="w-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                      placeholder="Leave blank to keep unchanged"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">Leave this blank if you don't want to change your password.</p>
+                  </div>
+                  <Button onClick={handleSaveProfile} disabled={savingProfile} className="w-full sm:w-auto px-8 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 dark:text-zinc-900 text-white font-bold shadow-lg shadow-slate-200 dark:shadow-none transition-all hover:scale-[1.01]">
+                    {savingProfile ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                    Update Credentials
+                  </Button>
                 </div>
-                <Button onClick={handleSaveSettings} disabled={settingsSaving} className="w-full sm:w-auto px-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
-                  {settingsSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  Save Settings
-                </Button>
               </div>
             </div>
           ) : activeTab === "branch-requests" ? (

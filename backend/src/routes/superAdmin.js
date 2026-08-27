@@ -82,6 +82,53 @@ router.post("/login", async (req, res) => {
 router.use(adminAuth, authorizeRole(['super_admin']));
 
 // ======================================================
+// PROFILE MANAGEMENT (Super Admin)
+// ======================================================
+router.get("/profile", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT email FROM super_admins WHERE id = $1", [req.admin.id]);
+    if (!result.rows.length) return res.status(404).json({ error: "Super admin not found" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error fetching super admin profile:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/profile", async (req, res) => {
+  const { email, password } = req.body;
+  if (!email) return res.status(400).json({ error: "Email/Username is required" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    
+    // Check if new email already exists (excluding self)
+    const check = await client.query("SELECT id FROM super_admins WHERE email = $1 AND id != $2", [email.trim().toLowerCase(), req.admin.id]);
+    if (check.rows.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Username/Email already in use" });
+    }
+
+    await client.query("UPDATE super_admins SET email = $1 WHERE id = $2", [email.trim().toLowerCase(), req.admin.id]);
+
+    if (password && password.trim() !== "") {
+      const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+      await client.query("UPDATE super_admins SET password_hash = $1 WHERE id = $2", [passwordHash, req.admin.id]);
+    }
+
+    await client.query("COMMIT");
+    res.json({ success: true, message: "Profile updated successfully" });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Error updating super admin profile:", err);
+    res.status(500).json({ error: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+// ======================================================
 // GET ALL BUSINESSES
 // ======================================================
 router.get("/businesses", async (req, res) => {
