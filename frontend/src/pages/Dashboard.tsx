@@ -48,6 +48,7 @@ import {
   Fingerprint,
   RefreshCw,
   DownloadCloud,
+  Network,
 } from "lucide-react";
 
 import { Loader2 } from "lucide-react";
@@ -59,6 +60,7 @@ import StatsBar from "@/components/dashboard/StatsBar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import PaymentCollectionModal from "@/components/PaymentCollectionModal";
 import AppUpdatesManager from "@/components/dashboard/AppUpdatesManager";
+import { BranchesTab } from "@/components/dashboard/BranchesTab";
 
 // Lazy-loaded heavy sub-components
 const SalesReportUI = lazy(() => import("@/components/dashboard/SalesReportUI"));
@@ -635,7 +637,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
     {},
   );
   const [tab, setTab] = useState<
-    "orders" | "tables" | "sales" | "analytics" | "content" | "management" | "system" | "staff"
+    "orders" | "tables" | "sales" | "analytics" | "content" | "management" | "system" | "staff" | "branches"
   >("orders");
   const [contentSubTab, setContentSubTab] = useState<"menu" | "hero" | "gallery" | "page" | "address" | "promotions">("menu");
   const [managementSubTab, setManagementSubTab] = useState<"coupons" | "reviews" | "qr-codes" | "customers">("qr-codes");
@@ -959,6 +961,13 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               { key: "content" as const, label: "Content", icon: FileText, roles: ["admin", "manager"], check: () => user.features?.website_cms },
               { key: "management" as const, label: "Management", icon: ClipboardList, roles: ["admin", "manager"], check: () => user.features?.coupon_engine || user.features?.customer_reviews },
               { key: "system" as const, label: "System", icon: Settings, roles: ["admin"] },
+              { 
+                key: "branches" as const, 
+                label: "Branches", 
+                icon: Network, 
+                roles: ["admin"],
+                check: () => user.parent_business_id === null && user.features?.multi_branch === true 
+              },
               { key: "staff" as const, label: "Staff", icon: Shield, roles: ["admin", "manager"] },
             ]
               .filter(t => user.role === 'admin' || (user.permissions?.tabs && user.permissions.tabs[t.key as keyof typeof user.permissions.tabs]))
@@ -1253,6 +1262,8 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
           </div>
         ) : tab === "staff" ? (
           <StaffManager />
+        ) : tab === "branches" ? (
+          <BranchesTab />
         ) : null}
       </Suspense>
 

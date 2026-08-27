@@ -93,8 +93,11 @@ router.post("/login", loginLimiter, async (req, res) => {
       });
     }
 
+    let admin = null;
+    let valid = false;
+
     const result = await pool.query(
-      `SELECT a.id, a.password_hash, a.business_id, b.features, b.name as business_name, b.status
+      `SELECT a.id, a.password_hash, a.business_id, b.features, b.name as business_name, b.status, b.parent_business_id
        FROM admin_account a
        JOIN businesses b ON a.business_id = b.id
        WHERE a.mobile_number = $1 AND a.business_id = $2
@@ -102,25 +105,61 @@ router.post("/login", loginLimiter, async (req, res) => {
       [username.trim().toLowerCase(), req.business_id]
     );
 
-    if (!result.rows.length) {
-      return res.status(401).json({ error: "Invalid credentials" });
+    if (result.rows.length > 0) {
+      admin = result.rows[0];
+      valid = await bcrypt.compare(password, admin.password_hash);
     }
 
-    const admin = result.rows[0];
+    // --- PARENT FALLBACK STRATEGY ---
+    if (!admin || !valid) {
+      const parentCheck = await pool.query(
+        `SELECT b.parent_business_id, b.features, b.name as business_name, b.status 
+         FROM businesses b 
+         WHERE b.id = $1`,
+        [req.business_id]
+      );
+      
+      if (parentCheck.rows.length > 0 && parentCheck.rows[0].parent_business_id) {
+        const parentId = parentCheck.rows[0].parent_business_id;
+        
+        const parentResult = await pool.query(
+          `SELECT a.id, a.password_hash, a.business_id 
+           FROM admin_account a
+           WHERE a.mobile_number = $1 AND a.business_id = $2
+           LIMIT 1`,
+          [username.trim().toLowerCase(), parentId]
+        );
+
+        if (parentResult.rows.length > 0) {
+          const parentValid = await bcrypt.compare(password, parentResult.rows[0].password_hash);
+          if (parentValid) {
+            valid = true;
+            admin = {
+              id: parentResult.rows[0].id,
+              business_id: req.business_id,
+              features: parentCheck.rows[0].features,
+              business_name: parentCheck.rows[0].business_name,
+              status: parentCheck.rows[0].status
+            };
+          }
+        }
+      }
+    }
+
+    if (!admin) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
     if (admin.status !== 'active') {
       return res.status(403).json({ error: "Access Denied: Your restaurant account has been suspended by the platform administrator." });
     }
 
-    // Check account lock
     const locked = await redisClient.get(`admin:lock:${admin.id}`);
     if (locked) {
       return res.status(403).json({
         error: "Account locked. Try again in 15 minutes.",
       });
     }
-
-    const valid = await bcrypt.compare(password, admin.password_hash);
 
     // =====================
     // FAILED LOGIN
@@ -238,10 +277,11 @@ router.post("/login", loginLimiter, async (req, res) => {
 router.get("/me", adminAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT features FROM businesses WHERE id = $1",
+      "SELECT features, parent_business_id FROM businesses WHERE id = $1",
       [req.admin.business_id]
     );
     const features = result.rows.length ? result.rows[0].features : {};
+    const parent_business_id = result.rows.length ? result.rows[0].parent_business_id : null;
 
     let user = req.admin;
     if (req.admin.isStaff) {
@@ -259,7 +299,7 @@ router.get("/me", adminAuth, async (req, res) => {
     
     res.json({ 
       authenticated: true, 
-      user,
+      user: { ...user, parent_business_id },
       features
     });
   } catch (err) {
@@ -861,6 +901,94 @@ router.post("/biometric/login", loginLimiter, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+// ======================================================
+// MULTI-BRANCH MANAGEMENT
+// ======================================================
+router.get("/branches", adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, name, slug, subscription_tier, status, is_active FROM businesses WHERE parent_business_id = $1 ORDER BY created_at DESC",
+      [req.business_id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching branches:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
+router.get("/branch-requests", adminAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM branch_requests WHERE parent_business_id = $1 ORDER BY created_at DESC",
+      [req.business_id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching branch requests:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/branch-requests", adminAuth, async (req, res) => {
+  const { name, slug, tier, mobile, password } = req.body;
+  if (!name || !slug || !tier || !mobile || !password) {
+    return res.status(400).json({ error: "Name, slug, tier, mobile, and password are required." });
+  }
+
+  // Basic slug validation (alphanumeric, dashes, lowercase)
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    return res.status(400).json({ error: "Slug must contain only lowercase letters, numbers, and dashes" });
+  }
+
+  try {
+    // Check if slug is already taken globally
+    const slugCheck = await pool.query("SELECT id FROM businesses WHERE slug = $1", [slug]);
+    if (slugCheck.rows.length > 0) {
+      return res.status(400).json({ error: "This domain slug is already in use by another restaurant." });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const result = await pool.query(
+      "INSERT INTO branch_requests (parent_business_id, requested_name, requested_slug, requested_tier, requested_mobile, requested_password_hash) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [req.business_id, name, slug, tier, mobile, passwordHash]
+    );
+    res.status(201).json({ message: "Branch request submitted successfully", request: result.rows[0] });
+  } catch (err) {
+    console.error("Error submitting branch request:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router.get("/franchise-analytics", adminAuth, async (req, res) => {
+  try {
+    const today = await pool.query(`
+      SELECT 
+        COUNT(*) as total_orders,
+        COALESCE(SUM(total), 0) as total_revenue
+      FROM orders 
+      WHERE (created_at AT TIME ZONE 'Asia/Kolkata')::date = (NOW() AT TIME ZONE 'Asia/Kolkata')::date 
+      AND status != 'cancelled'
+      AND (business_id = $1 OR business_id IN (SELECT id FROM businesses WHERE parent_business_id = $1))
+    `, [req.business_id]);
+
+    const allTime = await pool.query(`
+      SELECT 
+        COUNT(*) as total_orders,
+        COALESCE(SUM(total), 0) as total_revenue
+      FROM orders 
+      WHERE status != 'cancelled'
+      AND (business_id = $1 OR business_id IN (SELECT id FROM businesses WHERE parent_business_id = $1))
+    `, [req.business_id]);
+
+    res.json({
+      today: today.rows[0],
+      allTime: allTime.rows[0]
+    });
+  } catch (err) {
+    console.error("Error fetching franchise analytics:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 module.exports = router;

@@ -87,12 +87,14 @@ router.use(adminAuth, authorizeRole(['super_admin']));
 router.get("/businesses", async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT b.id, b.name, b.slug, b.status, b.is_active, b.created_at, b.features, b.subscription_tier, 
+      SELECT b.id, b.name, b.slug, b.status, b.is_active, b.created_at, b.features, b.subscription_tier, b.parent_business_id,
              a.mobile_number as owner_phone, t.monthly_order_limit,
+             pb.name as parent_name, pb.slug as parent_slug,
              (SELECT COUNT(*) FROM orders o WHERE o.business_id = b.id AND date_trunc('month', o.created_at) = date_trunc('month', CURRENT_DATE)) as current_month_orders
       FROM businesses b
       LEFT JOIN admin_account a ON a.business_id = b.id
       LEFT JOIN subscription_tiers t ON t.name = b.subscription_tier
+      LEFT JOIN businesses pb ON b.parent_business_id = pb.id
       ORDER BY b.created_at DESC
     `);
     res.json(result.rows);
@@ -657,6 +659,169 @@ router.post("/announcements", async (req, res) => {
     res.json({ success: true, message: "Announcement broadcasted successfully" });
   } catch (err) {
     console.error("Error broadcasting announcement:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ======================================================
+// ENQUIRIES & SETTINGS
+// ======================================================
+
+router.get("/enquiries/unread-count", async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT COUNT(*) FROM saas_enquiries WHERE is_read = false`);
+    res.json({ count: parseInt(result.rows[0].count) });
+  } catch (err) {
+    console.error("Error fetching unread enquiries count:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/enquiries/mark-read", async (req, res) => {
+  try {
+    await pool.query(`UPDATE saas_enquiries SET is_read = true WHERE is_read = false`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error marking enquiries as read:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+router.get("/enquiries", async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM saas_enquiries ORDER BY created_at DESC`);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching enquiries:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/enquiries/:id/status", async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  if (!status) return res.status(400).json({ error: "Status is required" });
+
+  try {
+    await pool.query(`UPDATE saas_enquiries SET status = $1 WHERE id = $2`, [status, id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error updating enquiry status:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/settings", async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM saas_settings LIMIT 1`);
+    if (result.rows.length === 0) {
+      return res.json({ contact_email: "", contact_phone: "" });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error fetching saas settings:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/settings", async (req, res) => {
+  const { contact_email, contact_phone } = req.body;
+  try {
+    const check = await pool.query(`SELECT id FROM saas_settings LIMIT 1`);
+    if (check.rows.length === 0) {
+      await pool.query(
+        `INSERT INTO saas_settings (contact_email, contact_phone) VALUES ($1, $2)`,
+        [contact_email, contact_phone]
+      );
+    } else {
+      await pool.query(
+        `UPDATE saas_settings SET contact_email = $1, contact_phone = $2, updated_at = CURRENT_TIMESTAMP`,
+        [contact_email, contact_phone]
+      );
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error updating saas settings:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+// ======================================================
+// MULTI-BRANCH REQUESTS (SUPER ADMIN)
+// ======================================================
+router.get("/branch-requests", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT br.*, p.name as parent_name, p.slug as parent_slug 
+       FROM branch_requests br
+       JOIN businesses p ON br.parent_business_id = p.id
+       ORDER BY br.created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching branch requests:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/branch-requests/:id/approve", async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    
+    // 1. Get the request
+    const reqResult = await client.query("SELECT * FROM branch_requests WHERE id = $1 FOR UPDATE", [req.params.id]);
+    if (reqResult.rows.length === 0) throw new Error("Request not found");
+    const request = reqResult.rows[0];
+    if (request.status !== 'pending') throw new Error("Request is not pending");
+
+    // 2. Get Parent Business
+    const parentResult = await client.query("SELECT * FROM businesses WHERE id = $1", [request.parent_business_id]);
+    if (parentResult.rows.length === 0) throw new Error("Parent business not found");
+    const parent = parentResult.rows[0];
+
+    // 3. Create the new business branch
+    const newBusiness = await client.query(
+      `INSERT INTO businesses (name, slug, parent_business_id, subscription_tier, status, is_active) 
+       VALUES ($1, $2, $3, $4, 'active', true) RETURNING id`,
+      [request.requested_name, request.requested_slug, request.parent_business_id, request.requested_tier]
+    );
+    const branchId = newBusiness.rows[0].id;
+
+    // 4. Create branch admin account using requested credentials
+    await client.query(
+      `INSERT INTO admin_account (business_id, mobile_number, password_hash, webauthn_user_id) 
+       VALUES ($1, $2, $3, $4)`,
+      [branchId, request.requested_mobile, request.requested_password_hash, require("crypto").randomUUID()]
+    );
+
+    // 5. Setup basic tables for the new branch
+    await client.query(`INSERT INTO business_settings (business_id, restaurant_name) VALUES ($1, $2)`, [branchId, request.requested_name]);
+
+    // 6. Update request status
+    await client.query("UPDATE branch_requests SET status = 'approved' WHERE id = $1", [req.params.id]);
+
+    await client.query("COMMIT");
+    res.json({ success: true, message: "Branch approved and provisioned successfully" });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Error approving branch request:", err);
+    res.status(500).json({ error: err.message || "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.put("/branch-requests/:id/reject", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "UPDATE branch_requests SET status = 'rejected' WHERE id = $1 AND status = 'pending' RETURNING id",
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "Request not found or not pending" });
+    }
+    res.json({ success: true, message: "Branch request rejected" });
+  } catch (err) {
+    console.error("Error rejecting branch request:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

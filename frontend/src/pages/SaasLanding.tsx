@@ -4,6 +4,8 @@ import { ChefHat, Smartphone, MonitorPlay, BarChart3, ChevronRight, ShieldCheck,
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import ThemeToggle from "@/components/ThemeToggle";
+import { API_URL } from '@/lib/apiClient';
+import { Loader2 } from 'lucide-react';
 
 const FEATURES = [
   {
@@ -36,6 +38,10 @@ export default function SaasLanding() {
   const [isSending, setIsSending] = useState(false);
   const [sendSuccess, setSendSuccess] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  
+  const [contactInfo, setContactInfo] = useState({ contact_email: "", contact_phone: "" });
+  const [formData, setFormData] = useState({ name: "", restaurant_name: "", email: "", phone: "", message: "" });
+  const [formStatus, setFormStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
 
   const handleSendToKitchen = () => {
     if (posCart.length === 0) return;
@@ -61,23 +67,42 @@ export default function SaasLanding() {
       { name: "pro", price: 2999, limit: "5k", features: ["Everything in Free", "QR Digital Ordering", "Advanced Analytics", "Customer Reviews"] },
       { name: "enterprise", price: 8999, limit: "Unlimited", features: ["Everything in Pro", "Website CMS", "Coupon Engine", "Priority Support"] }
     ]);
+
+    // Fetch SAAS Contact Info
+    const fetchContactInfo = async () => {
+      try {
+        const res = await fetch(`${API_URL}/public/saas-settings`);
+        const data = await res.json();
+        if (data) setContactInfo(data);
+      } catch (err) {
+        console.error("Failed to fetch saas settings", err);
+      }
+    };
+    fetchContactInfo();
   }, []);
 
-  const handleDemoLogin = () => {
-    const isLocal = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1');
-    const port = window.location.port ? `:${window.location.port}` : '';
-    const protocol = window.location.protocol;
-
-    if (isLocal) {
-      window.location.href = `${protocol}//the-chinese-house.localhost${port}/`;
-    } else {
-      // In production, we assume the classic-chinese.app root domain
-      window.location.href = `https://the-chinese-house.classic-chinese.app/`;
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormStatus("submitting");
+    try {
+      const res = await fetch(`${API_URL}/public/saas-enquiry`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formData)
+      });
+      if (!res.ok) throw new Error("Failed to submit");
+      setFormStatus("success");
+      setFormData({ name: "", restaurant_name: "", email: "", phone: "", message: "" });
+    } catch (err) {
+      console.error("Failed to submit enquiry", err);
+      setFormStatus("error");
     }
   };
 
-  const handleSuperAdmin = () => {
-    navigate("/super");
+  const scrollToPricing = () => {
+    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -104,10 +129,7 @@ export default function SaasLanding() {
 
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Button variant="ghost" onClick={handleDemoLogin} className="hidden sm:flex text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-white/5">
-              Sign In
-            </Button>
-            <Button onClick={handleDemoLogin} className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold rounded-full px-6">
+            <Button onClick={scrollToPricing} className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold rounded-full px-6">
               Start Free Trial
             </Button>
           </div>
@@ -150,11 +172,8 @@ export default function SaasLanding() {
             transition={{ delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center gap-4"
           >
-            <Button onClick={handleDemoLogin} size="lg" className="h-14 px-8 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold text-lg w-full sm:w-auto">
-              View Live Demo <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-            <Button onClick={handleSuperAdmin} size="lg" variant="outline" className="h-14 px-8 rounded-full border-slate-300 hover:bg-slate-100 hover:text-slate-900 text-slate-600 dark:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-white font-bold text-lg w-full sm:w-auto dark:text-zinc-300">
-              God View (Admin)
+            <Button onClick={scrollToPricing} size="lg" className="h-14 px-8 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold text-lg w-full sm:w-auto">
+              Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </motion.div>
         </div>
@@ -788,7 +807,7 @@ export default function SaasLanding() {
                 </div>
 
                 <Button
-                  onClick={handleDemoLogin}
+                  onClick={scrollToPricing}
                   className={`w-full h-12 rounded-xl font-bold text-base ${tier.name === 'pro' ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200'}`}
                 >
                   Get Started
@@ -796,6 +815,80 @@ export default function SaasLanding() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Contact Sales / Support Section */}
+      <section className="py-24 px-6 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-zinc-950 relative z-10">
+        <div className="max-w-4xl mx-auto bg-white dark:bg-zinc-900/80 rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden flex flex-col md:flex-row">
+           <div className="w-full md:w-2/5 bg-indigo-600 dark:bg-indigo-900 p-8 sm:p-12 text-white flex flex-col justify-between">
+              <div>
+                <h3 className="text-2xl font-black mb-4">Let's talk.</h3>
+                <p className="text-indigo-100 mb-8 opacity-90">Ready to digitize your restaurant? Fill out the form and our team will get back to you within 24 hours.</p>
+                <div className="space-y-4">
+                  {contactInfo.contact_email && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-indigo-500/30 flex items-center justify-center shrink-0">
+                        <svg className="w-5 h-5 text-indigo-100" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                      </div>
+                      <span className="font-medium text-sm sm:text-base text-indigo-50">{contactInfo.contact_email}</span>
+                    </div>
+                  )}
+                  {contactInfo.contact_phone && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-indigo-500/30 flex items-center justify-center shrink-0">
+                        <svg className="w-5 h-5 text-indigo-100" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                      </div>
+                      <span className="font-medium text-sm sm:text-base text-indigo-50">{contactInfo.contact_phone}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+           </div>
+           <div className="w-full md:w-3/5 p-8 sm:p-12">
+              {formStatus === "success" ? (
+                 <div className="h-full flex flex-col items-center justify-center text-center py-12">
+                    <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-4">
+                       <CheckCircle2 className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Message Sent!</h3>
+                    <p className="text-slate-600 dark:text-zinc-400">Thank you for your interest. Our sales team will contact you shortly.</p>
+                 </div>
+              ) : (
+                <form onSubmit={handleContactSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Name</label>
+                        <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white" placeholder="John Doe" />
+                     </div>
+                     <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Restaurant Name</label>
+                        <input required type="text" value={formData.restaurant_name} onChange={e => setFormData({...formData, restaurant_name: e.target.value})} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white" placeholder="Golden Dragon" />
+                     </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Email</label>
+                        <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white" placeholder="john@example.com" />
+                     </div>
+                     <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Phone</label>
+                        <input required type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white" placeholder="+91 99999 99999" />
+                     </div>
+                  </div>
+                  <div className="space-y-1">
+                     <label className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Message (Optional)</label>
+                     <textarea value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px] resize-none dark:text-white" placeholder="Tell us about your requirements..."></textarea>
+                  </div>
+                  {formStatus === "error" && (
+                    <p className="text-red-500 text-sm font-medium">Failed to submit. Please try again.</p>
+                  )}
+                  <Button type="submit" disabled={formStatus === "submitting"} className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base mt-4 transition-all">
+                    {formStatus === "submitting" ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Sending...</> : "Submit Enquiry"}
+                  </Button>
+                </form>
+              )}
+           </div>
         </div>
       </section>
 
@@ -810,7 +903,6 @@ export default function SaasLanding() {
           <div className="flex items-center gap-6 text-sm text-slate-500 dark:text-zinc-500">
             <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">Privacy</a>
             <a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">Terms</a>
-            <button onClick={handleSuperAdmin} className="hover:text-slate-900 dark:hover:text-white transition-colors text-slate-400 dark:text-zinc-700">Admin Login</button>
           </div>
         </div>
       </footer>

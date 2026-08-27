@@ -3,7 +3,7 @@ import { API_URL } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Power, ShieldAlert, Settings2, DownloadCloud, UploadCloud, MessageSquareWarning, PieChart, Building2, LogOut, Pencil, TrendingUp, ShoppingBag, CreditCard } from "lucide-react";
+import { Loader2, Plus, Power, ShieldAlert, Settings2, DownloadCloud, UploadCloud, MessageSquareWarning, PieChart, Building2, LogOut, Pencil, TrendingUp, ShoppingBag, CreditCard, MessageSquare, Settings } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,8 @@ import { apiSuperAdminUploadUpdate, apiSuperAdminAnalytics, apiSuperAdminImperso
 import { useNavigate } from "react-router-dom";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import ThemeToggle from "@/components/ThemeToggle";
+import { BranchRequestsTab } from "@/components/superadmin/BranchRequestsTab";
+import { Network, ChevronDown, ChevronRight, CornerDownRight, Search, Filter } from "lucide-react";
 
 export default function SuperAdmin() {
   const navigate = useNavigate();
@@ -23,12 +25,18 @@ export default function SuperAdmin() {
 
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [fetching, setFetching] = useState(false);
-  const [activeTab, setActiveTab] = useState<"analytics" | "businesses" | "ota" | "announcements" | "plans">("analytics");
+  const [activeTab, setActiveTab] = useState<"analytics" | "businesses" | "ota" | "announcements" | "plans" | "enquiries" | "settings" | "branch-requests">("analytics");
 
   // Plans State
   const [tiers, setTiers] = useState<any[]>([]);
   const [fetchingTiers, setFetchingTiers] = useState(false);
   const [savingTier, setSavingTier] = useState<string | null>(null);
+
+  // Saas state
+  const [enquiries, setEnquiries] = useState<any[]>([]);
+  const [unreadEnquiriesCount, setUnreadEnquiriesCount] = useState(0);
+  const [saasSettings, setSaasSettings] = useState({ contact_email: "", contact_phone: "" });
+  const [settingsSaving, setSettingsSaving] = useState(false);
 
   // Analytics State
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -52,6 +60,13 @@ export default function SuperAdmin() {
   const [newSlug, setNewSlug] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  
+  // Filter state for businesses
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [tierFilter, setTierFilter] = useState("all");
+  const [hierarchyFilter, setHierarchyFilter] = useState("all");
 
   const [featuresModal, setFeaturesModal] = useState<{ isOpen: boolean, business: any }>({ isOpen: false, business: null });
   const [savingFeatures, setSavingFeatures] = useState(false);
@@ -94,7 +109,8 @@ export default function SuperAdmin() {
     { key: 'website_cms', label: 'Website CMS', desc: 'Allow the tenant to manage their landing page, gallery, and promotions.' },
     { key: 'coupon_engine', label: 'Coupon Engine', desc: 'Enable the creation and redemption of discount coupons.' },
     { key: 'customer_reviews', label: 'Customer Reviews', desc: 'Allow customers to submit reviews and feedback.' },
-    { key: 'chatbot', label: 'AI Chatbot', desc: 'Enable the AI assistant floating widget on the customer-facing pages.' }
+    { key: 'chatbot', label: 'AI Chatbot', desc: 'Enable the AI assistant floating widget on the customer-facing pages.' },
+    { key: 'multi_branch', label: 'Multi-Branch Support', desc: 'Allow this tenant to request and manage sub-branches.' }
   ];
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -192,8 +208,72 @@ export default function SuperAdmin() {
       fetchBusinesses();
       fetchAnalytics();
       fetchTiers();
+      fetchEnquiries();
+      fetchUnreadEnquiriesCount();
+      fetchSaasSettings();
     }
   }, [token]);
+
+  const fetchEnquiries = async () => {
+    try {
+      const res = await fetch(`${API_URL}/super/enquiries`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      setEnquiries(data);
+    } catch (err) {
+      console.error("Failed to fetch enquiries:", err);
+    }
+  };
+
+  const fetchUnreadEnquiriesCount = async () => {
+    try {
+      const res = await fetch(`${API_URL}/super/enquiries/unread-count`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      setUnreadEnquiriesCount(data.count || 0);
+    } catch (err) {
+      console.error("Failed to fetch unread enquiries count:", err);
+    }
+  };
+
+  const fetchSaasSettings = async () => {
+    try {
+      const res = await fetch(`${API_URL}/super/settings`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (data) setSaasSettings(data);
+    } catch (err) {
+      console.error("Failed to fetch settings:", err);
+    }
+  };
+
+  const updateEnquiryStatus = async (id: string, status: string) => {
+    try {
+      await fetch(`${API_URL}/super/enquiries/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status })
+      });
+      fetchEnquiries();
+    } catch (err) {
+      console.error("Failed to update status:", err);
+      toast({ title: "Failed to update status", variant: "destructive" });
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setSettingsSaving(true);
+    try {
+      await fetch(`${API_URL}/super/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(saasSettings)
+      });
+      toast({ title: "Settings saved successfully!" });
+    } catch (err) {
+      console.error("Failed to save settings:", err);
+      toast({ title: "Failed to save settings", variant: "destructive" });
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
 
   const handleImpersonate = async (businessId: string) => {
     try {
@@ -450,6 +530,13 @@ export default function SuperAdmin() {
           >
             <Building2 className={`w-5 h-5 ${activeTab === 'businesses' ? 'text-indigo-600 dark:text-indigo-400' : ''}`} /> Businesses
           </button>
+          
+          <button
+            onClick={() => setActiveTab("branch-requests")}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === "branch-requests" ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none scale-[1.02]" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-slate-200"}`}
+          >
+            <Network className={`w-5 h-5 ${activeTab === 'branch-requests' ? 'text-indigo-600 dark:text-indigo-400' : ''}`} /> Branch Requests
+          </button>
 
           <button
             onClick={() => setActiveTab("plans")}
@@ -470,6 +557,40 @@ export default function SuperAdmin() {
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === "ota" ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none scale-[1.02]" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-slate-200"}`}
           >
             <DownloadCloud className={`w-5 h-5 ${activeTab === 'ota' ? 'text-indigo-600 dark:text-indigo-400' : ''}`} /> OTA Updates
+          </button>
+          
+          <button
+            onClick={async () => {
+              setActiveTab("enquiries");
+              if (unreadEnquiriesCount > 0) {
+                setUnreadEnquiriesCount(0);
+                try {
+                  await fetch(`${API_URL}/super/enquiries/mark-read`, {
+                    method: "PUT",
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                } catch (err) {
+                  console.error("Failed to mark enquiries as read", err);
+                }
+              }
+            }}
+            className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === "enquiries" ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none scale-[1.02]" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-slate-200"}`}
+          >
+            <div className="flex items-center gap-3">
+              <MessageSquare className={`w-5 h-5 ${activeTab === 'enquiries' ? 'text-indigo-600 dark:text-indigo-400' : ''}`} /> Enquiries
+            </div>
+            {unreadEnquiriesCount > 0 && (
+              <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full shadow-sm animate-pulse">
+                {unreadEnquiriesCount}
+              </span>
+            )}
+          </button>
+          
+          <button
+            onClick={() => setActiveTab("settings")}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === "settings" ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none scale-[1.02]" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-slate-200"}`}
+          >
+            <Settings className={`w-5 h-5 ${activeTab === 'settings' ? 'text-indigo-600 dark:text-indigo-400' : ''}`} /> Platform Settings
           </button>
         </nav>
 
@@ -498,9 +619,12 @@ export default function SuperAdmin() {
               <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">
                 {activeTab === 'analytics' && "Platform-wide performance and metrics"}
                 {activeTab === 'businesses' && "Manage and provision tenant instances"}
+                {activeTab === 'branch-requests' && "Review and approve franchise branch requests"}
                 {activeTab === 'plans' && "Configure limits and features for subscription tiers"}
                 {activeTab === 'announcements' && "Broadcast instant alerts globally"}
                 {activeTab === 'ota' && "Push live updates to all tablets"}
+                {activeTab === 'enquiries' && "View and manage inbound leads"}
+                {activeTab === 'settings' && "Configure global platform settings"}
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -617,6 +741,51 @@ export default function SuperAdmin() {
               )}
 
               <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border border-slate-200 dark:border-zinc-800 overflow-hidden">
+                <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 flex flex-col md:flex-row gap-4 items-center justify-between">
+                  <div className="relative w-full md:w-96">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input 
+                      placeholder="Search restaurants, slugs, or owners..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-4 h-4 text-slate-400" />
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none font-medium text-slate-700 dark:text-slate-300"
+                      >
+                        <option value="all">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                      </select>
+                    </div>
+                    <select
+                      value={tierFilter}
+                      onChange={(e) => setTierFilter(e.target.value)}
+                      className="bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none font-medium text-slate-700 dark:text-slate-300"
+                    >
+                      <option value="all">All Tiers</option>
+                      <option value="free">Free</option>
+                      <option value="pro">Pro</option>
+                      <option value="enterprise">Enterprise</option>
+                    </select>
+                    <select
+                      value={hierarchyFilter}
+                      onChange={(e) => setHierarchyFilter(e.target.value)}
+                      className="bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm outline-none font-medium text-slate-700 dark:text-slate-300"
+                    >
+                      <option value="all">All Types</option>
+                      <option value="franchise">Franchise (Has Branches)</option>
+                      <option value="independent">Independent</option>
+                    </select>
+                  </div>
+                </div>
+
                 {fetching ? (
                   <div className="p-20 flex justify-center"><Loader2 className="w-10 h-10 animate-spin text-indigo-500" /></div>
                 ) : (
@@ -633,9 +802,64 @@ export default function SuperAdmin() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50">
-                      {businesses.map(b => (
-                        <tr key={b.id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/20 transition-all group">
-                          <td className="px-6 py-5 font-bold text-slate-900 dark:text-white">{b.name}</td>
+                      {businesses.filter(b => !b.parent_business_id).filter(b => {
+                        const branches = businesses.filter(branch => branch.parent_business_id === b.id);
+                        
+                        // Search filter: matches parent OR any of its branches
+                        const sq = searchQuery.toLowerCase();
+                        const matchesSearch = !sq || 
+                          b.name.toLowerCase().includes(sq) || 
+                          b.slug.toLowerCase().includes(sq) || 
+                          b.owner_phone.includes(sq) ||
+                          branches.some(br => 
+                            br.name.toLowerCase().includes(sq) || 
+                            br.slug.toLowerCase().includes(sq) || 
+                            br.owner_phone.includes(sq)
+                          );
+                        
+                        // Status, Tier & Hierarchy filters only apply to the parent for visibility
+                        const matchesStatus = statusFilter === 'all' || b.status === statusFilter;
+                        const matchesTier = tierFilter === 'all' || b.subscription_tier === tierFilter;
+                        
+                        const isFranchise = branches.length > 0;
+                        const matchesHierarchy = hierarchyFilter === 'all' || 
+                                                (hierarchyFilter === 'franchise' && isFranchise) || 
+                                                (hierarchyFilter === 'independent' && !isFranchise);
+                        
+                        return matchesSearch && matchesStatus && matchesTier && matchesHierarchy;
+                      }).map(b => {
+                        const isExpanded = expandedRows.has(b.id);
+                        const branches = businesses.filter(branch => branch.parent_business_id === b.id);
+                        const hasBranches = branches.length > 0;
+
+                        return (
+                          <React.Fragment key={b.id}>
+                            <tr className={`hover:bg-slate-50/50 dark:hover:bg-zinc-800/20 transition-all group ${isExpanded ? 'bg-slate-50/50 dark:bg-zinc-800/10' : ''}`}>
+                              <td className="px-6 py-5">
+                                <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                  {hasBranches && (
+                                    <button 
+                                      onClick={() => {
+                                        setExpandedRows(prev => {
+                                          const next = new Set(prev);
+                                          if (next.has(b.id)) next.delete(b.id);
+                                          else next.add(b.id);
+                                          return next;
+                                        });
+                                      }}
+                                      className="p-1 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-md transition-colors"
+                                    >
+                                      {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                    </button>
+                                  )}
+                                  {b.name}
+                                </div>
+                                {hasBranches && !isExpanded && (
+                                  <div className="text-xs text-slate-500 mt-1 font-medium ml-8">
+                                    {branches.length} {branches.length === 1 ? 'branch' : 'branches'}
+                                  </div>
+                                )}
+                              </td>
                           <td className="px-6 py-5 font-mono text-sm text-slate-500"><span className="bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700">{b.slug}</span></td>
                           <td className="px-6 py-5 font-medium text-slate-700 dark:text-slate-300">{b.owner_phone}</td>
                           <td className="px-6 py-5">
@@ -714,7 +938,93 @@ export default function SuperAdmin() {
                             </div>
                           </td>
                         </tr>
-                      ))}
+                        {isExpanded && branches.map(branch => (
+                              <tr key={branch.id} className="group bg-indigo-50/30 dark:bg-indigo-500/5 hover:bg-indigo-50/60 dark:hover:bg-indigo-500/10 transition-all">
+                                <td className="px-6 py-4 pl-12 border-l-2 border-indigo-200 dark:border-indigo-500/30">
+                                  <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                    <CornerDownRight size={14} className="text-indigo-400" />
+                                    {branch.name}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 font-mono text-sm text-slate-500"><span className="bg-white dark:bg-zinc-800 px-2.5 py-1 rounded-md border border-slate-200 dark:border-zinc-700 shadow-sm">{branch.slug}</span></td>
+                                <td className="px-6 py-4 font-medium text-slate-700 dark:text-slate-300">{branch.owner_phone}</td>
+                                <td className="px-6 py-4">
+                                  <select
+                                    value={branch.subscription_tier || 'free'}
+                                    onChange={(e) => handleUpdateTier(branch.id, e.target.value)}
+                                    className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm outline-none font-bold capitalize text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors"
+                                  >
+                                    <option value="free">Free</option>
+                                    <option value="pro">Pro</option>
+                                    <option value="enterprise">Enterprise</option>
+                                  </select>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`font-bold ${branch.monthly_order_limit && parseInt(branch.current_month_orders || 0) >= parseInt(branch.monthly_order_limit) ? 'text-red-600 bg-red-50 dark:bg-red-500/10 px-3 py-1 rounded-full' : 'text-slate-600 dark:text-slate-300'}`}>
+                                      {branch.current_month_orders || 0}
+                                      {branch.monthly_order_limit && <span className="text-slate-400 font-medium ml-1">/ {branch.monthly_order_limit >= 999999 ? '∞' : (branch.monthly_order_limit >= 1000 ? (branch.monthly_order_limit/1000).toFixed(1) + 'k' : branch.monthly_order_limit)}</span>}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${branch.status === 'active' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${branch.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                                    {branch.status.toUpperCase()}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button
+                                      variant={branch.status === 'active' ? "ghost" : "default"}
+                                      size="icon"
+                                      onClick={() => toggleStatus(branch.id, branch.status)}
+                                      className={branch.status === 'active' ? "text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 h-8 w-8" : "bg-emerald-500 hover:bg-emerald-600 h-8 w-8"}
+                                      title={branch.status === 'active' ? "Suspend" : "Activate"}
+                                    >
+                                      <Power className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => openEditModal(branch)}
+                                      title="Edit Tenant Details"
+                                      className="text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 h-8 w-8"
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => openTenantAnalytics(branch)}
+                                      title="View Performance Analytics"
+                                      className="text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 h-8 w-8"
+                                    >
+                                      <TrendingUp className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => openFeaturesModal(branch)}
+                                      title="Manual Feature Override"
+                                      className="text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 h-8 w-8"
+                                    >
+                                      <Settings2 className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleImpersonate(branch.id)}
+                                      className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 dark:shadow-none h-8"
+                                    >
+                                      Log In As
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </React.Fragment>
+                      );
+                    })}
                       {businesses.length === 0 && (
                         <tr>
                           <td colSpan={7} className="p-12 text-center text-slate-500 font-medium">No restaurants provisioned yet.</td>
@@ -926,6 +1236,92 @@ export default function SuperAdmin() {
                 </div>
               </form>
             </div>
+          ) : activeTab === "enquiries" ? (
+            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm">
+              <h3 className="text-xl font-bold mb-6 text-slate-800 dark:text-white">Inbound Enquiries</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-white/10 text-slate-500 dark:text-zinc-400 text-sm">
+                      <th className="pb-3 font-semibold pl-2">Date</th>
+                      <th className="pb-3 font-semibold">Name</th>
+                      <th className="pb-3 font-semibold">Restaurant</th>
+                      <th className="pb-3 font-semibold">Contact</th>
+                      <th className="pb-3 font-semibold">Message</th>
+                      <th className="pb-3 font-semibold">Status</th>
+                      <th className="pb-3 font-semibold">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {enquiries.length === 0 ? (
+                       <tr><td colSpan={7} className="text-center py-6 text-slate-500">No enquiries found</td></tr>
+                    ) : enquiries.map((enq) => (
+                      <tr key={enq.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
+                        <td className="py-4 pl-2 text-sm text-slate-600 dark:text-zinc-300">
+                           {new Date(enq.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="py-4 font-bold text-slate-900 dark:text-white text-sm">{enq.name}</td>
+                        <td className="py-4 text-sm text-slate-600 dark:text-zinc-300">{enq.restaurant_name}</td>
+                        <td className="py-4 text-sm text-slate-600 dark:text-zinc-300">
+                           {enq.email}<br/><span className="text-xs opacity-70">{enq.phone}</span>
+                        </td>
+                        <td className="py-4 text-sm text-slate-600 dark:text-zinc-300 max-w-[200px] truncate" title={enq.message}>{enq.message || "-"}</td>
+                        <td className="py-4">
+                           <span className={`px-2 py-1 rounded-full text-xs font-bold ${enq.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : enq.status === 'Contacted' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400'}`}>
+                             {enq.status}
+                           </span>
+                        </td>
+                        <td className="py-4">
+                           <select 
+                             className="bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                             value={enq.status}
+                             onChange={(e) => updateEnquiryStatus(enq.id, e.target.value)}
+                           >
+                             <option value="New">New</option>
+                             <option value="Contacted">Contacted</option>
+                             <option value="Resolved">Resolved</option>
+                           </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : activeTab === "settings" ? (
+            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm max-w-2xl">
+              <h3 className="text-xl font-bold mb-6 text-slate-800 dark:text-white">Platform Public Settings</h3>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">Public Support Email</label>
+                  <input
+                    type="email"
+                    value={saasSettings.contact_email}
+                    onChange={(e) => setSaasSettings({ ...saasSettings, contact_email: e.target.value })}
+                    className="w-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                    placeholder="support@classicos.com"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">This email will be displayed on the public landing page in the Contact Us section.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2">Public Contact Phone</label>
+                  <input
+                    type="text"
+                    value={saasSettings.contact_phone}
+                    onChange={(e) => setSaasSettings({ ...saasSettings, contact_phone: e.target.value })}
+                    className="w-full bg-slate-100 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                    placeholder="+91 9876543210"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">This phone number will be displayed alongside the email.</p>
+                </div>
+                <Button onClick={handleSaveSettings} disabled={settingsSaving} className="w-full sm:w-auto px-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                  {settingsSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Save Settings
+                </Button>
+              </div>
+            </div>
+          ) : activeTab === "branch-requests" ? (
+            <BranchRequestsTab token={token || ""} />
           ) : null}
         </div>
       </main>

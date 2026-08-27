@@ -271,6 +271,7 @@ export interface AuthUser {
   name: string;
   role: "admin" | "manager" | "waiter" | "kitchen";
   phone?: string;
+  parent_business_id?: string | null;
   features?: Record<string, any>;
   permissions?: {
     canClearTable?: boolean;

@@ -51,4 +51,42 @@ router.get("/business-info", async (req, res) => {
   }
 });
 
+// ======================================================
+// GET PUBLIC SAAS SETTINGS
+// ======================================================
+router.get("/saas-settings", async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT contact_email, contact_phone FROM saas_settings LIMIT 1`);
+    if (result.rows.length === 0) {
+      return res.json({ contact_email: "support@classicos.com", contact_phone: "+91 98765 43210" });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Fetch saas settings error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ======================================================
+// POST SAAS ENQUIRY
+// ======================================================
+router.post("/saas-enquiry", async (req, res) => {
+  const { name, restaurant_name, email, phone, message } = req.body;
+  if (!name || !restaurant_name || !email || !phone) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+  
+  try {
+    await pool.query(
+      `INSERT INTO saas_enquiries (name, restaurant_name, email, phone, message)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [name, restaurant_name, email, phone, message || ""]
+    );
+    res.status(201).json({ success: true, message: "Enquiry submitted successfully" });
+  } catch (err) {
+    console.error("Submit saas enquiry error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 module.exports = router;
