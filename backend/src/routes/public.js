@@ -16,7 +16,7 @@ router.get("/business-info", async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT 
-        b.id, b.name, b.logo_url, b.theme, b.layout_theme, b.status,
+        b.id, b.name, b.logo_url, b.theme, b.layout_theme, b.status, b.features,
         s.landing_page_content
        FROM businesses b
        LEFT JOIN business_settings s ON s.business_id = b.id
@@ -39,6 +39,7 @@ router.get("/business-info", async (req, res) => {
       theme: business.theme || "hennys-classic",
       layout_theme: business.layout_theme || "classic",
       status: business.status,
+      features: business.features || {}
     };
 
     // Very aggressive caching for public branding to make load times instant

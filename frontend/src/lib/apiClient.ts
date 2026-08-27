@@ -691,6 +691,7 @@ export interface PublicBusinessInfo {
   theme: string;
   layout_theme: string;
   status: string;
+  features?: Record<string, any>;
 }
 
 export async function apiGetPublicBusinessInfo(): Promise<PublicBusinessInfo> {

@@ -9,6 +9,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import ThemeInjector from "@/components/ThemeInjector";
 import AiChatbot from "@/components/AiChatbot";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { KeepAwake } from '@capacitor-community/keep-awake';
 import { Capacitor } from '@capacitor/core';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
@@ -115,6 +116,16 @@ function AnimatedRoutes() {
 
 function GlobalChatbot() {
   const location = useLocation();
+  const { settings } = useBusinessSettings();
+  
+  // Explicitly hide on the SaaS branding page and Super Admin portal
+  if (isRootDomain() || location.pathname.startsWith('/super') || location.pathname === '/') {
+    return null;
+  }
+
+  // Hide if the tenant does not have the chatbot feature enabled
+  if (!settings?.features?.chatbot) return null;
+
   // Hide chatbot on admin/staff pages
   const isAdminPage = location.pathname.startsWith('/dashboard') ||
     location.pathname.startsWith('/kitchen') ||

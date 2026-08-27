@@ -93,7 +93,8 @@ export default function SuperAdmin() {
     { key: 'advanced_analytics', label: 'Advanced Analytics', desc: 'Unlock detailed sales and performance charts.' },
     { key: 'website_cms', label: 'Website CMS', desc: 'Allow the tenant to manage their landing page, gallery, and promotions.' },
     { key: 'coupon_engine', label: 'Coupon Engine', desc: 'Enable the creation and redemption of discount coupons.' },
-    { key: 'customer_reviews', label: 'Customer Reviews', desc: 'Allow customers to submit reviews and feedback.' }
+    { key: 'customer_reviews', label: 'Customer Reviews', desc: 'Allow customers to submit reviews and feedback.' },
+    { key: 'chatbot', label: 'AI Chatbot', desc: 'Enable the AI assistant floating widget on the customer-facing pages.' }
   ];
 
   const handleLogin = async (e: React.FormEvent) => {
