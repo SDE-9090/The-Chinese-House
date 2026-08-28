@@ -907,12 +907,132 @@ router.post("/biometric/login", loginLimiter, async (req, res) => {
 router.get("/branches", adminAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, name, slug, subscription_tier, status, is_active FROM businesses WHERE parent_business_id = $1 ORDER BY created_at DESC",
+      `SELECT 
+          b.id, b.name, b.slug, b.subscription_tier, b.status, b.is_active,
+          (
+            SELECT COUNT(id) FROM orders 
+            WHERE business_id = b.id AND (created_at AT TIME ZONE 'Asia/Kolkata')::date = (NOW() AT TIME ZONE 'Asia/Kolkata')::date AND status != 'cancelled'
+          ) as today_orders,
+          (
+            SELECT COALESCE(SUM(total), 0) FROM orders 
+            WHERE business_id = b.id AND (created_at AT TIME ZONE 'Asia/Kolkata')::date = (NOW() AT TIME ZONE 'Asia/Kolkata')::date AND status != 'cancelled'
+          ) as today_revenue,
+          (
+            SELECT COUNT(id) FROM orders 
+            WHERE business_id = b.id AND status != 'cancelled'
+          ) as all_time_orders,
+          (
+            SELECT COALESCE(SUM(total), 0) FROM orders 
+            WHERE business_id = b.id AND status != 'cancelled'
+          ) as all_time_revenue,
+          (
+            SELECT COUNT(id) FROM orders 
+            WHERE business_id = b.id AND status IN ('new', 'preparing')
+          ) as active_orders_count
+       FROM businesses b 
+       WHERE b.parent_business_id = $1 
+       ORDER BY b.created_at DESC`,
       [req.business_id]
     );
     res.json(result.rows);
   } catch (err) {
     console.error("Error fetching branches:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/impersonate-branch", adminAuth, async (req, res) => {
+  const { branchId } = req.body;
+  if (!branchId) return res.status(400).json({ error: "Branch ID required" });
+
+  try {
+    // Verify the branch belongs to this HQ
+    const branchRes = await pool.query(
+      "SELECT id, name FROM businesses WHERE id = $1 AND parent_business_id = $2",
+      [branchId, req.business_id]
+    );
+    
+    if (branchRes.rows.length === 0) {
+      return res.status(403).json({ error: "Unauthorized or branch not found" });
+    }
+
+    // Since the HQ admin is verified, issue a token for the branch
+    const token = require("jsonwebtoken").sign(
+      { 
+        id: req.admin.id, // Using same admin id but acting under a different business
+        role: "admin",
+        business_id: branchId 
+      },
+      require("../middleware/adminAuth").JWT_SECRET,
+      { expiresIn: "1h" } // Short-lived impersonation token
+    );
+
+    res.json({ token, branch: branchRes.rows[0] });
+  } catch (err) {
+    console.error("Error impersonating branch:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch("/branches/:id/toggle-status", adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // First verify ownership
+    const checkRes = await pool.query(
+      "SELECT is_active FROM businesses WHERE id = $1 AND parent_business_id = $2",
+      [id, req.business_id]
+    );
+    
+    if (checkRes.rows.length === 0) {
+      return res.status(404).json({ error: "Branch not found" });
+    }
+    
+    const newStatus = !checkRes.rows[0].is_active;
+    
+    await pool.query(
+      "UPDATE businesses SET is_active = $1 WHERE id = $2",
+      [newStatus, id]
+    );
+    
+    res.json({ message: "Branch status updated", is_active: newStatus });
+  } catch (err) {
+    console.error("Error toggling branch status:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.put("/branches/:id", adminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { slug, subscription_tier } = req.body;
+    
+    // Verify ownership
+    const checkRes = await pool.query(
+      "SELECT id FROM businesses WHERE id = $1 AND parent_business_id = $2",
+      [id, req.business_id]
+    );
+    
+    if (checkRes.rows.length === 0) {
+      return res.status(404).json({ error: "Branch not found" });
+    }
+    
+    // Check if new slug is taken by a different business
+    if (slug) {
+      const slugCheck = await pool.query("SELECT id FROM businesses WHERE slug = $1 AND id != $2", [slug, id]);
+      if (slugCheck.rows.length > 0) {
+        return res.status(400).json({ error: "Slug is already in use" });
+      }
+    }
+    
+    await pool.query(
+      "UPDATE businesses SET slug = COALESCE($1, slug), subscription_tier = COALESCE($2, subscription_tier) WHERE id = $3",
+      [slug, subscription_tier, id]
+    );
+    
+    res.json({ message: "Branch updated successfully" });
+  } catch (err) {
+    console.error("Error updating branch:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

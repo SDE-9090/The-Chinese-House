@@ -582,6 +582,13 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith("#impersonate=")) {
+      const token = hash.split("=")[1];
+      localStorage.setItem("admin_auth_token", token);
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+
     apiAdminCheckAuth().then((auth) => {
       if (auth.authenticated && auth.user) {
         // Kitchen staff should use the dedicated /kitchen page
