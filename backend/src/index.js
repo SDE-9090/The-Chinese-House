@@ -11,6 +11,7 @@ const reviewRoutes = require("./routes/reviews");
 const couponRoutes = require("./routes/coupons");
 const adminRoutes = require("./routes/admin");
 const adminBusinessSettingsRoutes = require("./routes/adminBusinessSettings");
+const adminMarketingRoutes = require("./routes/adminMarketing");
 const businessSettingsRoutes = require("./routes/businessSettings");
 const menuRoutes = require("./routes/menu");
 const categoryRoutes = require("./routes/categories");
@@ -28,6 +29,7 @@ const webauthnRoutes = require("./routes/webauthn");
 const updateRoutes = require("./routes/updates");
 const superAdminRoutes = require("./routes/superAdmin");
 const cronRoutes = require("./routes/cron");
+const waitlistRoutes = require("./routes/waitlist");
 const { tenantEnforcer } = require("./middleware/tenantEnforcer");
 const path = require("path");
 
@@ -215,6 +217,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/coupons", couponRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/business-settings", adminBusinessSettingsRoutes);
+app.use("/api/admin/marketing", adminMarketingRoutes);
 app.use("/api/business-settings", businessSettingsRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/categories", categoryRoutes);
@@ -229,6 +232,7 @@ app.use("/api/customers", customersRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/webauthn", webauthnRoutes);
 app.use("/api/updates", updateRoutes);
+app.use("/api/waitlist", waitlistRoutes);
 
 // ---- Start Server ----
 server.listen(PORT, () => {

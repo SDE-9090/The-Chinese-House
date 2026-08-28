@@ -22,6 +22,8 @@ import { Loader2, AlertTriangle, Printer, Bluetooth, Settings, Utensils } from "
 import { apiAdminFactoryReset } from "@/lib/apiClient";
 import { Capacitor } from "@capacitor/core";
 import { BluetoothPrinter } from "@candraadiw/capacitor-bluetooth-printer";
+import { apiAdminGetMarketingHistory, type MarketingCampaign } from "@/lib/apiClient";
+import { format } from "date-fns";
 
 import { validateName, validateMobile, validateGST } from "@/lib/validators";
 
@@ -60,6 +62,11 @@ const BusinessSettingsManager = ({ user }: Props) => {
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
   const [resetting, setResetting] = useState(false);
+
+  // Marketing History States
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [marketingHistory, setMarketingHistory] = useState<MarketingCampaign[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Bluetooth Printer States
   const [btDevices, setBtDevices] = useState<any[]>([]);
@@ -135,6 +142,19 @@ const BusinessSettingsManager = ({ user }: Props) => {
     } catch (err: any) {
       toast({ title: "Reset Failed", description: err.message, variant: "destructive" });
       setResetting(false);
+    }
+  };
+
+  const handleOpenMarketingHistory = async () => {
+    setHistoryModalOpen(true);
+    setLoadingHistory(true);
+    try {
+      const history = await apiAdminGetMarketingHistory();
+      setMarketingHistory(history);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setLoadingHistory(false);
     }
   };
 
@@ -505,6 +525,11 @@ const BusinessSettingsManager = ({ user }: Props) => {
               Configure the automated discount sent to customers who haven't ordered in 30 days.
             </p>
           </div>
+          <div className="ml-auto">
+            <Button variant="outline" size="sm" onClick={handleOpenMarketingHistory}>
+              View History
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -691,6 +716,70 @@ const BusinessSettingsManager = ({ user }: Props) => {
               {resetting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
               Confirm Factory Reset
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Marketing History Modal */}
+      <Dialog open={historyModalOpen} onOpenChange={setHistoryModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Marketing Campaign History</DialogTitle>
+            <DialogDescription>
+              A log of all automated Win-Back SMS/WhatsApp messages sent to your customers.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            {loadingHistory ? (
+              <div className="flex justify-center p-8">
+                <Loader2 className="animate-spin w-6 h-6 text-muted-foreground" />
+              </div>
+            ) : marketingHistory.length === 0 ? (
+              <div className="text-center p-8 text-muted-foreground bg-muted/20 rounded-xl border border-dashed border-border">
+                No campaigns have been sent yet.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-muted/50 text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 font-medium rounded-tl-xl">Date</th>
+                      <th className="px-4 py-3 font-medium">Customer</th>
+                      <th className="px-4 py-3 font-medium">Phone</th>
+                      <th className="px-4 py-3 font-medium">Campaign</th>
+                      <th className="px-4 py-3 font-medium rounded-tr-xl">Coupon Code</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {marketingHistory.map((log) => (
+                      <tr key={log.id} className="hover:bg-muted/20">
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {format(new Date(log.sent_at), "dd MMM yyyy, hh:mm a")}
+                        </td>
+                        <td className="px-4 py-3 font-medium">
+                          {log.customer_name || "Unknown"}
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs">
+                          {log.customer_phone}
+                        </td>
+                        <td className="px-4 py-3 capitalize">
+                          {log.campaign_type.replace("-", " ")}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="bg-primary/10 text-primary px-2 py-1 rounded-md font-mono text-xs font-bold">
+                            {log.coupon_code}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setHistoryModalOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

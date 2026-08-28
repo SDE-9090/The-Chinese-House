@@ -835,6 +835,7 @@ export default function SuperAdmin() {
                         <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Owner</th>
                         <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Tier</th>
                         <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Orders (Mtd)</th>
+                        <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Marketing (Mtd)</th>
                         <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">Status</th>
                         <th className="px-6 py-5 font-bold text-xs uppercase tracking-wider text-slate-500">
                           <div className="flex justify-end">Actions</div>
@@ -925,6 +926,11 @@ export default function SuperAdmin() {
                             </div>
                           </td>
                           <td className="px-6 py-5">
+                            <span className="font-bold text-slate-600 dark:text-slate-300">
+                              {b.current_month_marketing || 0}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5">
                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${b.status === 'active' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${b.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                               {b.status.toUpperCase()}
@@ -1006,6 +1012,11 @@ export default function SuperAdmin() {
                                       {branch.monthly_order_limit && <span className="text-slate-400 font-medium ml-1">/ {branch.monthly_order_limit >= 999999 ? '∞' : (branch.monthly_order_limit >= 1000 ? (branch.monthly_order_limit/1000).toFixed(1) + 'k' : branch.monthly_order_limit)}</span>}
                                     </span>
                                   </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="font-bold text-slate-600 dark:text-slate-300">
+                                    {branch.current_month_marketing || 0}
+                                  </span>
                                 </td>
                                 <td className="px-6 py-4">
                                   <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${branch.status === 'active' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'}`}>

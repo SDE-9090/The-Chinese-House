@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db/pool");
+const { sendWhatsAppTemplate } = require("../utils/whatsapp");
 
 // Protect this route from public access
 function cronAuth(req, res, next) {
@@ -88,52 +89,13 @@ router.get("/process-whatsapp-marketing", cronAuth, async (req, res) => {
             ? `₹${business.winback_discount_value} OFF`
             : `${business.winback_discount_value}% OFF`;
             
-          const whatsappPayload = {
-            messaging_product: "whatsapp",
-            to: customer.phone,
-            type: "template",
-            template: {
-              name: "winback_campaign",
-              language: { code: "en_US" },
-              components: [
-                {
-                  type: "body",
-                  parameters: [
-                    { type: "text", text: customer.name || "Foodie" },
-                    { type: "text", text: business.restaurant_name },
-                    { type: "text", text: discountText },
-                    { type: "text", text: favItem },
-                    { type: "text", text: couponCode }
-                  ]
-                }
-              ]
-            }
-          };
-
-          // If credentials exist, send the real WhatsApp message
-          if (process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_ACCESS_TOKEN) {
-            const waResponse = await fetch(`https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(whatsappPayload)
-            });
-
-            if (!waResponse.ok) {
-              const waErr = await waResponse.text();
-              console.error(`[CRON] WhatsApp API Error for ${customer.phone}:`, waErr);
-              // Depending on requirements, we might want to rollback if message fails. 
-              // We'll throw to trigger the catch block and rollback coupon/campaign logging.
-              throw new Error(`WhatsApp API failed: ${waErr}`);
-            }
-            console.log(`[CRON] WIN-BACK SENT SUCCESSFULLY for ${customer.phone} at ${business.restaurant_name}`);
-          } else {
-            // Dry-Run Mode when credentials are missing
-            console.log(`[CRON] DRY-RUN WIN-BACK TRIGGERED for ${customer.phone} at ${business.restaurant_name}`);
-            console.log(`[CRON] Payload: ${JSON.stringify(whatsappPayload, null, 2)}`);
-          }
+          await sendWhatsAppTemplate(customer.phone, "winback_campaign", [
+            customer.name || "Foodie",
+            business.restaurant_name,
+            discountText,
+            favItem,
+            couponCode
+          ]);
 
           await client.query("COMMIT");
           totalMessaged++;

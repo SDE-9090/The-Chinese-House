@@ -11,11 +11,13 @@ interface TableOpenModalProps {
   onSuccess: () => void;
   tableId: string;
   tableNumber: string;
+  defaultName?: string;
+  defaultPhone?: string;
 }
 
-export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, tableNumber }: TableOpenModalProps) {
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
+export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, tableNumber, defaultName, defaultPhone }: TableOpenModalProps) {
+  const [customerName, setCustomerName] = useState(defaultName || "");
+  const [customerPhone, setCustomerPhone] = useState(defaultPhone || "");
   const [nameError, setNameError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,8 +43,8 @@ export default function TableOpenModal({ isOpen, onClose, onSuccess, tableId, ta
       onSuccess();
       onClose();
       // Reset state for next time
-      setCustomerName("");
-      setCustomerPhone("");
+      setCustomerName(defaultName || "");
+      setCustomerPhone(defaultPhone || "");
       setNameError("");
       setPhoneError("");
     } catch (err: any) {

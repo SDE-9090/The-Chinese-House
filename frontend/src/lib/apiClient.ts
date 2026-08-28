@@ -621,6 +621,68 @@ export async function apiAdminFactoryReset(confirmText: string): Promise<{ messa
   return data;
 }
 
+export interface MarketingCampaign {
+  id: string;
+  customer_phone: string;
+  customer_name: string | null;
+  party_size: number;
+  status: 'waiting' | 'notified' | 'seated' | 'cancelled';
+  quoted_wait_minutes: number;
+  created_at: string;
+  notified_at: string | null;
+  seated_at: string | null;
+}
+
+export const apiPublicJoinWaitlist = async (
+  slug: string,
+  data: { name: string; phone: string; party_size: number }
+) => {
+  const res = await fetch(`${API_URL}/waitlist/public/${slug}/join`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const apiAdminGetWaitlist = async (): Promise<WaitlistEntry[]> => {
+  const res = await authFetch(`${API_URL}/waitlist/admin`, { headers: authHeaders() });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const apiAdminUpdateWaitlistStatus = async (
+  id: string,
+  status: 'seated' | 'cancelled'
+): Promise<WaitlistEntry> => {
+  const res = await authFetch(`${API_URL}/waitlist/admin/${id}/status`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export const apiAdminNotifyWaitlist = async (id: string): Promise<WaitlistEntry> => {
+  const res = await authFetch(`${API_URL}/waitlist/admin/${id}/notify`, {
+    method: "POST",
+    headers: authHeaders()
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+};
+
+export async function apiAdminGetMarketingHistory(): Promise<MarketingCampaign[]> {
+  const res = await authFetch(`${API_URL}/admin/marketing/history`, {
+    headers: authHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch marketing history");
+  return data;
+}
+
 
 export async function apiGetBusinessSettings(): Promise<BusinessSettings> {
   if (!isApiMode()) {
@@ -688,6 +750,18 @@ export interface EditOrderItem {
 
 // ─── Public APIs ──────────────────────────────────────────
 
+export interface WaitlistEntry {
+  id: string;
+  business_id: string;
+  customer_name: string;
+  customer_phone: string;
+  party_size: number;
+  status: 'waiting' | 'notified' | 'seated' | 'cancelled';
+  quoted_wait_minutes: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PublicBusinessInfo {
   name: string;
   logo_url: string;
@@ -701,7 +775,9 @@ export async function apiGetPublicBusinessInfo(): Promise<PublicBusinessInfo> {
   const res = await tenantFetch(`${API_URL}/public/business-info`);
   if (!res.ok) throw new Error("Failed to fetch public business info");
   return res.json();
-}export async function apiGetTableSessionBill(sessionId: string): Promise<SessionBill> {
+}
+
+export async function apiGetTableSessionBill(sessionId: string): Promise<SessionBill> {
   const res = await tenantFetch(`${API_URL}/tables/sessions/${sessionId}/bill`, {
     headers: authHeaders(),
   });

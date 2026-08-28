@@ -155,7 +155,8 @@ router.get("/businesses", async (req, res) => {
       SELECT b.id, b.name, b.slug, b.status, b.is_active, b.created_at, b.features, b.subscription_tier, b.parent_business_id,
              a.mobile_number as owner_phone, t.monthly_order_limit,
              pb.name as parent_name, pb.slug as parent_slug,
-             (SELECT COUNT(*) FROM orders o WHERE o.business_id = b.id AND date_trunc('month', o.created_at) = date_trunc('month', CURRENT_DATE)) as current_month_orders
+             (SELECT COUNT(*) FROM orders o WHERE o.business_id = b.id AND date_trunc('month', o.created_at) = date_trunc('month', CURRENT_DATE)) as current_month_orders,
+             (SELECT COUNT(*) FROM marketing_campaigns mc WHERE mc.business_id = b.id AND date_trunc('month', mc.sent_at) = date_trunc('month', CURRENT_DATE)) as current_month_marketing
       FROM businesses b
       LEFT JOIN admin_account a ON a.business_id = b.id
       LEFT JOIN subscription_tiers t ON t.name = b.subscription_tier

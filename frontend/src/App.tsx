@@ -26,6 +26,7 @@ const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const MobileSetup = lazy(() => import("./pages/MobileSetup"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const SaasLanding = lazy(() => import("./pages/SaasLanding"));
+const WaitlistJoin = lazy(() => import("./pages/WaitlistJoin"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -105,6 +106,7 @@ function AnimatedRoutes() {
             <Route path="/table/:qrCode" element={<TenantGuard><PageTransition><TableOrderPage /></PageTransition></TenantGuard>} />
             <Route path="/kitchen" element={<TenantGuard><PageTransition><KitchenDisplay /></PageTransition></TenantGuard>} />
             <Route path="/dashboard" element={<TenantGuard><PageTransition><Dashboard /></PageTransition></TenantGuard>} />
+            <Route path="/waitlist" element={<TenantGuard><PageTransition><WaitlistJoin /></PageTransition></TenantGuard>} />
 
             <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Routes>

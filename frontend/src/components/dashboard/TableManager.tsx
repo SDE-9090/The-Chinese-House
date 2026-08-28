@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { socket } from "@/lib/socket";
-import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, apiValidateCoupon, type Table, type Order, type SessionBill, type AuthUser, type TableHistoryOrder } from "@/lib/apiClient";
+import { apiAdminGetTables, apiAdminCreateTable, apiSessionClose, apiGetSessionBill, apiGetBusinessSettings, apiDeleteTable, apiPlaceOrder, apiValidateCoupon, apiAdminUpdateWaitlistStatus, type Table, type Order, type SessionBill, type AuthUser, type TableHistoryOrder } from "@/lib/apiClient";
 import OrderCard from "./OrderCard";
 import BillDocument, { downloadBillPrint, downloadKOTPrint } from "@/components/BillDocument";
 import { printQueue } from "@/lib/printQueue";
@@ -30,6 +30,9 @@ import TableOrderModal from "./TableOrderModal";
 import TableTransferModal from "./TableTransferModal";
 import SettledBillsModal from "./SettledBillsModal";
 import PaymentCollectionModal from "../PaymentCollectionModal";
+import WaitlistManager from "./WaitlistManager";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Users } from "lucide-react";
 
 interface TableManagerProps {
   orders: Order[];
@@ -62,6 +65,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   const [addingTable, setAddingTable] = useState(false);
   const [customDiscount, setCustomDiscount] = useState("");
   const [showSettledBills, setShowSettledBills] = useState(false);
+  const [showWaitlistModal, setShowWaitlistModal] = useState(false);
+  const [seatingWaitlistEntry, setSeatingWaitlistEntry] = useState<any>(null);
 
   const [showPaymentModal, setShowPaymentModal] = useState<string | null>(null);
   const [splitMode, setSplitMode] = useState(false);
@@ -253,9 +258,17 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
   };
 
 
-  const handleModalSuccess = () => {
+  const handleModalSuccess = async () => {
     fetchTables();
     onRefresh();
+    if (seatingWaitlistEntry) {
+      try {
+        await apiAdminUpdateWaitlistStatus(seatingWaitlistEntry.id, 'seated');
+        setSeatingWaitlistEntry(null);
+      } catch (e) {
+        console.error("Failed to mark waitlist as seated:", e);
+      }
+    }
   };
 
   return (
@@ -268,8 +281,14 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           </h2>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setShowWaitlistModal(true)}
+              className={`px-3 py-1.5 ${seatingWaitlistEntry ? 'bg-green-600 text-white border-green-600' : 'bg-muted/50 hover:bg-muted text-foreground border-border'} border rounded-xl text-xs font-bold transition flex items-center gap-1.5`}
+            >
+              <Users size={14} /> Waitlist
+            </button>
+            <button
               onClick={() => setShowSettledBills(true)}
-              className="px-3 py-1.5 bg-muted/50 hover:bg-muted text-foreground border border-border rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-muted/50 hover:bg-muted text-foreground border border-border rounded-xl text-xs font-bold transition flex items-center gap-1.5 hidden sm:flex"
             >
               <FileText size={14} /> Settled Bills
             </button>
@@ -283,6 +302,18 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
             <Loader2 className="animate-spin w-8 h-8 text-primary" />
           </div>
         ) : (
+          <>
+          {seatingWaitlistEntry && (
+            <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4">
+              <div>
+                <p className="text-sm font-bold text-green-800">Select a table to seat {seatingWaitlistEntry.customer_name}</p>
+                <p className="text-xs text-green-700">Party of {seatingWaitlistEntry.party_size}</p>
+              </div>
+              <button onClick={() => setSeatingWaitlistEntry(null)} className="text-green-800 hover:bg-green-200/50 p-2 rounded-lg text-sm font-bold">
+                Cancel
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
             {tables.map(table => {
               const session = table.activeSession;
@@ -464,6 +495,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
               );
             })}
           </div>
+          </>
         )}
       </div>
 
@@ -678,6 +710,8 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           onSuccess={handleModalSuccess}
           tableId={openTableState.id}
           tableNumber={openTableState.number}
+          defaultName={seatingWaitlistEntry?.customer_name}
+          defaultPhone={seatingWaitlistEntry?.customer_phone?.replace(/^91/, '')}
         />
       )}
 
@@ -710,6 +744,24 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           onClose={() => setShowSettledBills(false)}
         />
       )}
+
+      <Dialog open={showWaitlistModal} onOpenChange={setShowWaitlistModal}>
+        <DialogContent className="max-w-2xl bg-card">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="text-primary" /> Digital Waitlist
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[70vh] overflow-y-auto pr-2">
+            <WaitlistManager 
+              onSeatCustomer={(entry) => {
+                setSeatingWaitlistEntry(entry);
+                setShowWaitlistModal(false);
+              }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
