@@ -588,7 +588,7 @@ router.post("/orders/:id/complete-payment", auth, async (req, res) => {
     await client.query(
       `UPDATE orders
        SET payment_status = 'paid', paid_amount = total, payment_method = $2, split_cash = $3, split_upi = $4
-       WHERE id = $1 AND payment_status != 'paid'`,
+       WHERE id = $1`,
       [id, paymentMethod, splitCash || 0, splitUpi || 0]
     );
 

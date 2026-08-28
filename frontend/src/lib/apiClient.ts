@@ -1188,6 +1188,14 @@ export async function apiGetActiveOrdersByPhone(phone: string) {
   return res.json();
 }
 
+export async function apiGetOrderById(id: string): Promise<Order> {
+  const res = await tenantFetch(`${API_URL}/orders/${id}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch order");
+  return res.json();
+}
+
 export async function apiGetEstimate() {
   const res = await tenantFetch(`${API_URL}/orders/estimate`, {
     headers: authHeaders(),

@@ -409,6 +409,78 @@ router.get("/tokens", async (req, res) => {
   }
 });
 
+// ---------------- GET SINGLE ORDER ----------------
+router.get("/:id", async (req, res, next) => {
+  const { id } = req.params;
+  // If id is a known static route, let it pass to the next handler
+  if (['tokens', 'history', 'active', 'estimate'].includes(id)) {
+    return next();
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT id, token, total, subtotal, discount, cgst, sgst, gst_total, gst_rate, status, payment_method, payment_status, paid_amount, coupon_code, customer_name, customer_phone, created_at, order_type, special_instructions, order_source, table_session_id
+       FROM orders
+       WHERE id = $1 AND business_id = $2`,
+      [id, req.business_id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    const order = result.rows[0];
+    
+    // Also fetch items
+    const itemsRes = await pool.query(
+      `SELECT menu_item_id, name, price, price_label as "priceLabel", quantity, image, note
+       FROM order_items
+       WHERE order_id = $1 AND business_id = $2`,
+      [id, req.business_id]
+    );
+
+    const businessSettings = await ensureBusinessSettings(pool, req.business_id);
+
+    res.json({
+      id: order.id,
+      token: order.token,
+      customerName: order.customer_name,
+      customerPhone: order.customer_phone,
+      total: parseFloat(order.total),
+      subtotal: parseFloat(order.subtotal || 0),
+      discount: parseFloat(order.discount || 0),
+      cgst: parseFloat(order.cgst || 0),
+      sgst: parseFloat(order.sgst || 0),
+      gst: parseFloat(order.gst_total || 0),
+      gstRate: parseFloat(order.gst_rate || 0),
+      status: order.status,
+      paymentMethod: order.payment_method,
+      paymentStatus: order.payment_status,
+      paidAmount: parseFloat(order.paid_amount || 0),
+      couponCode: order.coupon_code,
+      createdAt: order.created_at,
+      orderType: order.order_type || "dine-in",
+      specialInstructions: order.special_instructions || "",
+      orderSource: order.order_source || "counter",
+      tableSessionId: order.table_session_id || null,
+      items: itemsRes.rows.map(i => ({
+        id: i.menu_item_id || `${order.id}-item`, // fallback
+        menu_item_id: i.menu_item_id,
+        name: i.name,
+        price: parseFloat(i.price),
+        priceLabel: i.priceLabel,
+        quantity: i.quantity,
+        image: i.image,
+        note: i.note
+      })),
+      business: toBusinessResponse(businessSettings)
+    });
+  } catch (err) {
+    console.error("Fetch single order error:", err);
+    res.status(500).json({ error: "Failed to fetch order" });
+  }
+});
+
 // ---------------- ORDER HISTORY BY PHONE ----------------
 router.get("/history/:phone", async (req, res) => {
   const { phone } = req.params;

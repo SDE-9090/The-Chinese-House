@@ -656,7 +656,7 @@ router.post("/sessions/:sessionId/pay", async (req, res) => {
     await client.query(
       `UPDATE orders
        SET payment_status = 'paid', paid_amount = total, payment_method = 'online'
-       WHERE table_session_id = $1 AND status != 'cancelled' AND payment_status != 'paid'`,
+       WHERE table_session_id = $1 AND status != 'cancelled'`,
       [sessionId]
     );
 
@@ -846,7 +846,7 @@ router.post("/sessions/:sessionId/close", adminAuth, async (req, res) => {
     await client.query(
       `UPDATE orders
        SET payment_status = 'paid', paid_amount = total, payment_method = $2, split_cash = $3, split_upi = $4
-       WHERE table_session_id = $1 AND payment_status != 'paid' AND status != 'cancelled'`,
+       WHERE table_session_id = $1 AND status != 'cancelled'`,
       [sessionId, paymentMethod, splitCash || 0, splitUpi || 0]
     );
 

@@ -57,7 +57,9 @@ import {
   type Order,
   type CouponValidation,
   type BusinessSettings,
+  apiGetOrderById,
 } from "@/lib/apiClient";
+import { socket } from "@/lib/socket";
 import { calculateOrderPricing } from "@/lib/billing";
 import { useDynamicMenu } from "@/hooks/useDynamicMenu";
 import type { DynamicMenuItem } from "@/hooks/useDynamicMenu";
@@ -480,6 +482,34 @@ function OrderPageContent({
   }, [isEditing, confirmedOrder?.id]);
 
   // Early returns must happen AFTER all hooks are defined
+  
+  // Real-time order synchronization
+  useEffect(() => {
+    if (step !== "confirmation" || !confirmedOrder?.id) return;
+
+    const handleOrderUpdate = async (data: { id?: string }) => {
+      // If the event provides an id, verify it matches our confirmed order
+      if (data && data.id && data.id !== confirmedOrder.id) return;
+
+      try {
+        const freshOrder = await apiGetOrderById(confirmedOrder.id);
+        if (freshOrder) {
+          setConfirmedOrder(freshOrder);
+        }
+      } catch (err) {
+        console.error("Failed to re-fetch order status:", err);
+      }
+    };
+
+    socket.on("payment-updated", handleOrderUpdate);
+    socket.on("order-updated", handleOrderUpdate);
+
+    return () => {
+      socket.off("payment-updated", handleOrderUpdate);
+      socket.off("order-updated", handleOrderUpdate);
+    };
+  }, [step, confirmedOrder?.id]);
+
   if (settingsLoading || menuLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background">

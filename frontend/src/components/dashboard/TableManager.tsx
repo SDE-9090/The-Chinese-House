@@ -160,9 +160,9 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
 
   useEffect(() => {
     fetchTables();
-    
+
     socket.on("tables-updated", fetchTables);
-    
+
     return () => {
       socket.off("tables-updated", fetchTables);
     };
@@ -303,198 +303,214 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
           </div>
         ) : (
           <>
-          {seatingWaitlistEntry && (
-            <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4">
-              <div>
-                <p className="text-sm font-bold text-green-800">Select a table to seat {seatingWaitlistEntry.customer_name}</p>
-                <p className="text-xs text-green-700">Party of {seatingWaitlistEntry.party_size}</p>
+            {seatingWaitlistEntry && (
+              <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-3 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4">
+                <div>
+                  <p className="text-sm font-bold text-green-800">Select a table to seat {seatingWaitlistEntry.customer_name}</p>
+                  <p className="text-xs text-green-700">Party of {seatingWaitlistEntry.party_size}</p>
+                </div>
+                <button onClick={() => setSeatingWaitlistEntry(null)} className="text-green-800 hover:bg-green-200/50 p-2 rounded-lg text-sm font-bold">
+                  Cancel
+                </button>
               </div>
-              <button onClick={() => setSeatingWaitlistEntry(null)} className="text-green-800 hover:bg-green-200/50 p-2 rounded-lg text-sm font-bold">
-                Cancel
-              </button>
-            </div>
-          )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-            {tables.map(table => {
-              const session = table.activeSession;
-              const isTableEditing = session && orders.some(o =>
-                (o.tableSessionId === session.id || (o as any).table_session_id === session.id) &&
-                editingOrderIds.has(o.id)
-              );
+            )}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+              {tables.map(table => {
+                const session = table.activeSession;
+                const isTableEditing = session && orders.some(o =>
+                  (o.tableSessionId === session.id || (o as any).table_session_id === session.id) &&
+                  editingOrderIds.has(o.id)
+                );
 
-              let elapsedString = "";
-              if (session?.startTime) {
-                const elapsedMs = now - new Date(session.startTime).getTime();
-                const totalSecs = Math.max(0, Math.floor(elapsedMs / 1000));
-                const h = Math.floor(totalSecs / 3600);
-                const m = Math.floor((totalSecs % 3600) / 60);
-                const s = totalSecs % 60;
+                let elapsedString = "";
+                if (session?.startTime) {
+                  const elapsedMs = now - new Date(session.startTime).getTime();
+                  const totalSecs = Math.max(0, Math.floor(elapsedMs / 1000));
+                  const h = Math.floor(totalSecs / 3600);
+                  const m = Math.floor((totalSecs % 3600) / 60);
+                  const s = totalSecs % 60;
 
-                if (h > 0) {
-                  elapsedString = `${h}h ${m}m ${s}s`;
-                } else {
-                  elapsedString = `${m}m ${s}s`;
+                  if (h > 0) {
+                    elapsedString = `${h}h ${m}m ${s}s`;
+                  } else {
+                    elapsedString = `${m}m ${s}s`;
+                  }
                 }
-              }
 
-              return (
-                <motion.div
-                  layout
-                  key={table.id}
-                  className={`relative p-5 rounded-2xl border flex flex-col transition-all ${isTableEditing ? 'border-amber-500 shadow-lg shadow-amber-500/20 bg-amber-500/5' :
-                    table.status === 'occupied' ? 'bg-primary/5 border-primary/30 shadow-md' :
-                      table.status === 'reserved' ? 'bg-amber-500/5 border-amber-500/30 shadow-md' :
-                        'bg-card border-border hover:shadow-lg'
-                    }`}
-                >
-                  {isTableEditing && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg animate-bounce flex items-center gap-1 z-10 whitespace-nowrap">
-                      <Loader2 size={10} className="animate-spin" />
-                      CUSTOMER EDITING
-                    </div>
-                  )}
-
-                  {/* 3 Dot Menu at Absolute Top Right */}
-                  {session && (
-                    <div className="absolute top-4 right-4 z-10">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger className="p-1 hover:bg-muted rounded-md transition text-muted-foreground outline-none">
-                          <MoreVertical size={16} />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                          {(user.role === 'admin' || user.permissions?.canTransferTable) && (
-                            <DropdownMenuItem
-                              onClick={() => setTransferTableState({ sessionId: session.id, number: table.tableNumber })}
-                              className="gap-2 cursor-pointer"
-                            >
-                              <ArrowLeftRight size={14} className="text-muted-foreground" />
-                              <span>Transfer Table</span>
-                            </DropdownMenuItem>
-                          )}
-                          {(user.role === 'admin' || user.permissions?.canClearTable) && (
-                            <DropdownMenuItem
-                              onClick={() => handleClearTableClick(session.id, session.customerPhone)}
-                              disabled={closingId === session.id}
-                              className="gap-2 text-destructive focus:text-destructive cursor-pointer md:hidden"
-                            >
-                              <X size={14} />
-                              <span>Clear Table</span>
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  )}
-
-                  <div className="flex flex-col gap-2 mb-4 pr-6">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-bold text-lg leading-none whitespace-nowrap">{table.tableNumber}</h3>
-                      {elapsedString && (
-                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-background border border-border text-muted-foreground flex items-center gap-1 shadow-sm whitespace-nowrap" title="Time Occupied">
-                          <Clock size={10} /> {elapsedString}
-                        </span>
-                      )}
-                    </div>
-                    {!(table.status === 'occupied' && session?.status !== 'billing') && (
-                      <div>
-                        <span className={`inline-block px-2.5 py-1 text-xs font-bold rounded-full ${session?.status === 'billing' ? 'bg-purple-600 text-white shadow-sm' :
-                          table.status === 'reserved' ? 'bg-amber-500 text-white' :
-                            'bg-muted text-muted-foreground'
-                          }`}>
-                          {session?.status === 'billing' ? "BILLING" : table.status.toUpperCase()}
-                        </span>
+                return (
+                  <motion.div
+                    layout
+                    key={table.id}
+                    className={`relative p-5 rounded-2xl border flex flex-col transition-all ${isTableEditing ? 'border-amber-500 shadow-lg shadow-amber-500/20 bg-amber-500/5' :
+                      table.status === 'occupied' ? 'bg-primary/5 border-primary/30 shadow-md' :
+                        table.status === 'reserved' ? 'bg-amber-500/5 border-amber-500/30 shadow-md' :
+                          'bg-card border-border hover:shadow-lg'
+                      }`}
+                  >
+                    {isTableEditing && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg animate-bounce flex items-center gap-1 z-10 whitespace-nowrap">
+                        <Loader2 size={10} className="animate-spin" />
+                        CUSTOMER EDITING
                       </div>
                     )}
-                  </div>
 
-                  {!session && table.status === 'available' && (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                        <UtensilsCrossed className="w-5 h-5 text-muted-foreground/50" />
-                      </div>
-                      <button
-                        onClick={() => setOpenTableState({ id: table.id, number: table.tableNumber })}
-                        className="w-full bg-primary/10 text-primary hover:bg-primary/20 py-2 rounded-xl text-sm font-bold border border-primary/20 transition-colors"
-                      >
-                        Open Table
-                      </button>
-                    </div>
-                  )}
-
-                  {session && (
-                    <div className="flex-1 flex flex-col space-y-5">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold text-sm flex items-center gap-1">
-                            {session.customerName}
-                            <CheckCircle className="w-3 h-3 text-emerald-600 inline ml-1" />
-                          </p>
-                          {session.customerPhone && session.customerPhone !== "0000000000" && (
-                            <p className="text-xs text-muted-foreground">{session.customerPhone}</p>
-                          )}
-                        </div>
-                        <div className="flex items-start gap-3">
-                          {billsMap[session.id] && (
-                            <div className="text-right">
-                              <p className="text-[10px] uppercase font-bold text-muted-foreground/70">Bill Total</p>
-                              <p className="text-base font-black text-primary leading-none mt-0.5">₹{billsMap[session.id].totalAmount.toFixed(0)}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {session.status === 'billing' ? (
-                        <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-3 text-center">
-                          <p className="text-sm font-bold text-purple-600 mb-2">Customer is Done</p>
-                          <p className="text-xs text-muted-foreground mb-3">Please collect payment to free this table.</p>
-                          {(user.role === 'admin' || user.permissions?.canClearTable) && (
-                            <div className="flex flex-col gap-2">
-                              <button
+                    {/* 3 Dot Menu at Absolute Top Right */}
+                    {session && (
+                      <div className="absolute top-4 right-4 z-10">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger className="p-1 hover:bg-muted rounded-md transition text-muted-foreground outline-none">
+                            <MoreVertical size={16} />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                            {(user.role === 'admin' || user.permissions?.canTransferTable) && (
+                              <DropdownMenuItem
+                                onClick={() => setTransferTableState({ sessionId: session.id, number: table.tableNumber })}
+                                className="gap-2 cursor-pointer"
+                              >
+                                <ArrowLeftRight size={14} className="text-muted-foreground" />
+                                <span>Transfer Table</span>
+                              </DropdownMenuItem>
+                            )}
+                            {(user.role === 'admin' || user.permissions?.canClearTable) && (
+                              <DropdownMenuItem
                                 onClick={() => handleClearTableClick(session.id, session.customerPhone)}
                                 disabled={closingId === session.id}
-                                className="w-full bg-purple-600 text-white py-2 flex items-center justify-center gap-2 rounded-lg text-xs font-bold shadow-md hover:bg-purple-700 transition disabled:opacity-50"
+                                className="gap-2 text-destructive focus:text-destructive cursor-pointer md:hidden"
                               >
-                                {closingId === session.id ? <Loader2 className="animate-spin w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-                                Clear Table
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setOrderTableState({ sessionId: session.id, number: table.tableNumber, customerName: session.customerName, customerPhone: session.customerPhone })}
-                            className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 py-2 px-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition shadow-sm leading-tight"
-                          >
-                            <Plus size={14} className="shrink-0" /> <span className="text-center">Add Items</span>
-                          </button>
-                          <button
-                            onClick={() => setSelectedTable(table)}
-                            className="flex-1 bg-muted text-foreground hover:bg-muted/80 py-2 px-2 flex items-center justify-center rounded-xl text-xs font-bold border border-border transition shadow-sm leading-tight text-center"
-                          >
-                            View Bill
-                          </button>
-                        </div>
-                      )}
+                                <X size={14} />
+                                <span>Clear Table</span>
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    )}
 
-                      {(user.role === 'admin' || user.permissions?.canClearTable) && (
-                        <div className="hidden md:flex flex-1 flex-col justify-end mt-3">
-                          <button
-                            onClick={() => handleClearTableClick(session.id, session.customerPhone)}
-                            disabled={closingId === session.id}
-                            className="w-full border border-destructive/30 text-destructive hover:bg-destructive/10 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                          >
-                            {closingId === session.id ? <Loader2 className="animate-spin w-4 h-4" /> : <X size={14} />}
-                            Clear Table
-                          </button>
+                    <div className="flex flex-col gap-2 mb-4 pr-6">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-bold text-lg leading-none whitespace-nowrap">{table.tableNumber}</h3>
+                        {elapsedString && (
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-background border border-border text-muted-foreground flex items-center gap-1 shadow-sm whitespace-nowrap" title="Time Occupied">
+                            <Clock size={10} /> {elapsedString}
+                          </span>
+                        )}
+                      </div>
+                      {!(table.status === 'occupied' && session?.status !== 'billing') && (
+                        <div>
+                          <span className={`inline-block px-2.5 py-1 text-xs font-bold rounded-full ${session?.status === 'billing' ? 'bg-purple-600 text-white shadow-sm' :
+                            table.status === 'reserved' ? 'bg-amber-500 text-white' :
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                            {session?.status === 'billing' ? "BILLING" : table.status.toUpperCase()}
+                          </span>
                         </div>
                       )}
                     </div>
-                  )}
-                </motion.div>
-              );
-            })}
-          </div>
+
+                    {!session && table.status === 'available' && (
+                      <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                          <UtensilsCrossed className="w-5 h-5 text-muted-foreground/50" />
+                        </div>
+                        <button
+                          onClick={() => setOpenTableState({ id: table.id, number: table.tableNumber })}
+                          className="w-full bg-primary/10 text-primary hover:bg-primary/20 py-2 rounded-xl text-sm font-bold border border-primary/20 transition-colors"
+                        >
+                          Open Table
+                        </button>
+                      </div>
+                    )}
+
+                    {session && (
+                      <div className="flex-1 flex flex-col space-y-5">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-semibold text-sm flex items-center gap-1">
+                              {session.customerName}
+                              <CheckCircle className="w-3 h-3 text-emerald-600 inline ml-1" />
+                            </p>
+                            {session.customerPhone && session.customerPhone !== "0000000000" && (
+                              <p className="text-xs text-muted-foreground">{session.customerPhone}</p>
+                            )}
+                          </div>
+                          <div className="flex items-start gap-3">
+                            {billsMap[session.id] && (
+                              <div className="text-right">
+                                <p className="text-[10px] uppercase font-bold text-muted-foreground/70">Bill Total</p>
+                                <p className="text-base font-black text-primary leading-none mt-0.5">₹{billsMap[session.id].totalAmount.toFixed(0)}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {session.status === 'billing' ? (
+                          <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-3 text-center">
+                            <p className="text-sm font-bold text-purple-600 mb-2">Customer is Done</p>
+                            <p className="text-xs text-muted-foreground mb-3">Please collect payment to free this table.</p>
+                            {(user.role === 'admin' || user.permissions?.canClearTable) && (
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  onClick={() => handleClearTableClick(session.id, session.customerPhone)}
+                                  disabled={closingId === session.id}
+                                  className="w-full bg-purple-600 text-white py-2 flex items-center justify-center gap-2 rounded-lg text-xs font-bold shadow-md hover:bg-purple-700 transition disabled:opacity-50"
+                                >
+                                  {closingId === session.id ? <Loader2 className="animate-spin w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                                  Clear Table
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setOrderTableState({ sessionId: session.id, number: table.tableNumber, customerName: session.customerName, customerPhone: session.customerPhone })}
+                              className="flex-1 bg-secondary text-secondary-foreground hover:bg-secondary/90 py-2 px-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition shadow-sm leading-tight"
+                            >
+                              <Plus size={14} className="shrink-0" /> <span className="text-center">Add Items</span>
+                            </button>
+                            <button
+                              onClick={() => setSelectedTable(table)}
+                              className="flex-1 bg-muted text-foreground hover:bg-muted/80 py-2 px-2 flex items-center justify-center rounded-xl text-xs font-bold border border-border transition shadow-sm leading-tight text-center"
+                            >
+                              View Bill
+                            </button>
+                          </div>
+                        )}
+
+                        {(user.role === 'admin' || user.permissions?.canClearTable) && (
+                          <div className="hidden md:flex flex-1 flex-col justify-end mt-3">
+                            <button
+                              onClick={() => handleClearTableClick(session.id, session.customerPhone)}
+                              disabled={closingId === session.id}
+                              className="w-full border border-destructive/30 text-destructive hover:bg-destructive/10 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                            >
+                              {closingId === session.id ? <Loader2 className="animate-spin w-4 h-4" /> : <X size={14} />}
+                              Clear Table
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {tables.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-16 text-center text-zinc-400 flex flex-col items-center justify-center bg-zinc-50/50 dark:bg-zinc-900/30 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 mt-6"
+              >
+                <div className="bg-white dark:bg-zinc-900 p-5 rounded-full shadow-sm mb-5">
+                  <UtensilsCrossed className="w-10 h-10 text-zinc-300 dark:text-zinc-600" />
+                </div>
+                <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-100 mb-2">No Tables Configured</h3>
+                <p className="text-sm max-w-sm mx-auto leading-relaxed">
+                  You haven't added any tables yet. Please go to the <strong>Management</strong> tab to create and manage your restaurant's tables.
+                </p>
+              </motion.div>
+            )}
           </>
         )}
       </div>
@@ -753,7 +769,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
             </DialogTitle>
           </DialogHeader>
           <div className="max-h-[70vh] overflow-y-auto pr-2">
-            <WaitlistManager 
+            <WaitlistManager
               onSeatCustomer={(entry) => {
                 setSeatingWaitlistEntry(entry);
                 setShowWaitlistModal(false);

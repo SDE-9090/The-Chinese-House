@@ -105,42 +105,62 @@ export default function WaitlistManager({ onSeatCustomer }: WaitlistManagerProps
           <X size={14}/>
         </button>
       </div>
-      <form onSubmit={handleManualAdd} className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <Input 
-            placeholder="Customer Name" 
-            value={newName} 
-            onChange={e => setNewName(e.target.value)} 
-            className="w-full bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 h-11"
-            required
-          />
+      <form onSubmit={handleManualAdd} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider ml-1">Customer Name</label>
+            <div className="relative">
+              <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
+              <Input 
+                placeholder="E.g. John Doe" 
+                value={newName} 
+                onChange={e => setNewName(e.target.value)} 
+                className="w-full pl-9 bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 h-11 transition-all focus:bg-white dark:focus:bg-zinc-900"
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider ml-1">Phone Number</label>
+            <div className="flex">
+              <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 sm:text-sm font-medium">
+                +91
+              </span>
+              <Input 
+                type="tel" 
+                placeholder="10 digit number" 
+                value={newPhone} 
+                onChange={e => setNewPhone(e.target.value)} 
+                className="w-full rounded-l-none bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 h-11 transition-all focus:bg-white dark:focus:bg-zinc-900"
+                required
+              />
+            </div>
+          </div>
         </div>
-        <div className="w-full sm:w-48">
-          <Input 
-            type="tel" 
-            placeholder="Phone (10 digits)" 
-            value={newPhone} 
-            onChange={e => setNewPhone(e.target.value)} 
-            className="w-full bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 h-11"
-            required
-          />
+        
+        <div className="flex flex-col sm:flex-row gap-4 items-end pt-1">
+          <div className="space-y-1.5 w-full sm:w-1/2">
+            <label className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider ml-1">Party Size</label>
+            <div className="relative">
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
+              <Input 
+                type="number" 
+                placeholder="Number of guests" 
+                value={newSize} 
+                onChange={e => setNewSize(e.target.value)} 
+                className="w-full pl-9 bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 h-11 transition-all focus:bg-white dark:focus:bg-zinc-900"
+                min="1"
+                required
+              />
+            </div>
+          </div>
+          
+          <Button type="submit" disabled={adding} className="w-full sm:w-1/2 h-11 shadow-sm font-semibold">
+            {adding ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />} 
+            Add to Queue
+          </Button>
         </div>
-        <div className="w-full sm:w-28 relative">
-          <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
-          <Input 
-            type="number" 
-            placeholder="Size" 
-            value={newSize} 
-            onChange={e => setNewSize(e.target.value)} 
-            className="w-full pl-9 bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 h-11"
-            min="1"
-            required
-          />
-        </div>
-        <Button type="submit" disabled={adding} className="w-full sm:w-32 h-11 shadow-sm font-semibold">
-          {adding ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />} 
-          Add to Queue
-        </Button>
       </form>
     </motion.div>
   );
