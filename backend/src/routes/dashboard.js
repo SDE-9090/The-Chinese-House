@@ -7,6 +7,7 @@ const { adminAuth } = require("../middleware/adminAuth");
 const { logAuditAction } = require("../utils/auditLogger");
 const { ensureBusinessSettings } = require("../utils/businessSettings");
 const { calculateOrderTotals } = require("../utils/gst");
+const { syncCustomerCRM } = require("../utils/crmSync");
 
 // Auth middleware: supports Bearer token (primary), cookie, or header password (fallback)
 function auth(req, res, next) {
@@ -213,6 +214,10 @@ router.patch("/orders/:id/status", auth, async (req, res) => {
     await invalidateDashboardCache(req.business_id);
     await invalidateActiveOrdersHistoryCache(update.rows[0].customer_phone, req.business_id);
     
+    if (update.rows[0].customer_phone) {
+      syncCustomerCRM(req.business_id, update.rows[0].customer_phone).catch(console.error);
+    }
+    
     await logAuditAction(req, "UPDATE_ORDER_STATUS", "order", update.rows[0].id, { new_status: status });
     
     res.json({ success: true });
@@ -406,7 +411,7 @@ router.patch("/orders/:id/pay-due", auth, async (req, res) => {
 
   try {
     const orderRes = await pool.query(
-      "SELECT total, paid_amount FROM orders WHERE id=$1 AND business_id=$2",
+      "SELECT total, paid_amount, customer_phone FROM orders WHERE id=$1 AND business_id=$2",
       [id, req.business_id],
     );
 
@@ -428,6 +433,10 @@ router.patch("/orders/:id/pay-due", auth, async (req, res) => {
     }
 
     await invalidateDashboardCache(req.business_id);
+
+    if (orderRes.rows[0].customer_phone) {
+      syncCustomerCRM(req.business_id, orderRes.rows[0].customer_phone).catch(console.error);
+    }
 
     res.json({
       message: "Due paid successfully",

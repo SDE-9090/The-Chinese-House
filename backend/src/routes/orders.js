@@ -11,6 +11,7 @@ const {
 const { sendSMS } = require("../utils/smsSender");
 const { ensureBusinessSettings, toBusinessResponse } = require("../utils/businessSettings");
 const { calculateOrderTotals, roundCurrency } = require("../utils/gst");
+const { syncCustomerCRM } = require("../utils/crmSync");
 
 function mapOrderItems(rows) {
   return rows.map((i) => ({
@@ -304,6 +305,9 @@ router.post("/", async (req, res) => {
     }
 
     await client.query("COMMIT");
+
+    // Background CRM Sync
+    syncCustomerCRM(req.business_id, phone).catch(console.error);
 
     const message = `The Chinese House 🍜
 
@@ -652,6 +656,9 @@ router.patch("/:id/customer-edit", async (req, res) => {
     );
 
     await client.query("COMMIT");
+
+    // Background CRM Sync
+    syncCustomerCRM(req.business_id, order.customer_phone).catch(console.error);
 
     const io = req.app.get("io");
     io.to(`tenant:${req.business_id}`).emit("order-updated", { id });

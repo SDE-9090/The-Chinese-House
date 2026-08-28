@@ -5,6 +5,7 @@ const { invalidateDashboardCache } = require("../helpers/cacheHelper");
 const { adminAuth } = require("../middleware/adminAuth");
 const { roundCurrency, calculateOrderTotals } = require("../utils/gst");
 const { ensureBusinessSettings } = require("../utils/businessSettings");
+const { syncCustomerCRM } = require("../utils/crmSync");
 
 
 
@@ -858,6 +859,10 @@ router.post("/sessions/:sessionId/close", adminAuth, async (req, res) => {
     if (io) { io.to(`tenant:${req.business_id}`).emit("tables-updated"); io.to(`tenant:${req.business_id}`).emit("orders-updated"); }
 
     await invalidateDashboardCache();
+
+    if (finalPhone) {
+      syncCustomerCRM(req.business_id, finalPhone).catch(console.error);
+    }
 
     res.json({ success: true });
   } catch (err) {
