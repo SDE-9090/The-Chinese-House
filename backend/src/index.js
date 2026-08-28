@@ -27,6 +27,7 @@ const aiRoutes = require("./routes/ai");
 const webauthnRoutes = require("./routes/webauthn");
 const updateRoutes = require("./routes/updates");
 const superAdminRoutes = require("./routes/superAdmin");
+const cronRoutes = require("./routes/cron");
 const { tenantEnforcer } = require("./middleware/tenantEnforcer");
 const path = require("path");
 
@@ -78,6 +79,7 @@ const { tenantContext } = require("./middleware/tenantContext");
 // ---- System Cron Routes ----
 // These must come before tenant enforcer since they run system-wide
 app.use("/api/reports", (req, res, next) => tenantContext.run('super_admin', next), reportsRoutes);
+app.use("/api/cron", (req, res, next) => tenantContext.run('super_admin', next), cronRoutes);
 
 // ---- Public Tenant Verification ----
 app.get("/api/verify-tenant/:slug", async (req, res) => {

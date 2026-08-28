@@ -41,6 +41,8 @@ const defaultState: BusinessSettings = {
   loyaltyEnabled: true,
   loyaltyPointsPer100: 10,
   loyaltyDiscountPerPoint: 1.00,
+  winbackDiscountType: "percent",
+  winbackDiscountValue: 15.00,
 };
 
 interface Props {
@@ -107,6 +109,8 @@ const BusinessSettingsManager = ({ user }: Props) => {
         loyaltyEnabled: data.loyaltyEnabled,
         loyaltyPointsPer100: data.loyaltyPointsPer100,
         loyaltyDiscountPerPoint: data.loyaltyDiscountPerPoint,
+        winbackDiscountType: data.winbackDiscountType,
+        winbackDiscountValue: data.winbackDiscountValue,
         qrRoutingMode: data.qrRoutingMode,
         printerWidth: data.printerWidth,
       });
@@ -484,6 +488,56 @@ const BusinessSettingsManager = ({ user }: Props) => {
               disabled={!data.loyaltyEnabled}
               className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="1.0"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Win-Back CRM Settings */}
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500 lucide lucide-message-circle-heart"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M15.8 9.2a2.5 2.5 0 0 0-3.5 0l-.3.4-.3-.4a2.5 2.5 0 1 0-3.6 3.5l3.9 3.9 3.9-3.9a2.5 2.5 0 0 0-.1-3.5Z"/></svg>
+          </div>
+          <div>
+            <h2 className="font-heading text-lg font-bold">Automated Win-Back CRM</h2>
+            <p className="text-sm text-muted-foreground">
+              Configure the automated discount sent to customers who haven't ordered in 30 days.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">Discount Type</label>
+            <select
+              value={data.winbackDiscountType || "percent"}
+              onChange={(e) => setData((prev) => ({ ...prev, winbackDiscountType: e.target.value as "percent" | "flat" }))}
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="percent">Percentage (%)</option>
+              <option value="flat">Flat Amount (₹)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">
+              Discount Value
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={data.winbackDiscountType === "percent" ? 1 : 10}
+              value={data.winbackDiscountValue ?? 15}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                setData((prev) => ({
+                  ...prev,
+                  winbackDiscountValue: isNaN(val) ? 0 : Math.max(0, val),
+                }));
+              }}
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="15"
             />
           </div>
         </div>

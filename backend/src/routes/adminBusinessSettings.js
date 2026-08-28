@@ -43,6 +43,8 @@ router.put("/", adminAuth, async (req, res) => {
     loyaltyDiscountPerPoint,
     qrRoutingMode,
     printerWidth,
+    winbackDiscountType,
+    winbackDiscountValue,
   } = req.body;
 
   if (restaurantName !== undefined) {
@@ -113,6 +115,18 @@ router.put("/", adminAuth, async (req, res) => {
     }
   }
 
+  if (winbackDiscountType !== undefined) {
+    if (!["percent", "flat"].includes(winbackDiscountType)) {
+      return res.status(400).json({ error: "Win-back discount type must be 'percent' or 'flat'" });
+    }
+  }
+
+  if (winbackDiscountValue !== undefined) {
+    if (typeof winbackDiscountValue !== "number" || winbackDiscountValue < 0) {
+      return res.status(400).json({ error: "Win-back discount value must be a non-negative number" });
+    }
+  }
+
   try {
     const current = await ensureBusinessSettings(pool, req.business_id);
     const next = {
@@ -134,12 +148,14 @@ router.put("/", adminAuth, async (req, res) => {
       loyaltyDiscountPerPoint: typeof loyaltyDiscountPerPoint === "number" ? loyaltyDiscountPerPoint : current.loyaltyDiscountPerPoint,
       qrRoutingMode: typeof qrRoutingMode === "string" && ["claim", "waiter_unlock"].includes(qrRoutingMode) ? qrRoutingMode : (current.qrRoutingMode || "claim"),
       printerWidth: typeof printerWidth === "string" && ["58mm", "80mm"].includes(printerWidth) ? printerWidth : current.printerWidth,
+      winbackDiscountType: typeof winbackDiscountType === "string" ? winbackDiscountType : current.winbackDiscountType,
+      winbackDiscountValue: typeof winbackDiscountValue === "number" ? winbackDiscountValue : current.winbackDiscountValue,
       landingPageContent: landingPageContent !== undefined ? landingPageContent : current.landingPageContent,
     };
 
     const result = await pool.query(
-      `INSERT INTO business_settings (business_id, restaurant_name, gstin, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate, kitchen_pin, updated_at, landing_page_content, order_workflow, loyalty_enabled, loyalty_points_per_100, loyalty_discount_per_point, qr_routing_mode, printer_width)
-       VALUES ($10, $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $11, $12, $13, $14, $15, $16, $17)
+      `INSERT INTO business_settings (business_id, restaurant_name, gstin, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate, kitchen_pin, updated_at, landing_page_content, order_workflow, loyalty_enabled, loyalty_points_per_100, loyalty_discount_per_point, qr_routing_mode, printer_width, winback_discount_type, winback_discount_value)
+       VALUES ($10, $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $11, $12, $13, $14, $15, $16, $17, $18, $19)
        ON CONFLICT (business_id) DO UPDATE SET
          restaurant_name = EXCLUDED.restaurant_name,
          gstin = EXCLUDED.gstin,
@@ -157,8 +173,10 @@ router.put("/", adminAuth, async (req, res) => {
          loyalty_discount_per_point = EXCLUDED.loyalty_discount_per_point,
          qr_routing_mode = EXCLUDED.qr_routing_mode,
          printer_width = EXCLUDED.printer_width,
+         winback_discount_type = EXCLUDED.winback_discount_type,
+         winback_discount_value = EXCLUDED.winback_discount_value,
          updated_at = NOW()
-       RETURNING id, restaurant_name, gstin, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate, kitchen_pin, landing_page_content, order_workflow, loyalty_enabled, loyalty_points_per_100, loyalty_discount_per_point, qr_routing_mode, printer_width`,
+       RETURNING id, restaurant_name, gstin, address, phone, email, is_gst_enabled, cgst_rate, sgst_rate, kitchen_pin, landing_page_content, order_workflow, loyalty_enabled, loyalty_points_per_100, loyalty_discount_per_point, qr_routing_mode, printer_width, winback_discount_type, winback_discount_value`,
       [
         next.restaurantName,
         next.gstin,
@@ -176,7 +194,9 @@ router.put("/", adminAuth, async (req, res) => {
         next.loyaltyPointsPer100,
         next.loyaltyDiscountPerPoint,
         next.qrRoutingMode,
-        next.printerWidth
+        next.printerWidth,
+        next.winbackDiscountType,
+        next.winbackDiscountValue
       ],
     );
 

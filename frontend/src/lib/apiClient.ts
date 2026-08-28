@@ -565,6 +565,8 @@ export interface BusinessSettings {
   loyaltyEnabled?: boolean;
   loyaltyPointsPer100?: number;
   loyaltyDiscountPerPoint?: number;
+  winbackDiscountType?: "percent" | "flat";
+  winbackDiscountValue?: number;
   qrRoutingMode?: "claim" | "waiter_unlock";
   printerWidth?: string;
 }
