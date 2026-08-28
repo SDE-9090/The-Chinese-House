@@ -122,7 +122,7 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuImage
 
   try {
 
-    const { name, description, price, price_label, category, available, variants, diet_type } = req.body;
+    const { name, description, price, price_label, category, available, variants, diet_type, is_chef_special, recommended_pairings } = req.body;
 
     if (!name || !price || !price_label || !category) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -145,11 +145,19 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuImage
       } catch (e) {}
     }
 
+    let pairingsJson = '[]';
+    if (recommended_pairings) {
+      try {
+        pairingsJson = typeof recommended_pairings === 'string' ? recommended_pairings : JSON.stringify(recommended_pairings);
+      } catch (e) {}
+    }
+
     const { rows } = await pool.query(
       `INSERT INTO menu_items
-      (name, slug, description, price, price_label, category_id, image_url, available, business_id, variants, diet_type, sort_order)
+      (name, slug, description, price, price_label, category_id, image_url, available, business_id, variants, diet_type, sort_order, is_chef_special, recommended_pairings)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, 
-        (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM menu_items WHERE business_id = $9)
+        (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM menu_items WHERE business_id = $9),
+        $12, $13
       )
       RETURNING *,
       (SELECT name FROM menu_categories WHERE id=$6) AS category`,
@@ -164,7 +172,9 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuImage
         available !== false,
         req.business_id,
         variantsJson,
-        diet_type || 'none'
+        diet_type || 'none',
+        is_chef_special === 'true' || is_chef_special === true,
+        pairingsJson
       ]
     );
 
@@ -198,7 +208,7 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuIma
   try {
 
     const { id } = req.params;
-    const { name, description, price, price_label, category, available, variants, diet_type } = req.body;
+    const { name, description, price, price_label, category, available, variants, diet_type, is_chef_special, recommended_pairings } = req.body;
 
     let categoryId = null;
 
@@ -230,6 +240,15 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuIma
       } catch (e) {}
     }
 
+    let pairingsJson = undefined;
+    if (recommended_pairings !== undefined) {
+      try {
+        pairingsJson = typeof recommended_pairings === 'string' ? recommended_pairings : JSON.stringify(recommended_pairings);
+      } catch (e) {}
+    }
+
+    const parsed_chef_special = is_chef_special === undefined ? null : (is_chef_special === 'true' || is_chef_special === true);
+
     const { rows } = await pool.query(
       `UPDATE menu_items
        SET name = COALESCE($1,name),
@@ -242,7 +261,9 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuIma
            available = COALESCE($8,available),
            variants = COALESCE($9,variants),
            updated_at = NOW(),
-           diet_type = COALESCE($12,diet_type)
+           diet_type = COALESCE($12,diet_type),
+           is_chef_special = COALESCE($13,is_chef_special),
+           recommended_pairings = COALESCE($14,recommended_pairings)
        WHERE id = $10 AND business_id = $11 AND is_deleted = FALSE
        RETURNING *,
        (SELECT name FROM menu_categories WHERE id = menu_items.category_id) AS category`,
@@ -258,7 +279,9 @@ router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), uploadMenuIma
         variantsJson,
         id,
         req.business_id,
-        diet_type || null
+        diet_type || null,
+        parsed_chef_special,
+        pairingsJson
       ]
     );
 

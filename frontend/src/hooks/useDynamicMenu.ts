@@ -14,13 +14,15 @@ export interface DynamicMenuItem {
   available: boolean;
   diet_type?: "veg" | "non-veg" | "egg" | "none";
   variants?: { name: string; price: number }[];
+  is_chef_special?: boolean;
+  recommended_pairings?: number[];
 }
 
 export function useDynamicMenu() {
   const [items, setItems] = useState<DynamicMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const CACHE_KEY = "menu_cache_v2";
+  const CACHE_KEY = "menu_cache_v3";
   const CACHE_TIME = 5 * 60 * 1000; // 5 minutes
 
   const fetchMenu = async () => {
@@ -39,6 +41,8 @@ export function useDynamicMenu() {
         available: d.available,
         diet_type: d.diet_type,
         variants: d.variants || [],
+        is_chef_special: Boolean(d.is_chef_special),
+        recommended_pairings: Array.isArray(d.recommended_pairings) ? d.recommended_pairings : [],
       }));
 
       setItems(formatted);

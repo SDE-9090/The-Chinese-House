@@ -65,6 +65,8 @@ export default function WaitlistJoin() {
       });
       setWaitData({ estimatedWait: data.estimatedWait, position: data.position });
       setJoined(true);
+      localStorage.setItem("classic_customer_phone", formattedPhone);
+      localStorage.setItem("classic_customer_name", name);
       toast({ title: "Successfully joined the waitlist!" });
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to join waitlist. Please try again.");

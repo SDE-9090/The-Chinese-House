@@ -625,12 +625,9 @@ export interface MarketingCampaign {
   id: string;
   customer_phone: string;
   customer_name: string | null;
-  party_size: number;
-  status: 'waiting' | 'notified' | 'seated' | 'cancelled';
-  quoted_wait_minutes: number;
-  created_at: string;
-  notified_at: string | null;
-  seated_at: string | null;
+  campaign_type: string;
+  coupon_code: string | null;
+  sent_at: string;
 }
 
 export const apiPublicJoinWaitlist = async (
@@ -1397,6 +1394,8 @@ export interface MenuItem {
   available: boolean
   sort_order: number
   variants?: { name: string; price: number }[]
+  is_chef_special?: boolean
+  recommended_pairings?: number[]
   created_at: string
   updated_at: string
 }
@@ -1425,6 +1424,8 @@ export async function apiCreateMenuItem(data: {
   image?: File | null
   available?: boolean
   variants?: { name: string; price: number }[]
+  is_chef_special?: boolean
+  recommended_pairings?: number[]
 }): Promise<MenuItem> {
 
   const formData = new FormData()
@@ -1445,6 +1446,14 @@ export async function apiCreateMenuItem(data: {
 
   if (data.variants !== undefined) {
     formData.append("variants", JSON.stringify(data.variants))
+  }
+
+  if (data.is_chef_special !== undefined) {
+    formData.append("is_chef_special", String(data.is_chef_special))
+  }
+
+  if (data.recommended_pairings !== undefined) {
+    formData.append("recommended_pairings", JSON.stringify(data.recommended_pairings))
   }
 
   if (data.image) {
@@ -1481,6 +1490,8 @@ export async function apiUpdateMenuItem(
     image: File | null
     available: boolean
     variants: { name: string; price: number }[]
+    is_chef_special: boolean
+    recommended_pairings: number[]
   }>
 ): Promise<MenuItem> {
 
@@ -1499,6 +1510,14 @@ export async function apiUpdateMenuItem(
 
   if (data.variants !== undefined) {
     formData.append("variants", JSON.stringify(data.variants))
+  }
+
+  if (data.is_chef_special !== undefined) {
+    formData.append("is_chef_special", String(data.is_chef_special))
+  }
+
+  if (data.recommended_pairings !== undefined) {
+    formData.append("recommended_pairings", JSON.stringify(data.recommended_pairings))
   }
 
   if (data.image) {
@@ -1679,6 +1698,17 @@ export interface CustomerAnalytics {
   avgOrdersPerCustomer: number;
   repeatCustomers: number;
   oneTimeCustomers: number;
+}
+
+export async function apiRecognizeCustomer(phone: string): Promise<{
+  recognized: boolean;
+  customer?: { name: string; points: number };
+  frequentItems?: { id: number; name: string }[];
+}> {
+  if (!isApiMode()) return { recognized: false };
+  const res = await authFetch(`${API_URL}/customers/recognize/${phone}`);
+  if (!res.ok) throw new Error("Failed to recognize customer");
+  return res.json();
 }
 
 export async function apiCheckLoyaltyPoints(phone: string): Promise<{

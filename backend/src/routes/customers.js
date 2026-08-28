@@ -55,6 +55,58 @@ router.get("/loyalty/:phone", async (req, res) => {
   }
 });
 
+// GET /api/customers/recognize/:phone
+// Fetch customer profile and their top ordered items
+router.get("/recognize/:phone", async (req, res) => {
+  try {
+    const { phone } = req.params;
+    const businessId = req.business_id;
+
+    if (!phone || phone.length < 10) {
+      return res.status(400).json({ error: "Invalid phone number" });
+    }
+
+    // Fetch customer profile
+    const customerRes = await pool.query(
+      "SELECT id, name, points_balance, total_spent FROM customers WHERE business_id = $1 AND phone = $2",
+      [businessId, phone]
+    );
+
+    if (customerRes.rows.length === 0) {
+      return res.json({ recognized: false });
+    }
+
+    const customer = customerRes.rows[0];
+
+    // Fetch frequent items (Top 3)
+    const frequentItemsRes = await pool.query(
+      `SELECT 
+        oi.menu_item_id as id, 
+        oi.name, 
+        COUNT(*) as frequency
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      WHERE o.customer_phone = $1 AND o.business_id = $2 AND oi.menu_item_id IS NOT NULL
+      GROUP BY oi.menu_item_id, oi.name
+      ORDER BY frequency DESC
+      LIMIT 3`,
+      [phone, businessId]
+    );
+
+    return res.json({
+      recognized: true,
+      customer: {
+        name: customer.name,
+        points: customer.points_balance,
+      },
+      frequentItems: frequentItemsRes.rows
+    });
+  } catch (error) {
+    console.error("Error in recognize customer:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // GET /api/customers
 // Fetch all customers for admin dashboard (paginated/searchable)
 router.get("/", async (req, res) => {

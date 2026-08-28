@@ -79,6 +79,8 @@ interface FormData {
   available: boolean;
   diet_type: "veg" | "non-veg" | "egg" | "none";
   variants: { name: string; price: number }[];
+  is_chef_special: boolean;
+  recommended_pairings: number[];
 }
 
 const emptyForm: FormData = {
@@ -91,6 +93,8 @@ const emptyForm: FormData = {
   available: true,
   diet_type: "none",
   variants: [],
+  is_chef_special: false,
+  recommended_pairings: [],
 };
 // ─── Sortable Desktop Row ───
 interface SortableRowProps {
@@ -624,6 +628,8 @@ const MenuManager = () => {
       available: item.available,
       diet_type: item.diet_type || "none",
       variants: item.variants || [],
+      is_chef_special: item.is_chef_special || false,
+      recommended_pairings: item.recommended_pairings || [],
     });
     setModalOpen(true);
   };
@@ -656,6 +662,8 @@ const MenuManager = () => {
           diet_type: form.diet_type,
           available: form.available,
           variants: form.variants.length > 0 ? form.variants : [],
+          is_chef_special: form.is_chef_special,
+          recommended_pairings: form.recommended_pairings,
         });
         toast({ title: "Menu item updated ✅" });
       } else {
@@ -669,6 +677,8 @@ const MenuManager = () => {
           diet_type: form.diet_type,
           available: form.available,
           variants: form.variants.length > 0 ? form.variants : [],
+          is_chef_special: form.is_chef_special,
+          recommended_pairings: form.recommended_pairings,
         });
         toast({ title: "Menu item created ✅" });
       }
@@ -1149,6 +1159,48 @@ const MenuManager = () => {
                       <option value="non-veg">🔺 Non-Veg</option>
                       <option value="egg">🟡 Contains Egg</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* Personalization Section */}
+                <div className="grid grid-cols-1 gap-4 border border-primary/20 p-4 rounded-xl bg-primary/5">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={form.is_chef_special}
+                      onCheckedChange={(checked) => setForm(f => ({ ...f, is_chef_special: !!checked }))}
+                      id="is_chef_special"
+                    />
+                    <label htmlFor="is_chef_special" className="text-sm font-semibold cursor-pointer select-none">
+                      Mark as Chef's Special
+                    </label>
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold mb-2 block">
+                      Recommended Pairings (Cross-Selling)
+                    </label>
+                    <div className="max-h-40 overflow-y-auto border border-border rounded-lg bg-background p-2 space-y-2">
+                      {items.filter(i => i.id !== editingItem?.id).map(item => (
+                        <div key={item.id} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            id={`pairing-${item.id}`}
+                            checked={form.recommended_pairings.includes(item.id)}
+                            onCheckedChange={(checked) => {
+                              setForm(f => {
+                                const newPairings = checked
+                                  ? [...f.recommended_pairings, item.id]
+                                  : f.recommended_pairings.filter(id => id !== item.id);
+                                return { ...f, recommended_pairings: newPairings };
+                              });
+                            }}
+                          />
+                          <label htmlFor={`pairing-${item.id}`} className="cursor-pointer select-none flex-1 truncate">{item.name}</label>
+                        </div>
+                      ))}
+                      {items.length <= 1 && (
+                         <p className="text-xs text-muted-foreground p-2">No other items available to pair with.</p>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Select items that pair well with this dish.</p>
                   </div>
                 </div>
 

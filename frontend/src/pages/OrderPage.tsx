@@ -58,6 +58,7 @@ import {
   type CouponValidation,
   type BusinessSettings,
   apiGetOrderById,
+  apiRecognizeCustomer,
 } from "@/lib/apiClient";
 import { socket } from "@/lib/socket";
 import { calculateOrderPricing } from "@/lib/billing";
@@ -121,6 +122,37 @@ function OrderPageContent({
 
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
+  
+  // Smart QR Personalization State
+  const [recognizedCustomer, setRecognizedCustomer] = useState<{ name: string; points: number } | null>(null);
+  const [frequentItems, setFrequentItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function checkIdentity() {
+      let savedPhone = localStorage.getItem("classic_customer_phone");
+      if (savedPhone) {
+        // Fix legacy phone numbers that were saved with the '91' prefix
+        if (savedPhone.length === 12 && savedPhone.startsWith("91")) {
+          savedPhone = savedPhone.substring(2);
+          localStorage.setItem("classic_customer_phone", savedPhone);
+        }
+        setCustomerPhone(savedPhone);
+        const savedName = localStorage.getItem("classic_customer_name");
+        if (savedName) setCustomerName(savedName);
+        
+        try {
+          const res = await apiRecognizeCustomer(savedPhone);
+          if (res.recognized) {
+            setRecognizedCustomer(res.customer || null);
+            setFrequentItems(res.frequentItems || []);
+          }
+        } catch (err) {
+          console.error("Failed to recognize customer:", err);
+        }
+      }
+    }
+    checkIdentity();
+  }, []);
   const { settings: businessSettings, loading: settingsLoading } = useBusinessSettings();
   const [searchParams] = useSearchParams();
   const [showHistory, setShowHistory] = useState(false);
@@ -616,6 +648,13 @@ function OrderPageContent({
 
       setConfirmedOrder(order);
       clearCart();
+      // Save identity for next time
+      if (customerPhone) {
+        localStorage.setItem("classic_customer_phone", customerPhone);
+      }
+      if (customerName) {
+        localStorage.setItem("classic_customer_name", customerName);
+      }
       setStep("confirmation");
     } catch (err) {
       console.error("Failed to place order:", err);
@@ -1753,6 +1792,7 @@ function OrderPageContent({
             </div>
           )}
 
+          {/* Sticky Search & Categories */}
           {!menuLoading && menuItems.length > 0 && (
             <div className="sticky top-[57px] z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
               <div className="container mx-auto px-4 py-3 space-y-3">
@@ -1826,6 +1866,114 @@ function OrderPageContent({
             </div>
           )}
 
+          {/* Smart QR: Welcome Banner */}
+          {recognizedCustomer && (
+            <div className="bg-gradient-to-r from-primary/10 to-primary/5 py-4 border-b border-primary/10">
+              <div className="container mx-auto px-4">
+                <h2 className="text-xl font-bold font-heading text-primary">
+                  Welcome back, {recognizedCustomer.name.split(" ")[0]} 👋
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {recognizedCustomer.points > 0 ? `You have ${recognizedCustomer.points} loyalty points to use!` : 'Ready to order your favorites?'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Smart QR: You Usually Order */}
+          {frequentItems.length > 0 && !search && activeCategory === "All" && (
+            <div className="py-4 border-b border-border/50 bg-background">
+              <div className="container mx-auto px-4">
+                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <Star size={18} className="text-amber-500 fill-amber-500" />
+                  You usually order
+                </h3>
+                <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
+                  {frequentItems.map(item => {
+                    const menuItem = menuItems.find(m => m.id === item.id);
+                    if (!menuItem || !menuItem.available) return null;
+                    return (
+                      <motion.button
+                        key={item.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          if (menuItem.variants && menuItem.variants.length > 0) {
+                            setVariantModalContext("cart");
+                            setVariantModalItem(menuItem);
+                          } else {
+                            addItem({ id: menuItem.id!, name: menuItem.name, price: menuItem.price, priceLabel: menuItem.priceLabel, image: menuItem.image });
+                          }
+                        }}
+                        className="min-w-[200px] bg-card border border-border/50 rounded-xl p-3 flex flex-col gap-2 shadow-sm text-left hover:border-primary/50 transition-colors"
+                      >
+                        <span className="font-semibold text-sm truncate">{menuItem.name}</span>
+                        <div className="flex items-center justify-between mt-auto">
+                          <span className="text-sm font-medium">{menuItem.priceLabel}</span>
+                          <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-md font-semibold flex items-center gap-1">
+                            <Plus size={12} /> Add
+                          </span>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Smart QR: Chef's Special */}
+          {menuItems.some(m => m.is_chef_special) && !search && activeCategory === "All" && (
+            <div className="py-6 border-b border-border/50 bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+              <div className="container mx-auto px-4">
+                <h3 className="font-heading font-bold text-2xl mb-4 flex items-center gap-2 text-foreground">
+                  <ChefHat size={24} className="text-primary drop-shadow-sm" />
+                  Try today: <span className="text-primary italic">Chef's Special</span>
+                </h3>
+                <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollbarWidth: "none" }}>
+                  {menuItems.filter(m => m.is_chef_special && m.available).map(menuItem => (
+                    <motion.button
+                      key={menuItem.id}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        if (menuItem.variants && menuItem.variants.length > 0) {
+                          setVariantModalContext("cart");
+                          setVariantModalItem(menuItem);
+                        } else {
+                          addItem({ id: menuItem.id!, name: menuItem.name, price: menuItem.price, priceLabel: menuItem.priceLabel, image: menuItem.image });
+                        }
+                      }}
+                      className="min-w-[240px] md:min-w-[280px] bg-card border border-primary/20 rounded-2xl overflow-hidden flex flex-col shadow-md hover:shadow-xl hover:border-primary/40 transition-all text-left group"
+                    >
+                      <div className="h-32 md:h-40 w-full relative overflow-hidden bg-primary/5 flex items-center justify-center">
+                        {(!menuItem.image || menuItem.image.includes("placeholder.svg") || menuItem.image.includes("placeholder.jpg")) ? (
+                          <CategoryPlaceholder category={menuItem.category} />
+                        ) : (
+                          <img src={menuItem.image} alt={menuItem.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute top-2 right-2 bg-background/95 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm border border-border/50">
+                          {menuItem.priceLabel}
+                        </div>
+                      </div>
+                      <div className="p-4 flex flex-col flex-1">
+                        <span className="font-bold text-lg truncate">{menuItem.name}</span>
+                        <span className="text-sm text-muted-foreground line-clamp-2 mt-1.5 leading-relaxed">{menuItem.desc}</span>
+                        <div className="mt-auto pt-4">
+                           <span className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm">
+                            <Plus size={16} /> Add to Cart
+                          </span>
+                        </div>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+
           <div className="container mx-auto p-4">
             <div className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-3"}>
               {menuLoading ? (
@@ -1889,6 +2037,25 @@ function OrderPageContent({
                               <p className="text-muted-foreground text-xs mb-3 line-clamp-2">
                                 {item.desc}
                               </p>
+                            )}
+
+                            {viewMode === "grid" && item.recommended_pairings && item.recommended_pairings.length > 0 && (
+                              <div className="mb-3">
+                                <p className="text-[10px] font-semibold text-primary mb-1 uppercase tracking-wider flex items-center gap-1">
+                                  <Sparkles size={10} /> Pairs well with
+                                </p>
+                                <div className="flex flex-wrap gap-1">
+                                  {item.recommended_pairings.map(pairingId => {
+                                    const pItem = menuItems.find(m => m.id === pairingId);
+                                    if (!pItem) return null;
+                                    return (
+                                      <span key={pairingId} className="text-[10px] bg-primary/5 text-primary px-1.5 py-0.5 rounded-sm border border-primary/10">
+                                        {pItem.name}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              </div>
                             )}
 
                             {viewMode === "list" && (
