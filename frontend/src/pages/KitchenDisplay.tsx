@@ -12,6 +12,7 @@ import {
   LogOut,
   Volume2,
   VolumeX,
+  Printer,
 } from "lucide-react";
 import {
   apiAdminCheckAuth,
@@ -22,11 +23,13 @@ import {
   setTenantSlug as setGlobalTenantSlug,
   type KitchenOrder,
 } from "@/lib/apiClient";
+import { printQueue } from "@/lib/printQueue";
 import { socket } from "@/lib/socket";
 import { useToast } from "@/hooks/use-toast";
 import BackgroundOrbs from "@/components/BackgroundOrbs";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import NotFound from "./NotFound";
+import { ConsolidatedItemView } from "./ConsolidatedItemView";
 
 const kitchenOrbs = [
   {
@@ -246,23 +249,41 @@ function KitchenOrderCard({
             </span>
           </div>
 
-          {/* Mark Ready button */}
-          <motion.button
-            whileHover={{ scale: isMarking ? 1 : 1.05 }}
-            whileTap={{ scale: isMarking ? 1 : 0.95 }}
-            disabled={isMarking}
-            onClick={() => onMarkReady(order.id)}
-            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-          >
-            {isMarking ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <>
-                <CheckCircle2 size={16} />
-                Mark Ready
-              </>
-            )}
-          </motion.button>
+          <div className="flex gap-2">
+            {/* Reprint KOT button */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                printQueue.enqueue(`manual-kot-${Date.now()}`, "kot", {
+                  ...order,
+                  tableNumber: (order as any).tableNumber,
+                } as any);
+              }}
+              className="bg-secondary/50 hover:bg-secondary text-secondary-foreground px-3 py-2 rounded-xl flex items-center justify-center transition-colors shadow-sm"
+              title="Reprint KOT"
+            >
+              <Printer size={16} />
+            </motion.button>
+
+            {/* Mark Ready button */}
+            <motion.button
+              whileHover={{ scale: isMarking ? 1 : 1.05 }}
+              whileTap={{ scale: isMarking ? 1 : 0.95 }}
+              disabled={isMarking}
+              onClick={() => onMarkReady(order.id)}
+              className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+            >
+              {isMarking ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <>
+                  <CheckCircle2 size={16} />
+                  Mark Ready
+                </>
+              )}
+            </motion.button>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -277,6 +298,7 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
   const [markingItemId, setMarkingItemId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [viewMode, setViewMode] = useState<"orders" | "items">("orders");
   const [isMuted, setIsMuted] = useState(() => {
     return localStorage.getItem("kitchen_sound_muted") !== "false";
   });
@@ -328,7 +350,10 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
   }, [fetchOrders, isMuted]);
 
   useEffect(() => {
-    const onConnect = () => setIsConnected(true);
+    const onConnect = () => {
+      setIsConnected(true);
+      fetchOrders();
+    };
     const onDisconnect = () => setIsConnected(false);
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
@@ -336,9 +361,34 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
     };
-  }, []);
+  }, [fetchOrders]);
 
+  // Task 2: Advanced Urgency Sound (play sound when an order becomes overdue)
+  const prevOverdueCountRef = useRef(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isMuted) return;
+      const overdueCount = orders.filter((o) => {
+        const elapsedMins = Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 60000);
+        return elapsedMins >= 10;
+      }).length;
 
+      if (overdueCount > prevOverdueCountRef.current) {
+        // An order just became overdue, play alert sound
+        try {
+          if (!audioRef.current) {
+            audioRef.current = new Audio("/alert.wav");
+          }
+          audioRef.current.volume = 1.0;
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(() => {});
+        } catch {}
+      }
+      prevOverdueCountRef.current = overdueCount;
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [orders, isMuted]);
 
   const handleMarkReady = async (orderId: string) => {
     setMarkingId(orderId);
@@ -374,6 +424,32 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
       toast({
         title: "Error",
         description: "Failed to mark item as ready",
+        variant: "destructive",
+      });
+    } finally {
+      setMarkingItemId(null);
+    }
+  };
+
+  const handleMarkMultipleItemsReady = async (instances: {orderId: string, itemId: string}[]) => {
+    setMarkingItemId("consolidated");
+    try {
+      await Promise.all(instances.map(inst => apiKitchenMarkItemReady(inst.itemId)));
+      setOrders((prev) => prev.map(o => {
+        let newOrder = { ...o };
+        let modified = false;
+        instances.forEach(inst => {
+           if (newOrder.id === inst.orderId) {
+              newOrder.items = newOrder.items.map(i => i.id === inst.itemId ? { ...i, status: "ready" } : i);
+              modified = true;
+           }
+        });
+        return modified ? newOrder : o;
+      }));
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to mark items as ready",
         variant: "destructive",
       });
     } finally {
@@ -438,6 +514,26 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
               <span className="text-sm font-semibold text-foreground">
                 {orders.length} Preparing
               </span>
+            </div>
+
+            {/* View Mode Toggle */}
+            <div className="flex bg-secondary/15 border border-secondary/25 p-1 rounded-xl">
+              <button
+                onClick={() => setViewMode("orders")}
+                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${
+                  viewMode === "orders" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Orders
+              </button>
+              <button
+                onClick={() => setViewMode("items")}
+                className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition ${
+                  viewMode === "items" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Items
+              </button>
             </div>
 
             {/* Audio Toggle Toggle */}
@@ -506,7 +602,7 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
               Orders will appear here when admin starts preparing
             </p>
           </motion.div>
-        ) : (
+        ) : viewMode === "orders" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <AnimatePresence>
               {orders.map((order) => (
@@ -521,6 +617,12 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
               ))}
             </AnimatePresence>
           </div>
+        ) : (
+          <ConsolidatedItemView 
+            orders={orders} 
+            onMarkMultipleReady={handleMarkMultipleItemsReady} 
+            isMarking={markingItemId === "consolidated"} 
+          />
         )}
       </div>
     </div>
