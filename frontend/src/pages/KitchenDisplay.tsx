@@ -415,7 +415,7 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
         >
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">
-              <span className="text-primary">{businessSettings?.restaurantName.split(" ")[0]}</span>{" "}
+              <span className="text-primary">{businessSettings?.restaurantName}</span>{" "}
               <span className="text-secondary">Kitchen</span>
             </h1>
 
