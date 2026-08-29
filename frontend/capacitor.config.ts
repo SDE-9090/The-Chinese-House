@@ -4,10 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.thechinesehouse.pos',
   appName: 'The Chinese House',
   webDir: 'dist',
-  server: {
-    url: 'https://the-chinese-house.vercel.app/dashboard',
-    cleartext: true
-  },
   plugins: {
     CapacitorUpdater: {
       autoUpdate: false
