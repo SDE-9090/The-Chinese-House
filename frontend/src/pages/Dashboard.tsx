@@ -1241,7 +1241,9 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
                 { key: "security" as const, label: "Login Logs", icon: Shield },
                 { key: "audit_logs" as const, label: "Audit Logs", icon: History },
                 { key: "updates" as const, label: "App Updates", icon: DownloadCloud },
-              ].map((st) => (
+              ]
+              .filter(st => user.role === 'admin' || st.key === 'business')
+              .map((st) => (
                 <button
                   key={st.key}
                   onClick={() => setSettingsSubTab(st.key)}
