@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db/pool");
-const { adminAuth } = require("../middleware/adminAuth");
+const { adminAuth, authorizeRole } = require("../middleware/adminAuth");
 const redisClient = require("../../config/redis");
 const { invalidateLocationCache } = require("../helpers/cacheHelper");
 
@@ -74,7 +74,7 @@ router.get("/", async (req, res) => {
 
 /* ---------------- MAP RESOLVE ---------------- */
 
-router.post("/resolve-map", adminAuth, async (req, res) => {
+router.post("/resolve-map", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
   try {
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: "url required" });
@@ -89,7 +89,7 @@ router.post("/resolve-map", adminAuth, async (req, res) => {
 
 /* ---------------- UPDATE LOCATION ---------------- */
 
-router.put("/", adminAuth, async (req, res) => {
+router.put("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
   try {
     let {
       address,

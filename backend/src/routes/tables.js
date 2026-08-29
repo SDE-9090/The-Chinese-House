@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db/pool");
 const { invalidateDashboardCache } = require("../helpers/cacheHelper");
-const { adminAuth } = require("../middleware/adminAuth");
+const { adminAuth, authorizeRole } = require("../middleware/adminAuth");
 const { roundCurrency, calculateOrderTotals } = require("../utils/gst");
 const { ensureBusinessSettings } = require("../utils/businessSettings");
 const { syncCustomerCRM } = require("../utils/crmSync");
@@ -141,7 +141,7 @@ router.post("/:tableId/admin-open", adminAuth, async (req, res) => {
 
 // POST /api/tables (Admin)
 // Create a new table
-router.post("/", adminAuth, async (req, res) => {
+router.post("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
   const { tableNumber, qrCode } = req.body;
   
   if (!tableNumber) {
@@ -876,7 +876,7 @@ router.post("/sessions/:sessionId/close", adminAuth, async (req, res) => {
 
 // PUT /api/tables/:id (Admin)
 // Update a table's number/name
-router.put("/:id", adminAuth, async (req, res) => {
+router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
   const { id } = req.params;
   const { tableNumber } = req.body;
   
@@ -904,7 +904,7 @@ router.put("/:id", adminAuth, async (req, res) => {
 });
 
 // DELETE /api/tables/:id (Admin)
-router.delete("/:id", adminAuth, async (req, res) => {
+router.delete("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
   const { id } = req.params;
   try {
     // Only allow deleting tables that are "available" (not reserved/occupied)

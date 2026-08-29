@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const rateLimit = require("express-rate-limit");
 const pool = require("../db/pool");
 const redisClient = require("../../config/redis");
-const { adminAuth, JWT_SECRET } = require("../middleware/adminAuth");
+const { adminAuth, authorizeRole, JWT_SECRET } = require("../middleware/adminAuth");
 const { generateOTP, hashOTP, verifyOTP } = require("../utils/otpHelper");
 const { sendEmailOTP } = require("../utils/emailSender");
 
@@ -382,7 +382,7 @@ router.post("/refresh", async (req, res) => {
 // ======================================================
 // LOGIN LOGS
 // ======================================================
-router.get("/login-logs", adminAuth, async (req, res) => {
+router.get("/login-logs", adminAuth, authorizeRole(['admin', 'manager', 'super_admin']), async (req, res) => {
   try {
 
     const result = await pool.query(
@@ -409,7 +409,7 @@ router.get("/login-logs", adminAuth, async (req, res) => {
 // ======================================================
 // AUDIT LOGS
 // ======================================================
-router.get("/audit-logs", adminAuth, async (req, res) => {
+router.get("/audit-logs", adminAuth, authorizeRole(['admin', 'manager', 'super_admin']), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
@@ -563,7 +563,7 @@ router.post("/reset-password", resetLimiter, async (req, res) => {
 // ======================================================
 // REQUEST OTP FOR SETTINGS CHANGES (authenticated)
 // ======================================================
-router.post("/request-settings-otp", adminAuth, resetLimiter, async (req, res) => {
+router.post("/request-settings-otp", adminAuth, authorizeRole(['admin', 'super_admin']), resetLimiter, async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM admin_account WHERE id = $1 AND business_id = $2", [req.admin.id, req.business_id]);
     if (!result.rows.length) {
@@ -615,7 +615,7 @@ router.post("/request-settings-otp", adminAuth, resetLimiter, async (req, res) =
 // ======================================================
 // CHANGE PASSWORD (authenticated + OTP)
 // ======================================================
-router.post("/change-password", adminAuth, resetLimiter, async (req, res) => {
+router.post("/change-password", adminAuth, authorizeRole(['admin', 'super_admin']), resetLimiter, async (req, res) => {
   const { otp, currentPassword, newPassword } = req.body;
 
   if (!otp || !currentPassword || !newPassword) {
@@ -680,7 +680,7 @@ router.post("/change-password", adminAuth, resetLimiter, async (req, res) => {
 // ======================================================
 // CHANGE MOBILE NUMBER (authenticated + OTP)
 // ======================================================
-router.post("/change-mobile", adminAuth, resetLimiter, async (req, res) => {
+router.post("/change-mobile", adminAuth, authorizeRole(['admin', 'super_admin']), resetLimiter, async (req, res) => {
   const { otp, newMobile } = req.body;
 
   if (!otp || !newMobile) {
@@ -737,7 +737,7 @@ router.post("/change-mobile", adminAuth, resetLimiter, async (req, res) => {
 // ======================================================
 // CHANGE EMAIL (authenticated + OTP)
 // ======================================================
-router.post("/change-email", adminAuth, resetLimiter, async (req, res) => {
+router.post("/change-email", adminAuth, authorizeRole(['admin', 'super_admin']), resetLimiter, async (req, res) => {
   const { otp, newEmail } = req.body;
 
   if (!newEmail) {
@@ -803,7 +803,7 @@ router.post("/change-email", adminAuth, resetLimiter, async (req, res) => {
 // ======================================================
 // GET CURRENT ADMIN INFO (masked mobile)
 // ======================================================
-router.get("/info", adminAuth, async (req, res) => {
+router.get("/info", adminAuth, authorizeRole(['admin', 'super_admin']), async (req, res) => {
   try {
     const result = await pool.query("SELECT mobile_number, email FROM admin_account WHERE id = $1 AND business_id = $2", [req.admin.id, req.business_id]);
     if (!result.rows.length) {
@@ -824,7 +824,7 @@ router.get("/info", adminAuth, async (req, res) => {
 // ======================================================
 // REGISTER BIOMETRIC DEVICE
 // ======================================================
-router.post("/biometric/register", adminAuth, async (req, res) => {
+router.post("/biometric/register", adminAuth, authorizeRole(['admin', 'super_admin']), async (req, res) => {
   try {
     const biometricToken = crypto.randomBytes(64).toString("hex");
     
@@ -904,7 +904,7 @@ router.post("/biometric/login", loginLimiter, async (req, res) => {
 // ======================================================
 // MULTI-BRANCH MANAGEMENT
 // ======================================================
-router.get("/branches", adminAuth, async (req, res) => {
+router.get("/branches", adminAuth, authorizeRole(['admin', 'super_admin']), async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT 
@@ -941,7 +941,7 @@ router.get("/branches", adminAuth, async (req, res) => {
   }
 });
 
-router.post("/impersonate-branch", adminAuth, async (req, res) => {
+router.post("/impersonate-branch", adminAuth, authorizeRole(['admin', 'super_admin']), async (req, res) => {
   const { branchId } = req.body;
   if (!branchId) return res.status(400).json({ error: "Branch ID required" });
 
@@ -1002,7 +1002,7 @@ router.patch("/branches/:id/toggle-status", adminAuth, async (req, res) => {
   }
 });
 
-router.put("/branches/:id", adminAuth, async (req, res) => {
+router.put("/branches/:id", adminAuth, authorizeRole(['admin', 'super_admin']), async (req, res) => {
   try {
     const { id } = req.params;
     const { slug, subscription_tier } = req.body;
@@ -1037,7 +1037,7 @@ router.put("/branches/:id", adminAuth, async (req, res) => {
   }
 });
 
-router.get("/branch-requests", adminAuth, async (req, res) => {
+router.get("/branch-requests", adminAuth, authorizeRole(['admin', 'super_admin']), async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT * FROM branch_requests WHERE parent_business_id = $1 ORDER BY created_at DESC",
@@ -1050,7 +1050,7 @@ router.get("/branch-requests", adminAuth, async (req, res) => {
   }
 });
 
-router.post("/branch-requests", adminAuth, async (req, res) => {
+router.post("/branch-requests", adminAuth, authorizeRole(['admin', 'super_admin']), async (req, res) => {
   const { name, slug, tier, mobile, password } = req.body;
   if (!name || !slug || !tier || !mobile || !password) {
     return res.status(400).json({ error: "Name, slug, tier, mobile, and password are required." });
@@ -1080,7 +1080,7 @@ router.post("/branch-requests", adminAuth, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router.get("/franchise-analytics", adminAuth, async (req, res) => {
+router.get("/franchise-analytics", adminAuth, authorizeRole(['admin', 'super_admin']), async (req, res) => {
   try {
     const today = await pool.query(`
       SELECT 

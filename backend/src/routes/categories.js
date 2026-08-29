@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db/pool");
-const { adminAuth } = require("../middleware/adminAuth");
+const { adminAuth, authorizeRole } = require("../middleware/adminAuth");
 const redisClient = require("../../config/redis");
 const { invalidateCategoryCache } = require("../helpers/cacheHelper");
 
@@ -26,7 +26,7 @@ router.get("/", async (req, res) => {
 });
 
 // ─── Admin: Create category ───
-router.post("/", adminAuth, async (req, res) => {
+router.post("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
   try {
     const { name } = req.body;
     if (!name || !name.trim()) {
@@ -60,7 +60,7 @@ router.post("/", adminAuth, async (req, res) => {
 });
 
 // ─── Admin: Update category ───
-router.put("/:id", adminAuth, async (req, res) => {
+router.put("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
   try {
     const { id } = req.params;
     const { name } = req.body;
@@ -95,7 +95,7 @@ router.put("/:id", adminAuth, async (req, res) => {
 });
 
 // ─── Admin: Delete category ───
-router.delete("/:id", adminAuth, async (req, res) => {
+router.delete("/:id", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
   try {
     const { id } = req.params;
 

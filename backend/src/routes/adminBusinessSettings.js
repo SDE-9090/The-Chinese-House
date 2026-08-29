@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db/pool");
-const { adminAuth } = require("../middleware/adminAuth");
+const { adminAuth, authorizeRole } = require("../middleware/adminAuth");
 const {
   GSTIN_REGEX,
   ensureBusinessSettings,
@@ -24,7 +24,7 @@ router.get("/", adminAuth, async (req, res) => {
   }
 });
 
-router.put("/", adminAuth, async (req, res) => {
+router.put("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
   const {
     restaurantName,
     gstin,
@@ -230,7 +230,7 @@ router.put("/", adminAuth, async (req, res) => {
 // ======================================================
 // FACTORY RESET (Danger Zone)
 // ======================================================
-router.post("/factory-reset", adminAuth, async (req, res) => {
+router.post("/factory-reset", adminAuth, authorizeRole(['admin']), async (req, res) => {
   const { confirmText } = req.body;
 
   if (confirmText !== "DELETE ALL DATA") {
