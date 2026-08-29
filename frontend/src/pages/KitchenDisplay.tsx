@@ -528,13 +528,26 @@ function KitchenDashboard({ onLogout }: { onLogout: () => void }) {
 }
 
 // ── Root without PIN gate ──────────────────────────────────
+import KitchenPinGate, { SESSION_KEY } from "@/components/kitchen/KitchenPinGate";
+
+// ── Root with PIN gate ──────────────────────────────────
 const KitchenDisplay = () => {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
+  const [pinVerified, setPinVerified] = useState(() => {
+    return sessionStorage.getItem(SESSION_KEY) === "true";
+  });
   const { settings: businessSettings, loading: settingsLoading } = useBusinessSettings();
 
   useEffect(() => {
-    // Check global admin/staff auth
+    // If they already verified via PIN gate, no need to check staff JWT
+    if (pinVerified) {
+      setAuthorized(true);
+      setLoading(false);
+      return;
+    }
+
+    // Otherwise, check if they are logged in as admin/staff
     apiAdminCheckAuth().then((res) => {
       if (
         res.authenticated &&
@@ -546,18 +559,18 @@ const KitchenDisplay = () => {
         setAuthorized(true);
       } else {
         setAuthorized(false);
-        // Let the user know or redirect them
-        window.location.href = "/dashboard";
       }
       setLoading(false);
     });
-  }, []);
+  }, [pinVerified]);
 
   const handleLogout = async () => {
     try {
+      sessionStorage.removeItem(SESSION_KEY);
       await apiAdminLogout();
       setAuthorized(false);
-      window.location.href = "/dashboard";
+      setPinVerified(false);
+      window.location.href = "/kitchen";
 
       if (document.fullscreenElement) {
         await document.exitFullscreen().catch(console.error);
@@ -582,7 +595,9 @@ const KitchenDisplay = () => {
     return <NotFound />;
   }
 
-  if (!authorized) return null;
+  if (!authorized) {
+    return <KitchenPinGate onVerified={() => setPinVerified(true)} />;
+  }
 
   return <KitchenDashboard onLogout={handleLogout} />;
 };

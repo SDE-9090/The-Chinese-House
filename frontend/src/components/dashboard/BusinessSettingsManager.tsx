@@ -120,6 +120,8 @@ const BusinessSettingsManager = ({ user }: Props) => {
         winbackDiscountValue: data.winbackDiscountValue,
         qrRoutingMode: data.qrRoutingMode,
         printerWidth: data.printerWidth,
+        orderWorkflow: data.orderWorkflow,
+        kitchenPin: data.kitchenPin,
       });
       setData(updated);
       toast({ title: "Saved", description: "Business settings updated." });

@@ -44,7 +44,8 @@ router.post("/verify-pin", async (req, res) => {
       `SELECT kitchen_pin FROM business_settings WHERE business_id = $1`,
       [req.business_id]
     );
-    const storedPin = rows[0]?.kitchen_pin;
+    const storedPin = rows[0]?.kitchen_pin || "1234";
+    console.log(`[DEBUG] Verify PIN - Input: ${pin}, Stored: ${storedPin}, match: ${pin === storedPin}`);
 
     if (pin !== storedPin) {
       return res.status(401).json({ error: "Invalid PIN" });
