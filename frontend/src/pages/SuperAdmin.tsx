@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-import { apiSuperAdminUploadUpdate, apiSuperAdminAnalytics, apiSuperAdminImpersonate, apiSuperAdminUpdateTier, apiSuperAdminSendAnnouncement, apiSuperAdminGetAuditLogs } from "@/lib/apiClient";
+import { apiSuperAdminUploadUpdate, apiSuperAdminAnalytics, apiSuperAdminImpersonate, apiSuperAdminUpdateTier, apiSuperAdminSendAnnouncement, apiSuperAdminGetAuditLogs, apiSuperAdminClearAuditLogs } from "@/lib/apiClient";
 import { useNavigate } from "react-router-dom";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -237,6 +237,21 @@ export default function SuperAdmin() {
       setAuditTotal(data.total);
     } catch (err: any) {
       toast({ title: "Failed to load audit logs", description: err.message, variant: "destructive" });
+    } finally {
+      setFetchingAuditLogs(false);
+    }
+  };
+
+  const handleClearAuditLogs = async () => {
+    try {
+      setFetchingAuditLogs(true);
+      await apiSuperAdminClearAuditLogs();
+      toast({ title: "Audit logs cleared successfully" });
+      setAuditLogs([]);
+      setAuditTotal(0);
+      setAuditPage(1);
+    } catch (err: any) {
+      toast({ title: "Failed to clear logs", description: err.message, variant: "destructive" });
     } finally {
       setFetchingAuditLogs(false);
     }
@@ -807,8 +822,29 @@ export default function SuperAdmin() {
                     className="pl-9 h-11 bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800"
                   />
                 </div>
-                <div className="text-sm font-medium text-slate-500">
-                  Total Logs: {auditTotal}
+                <div className="flex items-center gap-4">
+                  <div className="text-sm font-medium text-slate-500">
+                    Total Logs: {auditTotal}
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm" className="h-9">Clear Logs</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-slate-900 dark:text-white">Clear All Audit Logs?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-slate-500 dark:text-zinc-400">
+                          This will permanently delete all audit logs across all tenants. This action cannot be undone. Are you absolutely sure?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-transparent hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-zinc-700">Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleClearAuditLogs} className="bg-red-600 hover:bg-red-700 text-white">
+                          Yes, clear logs
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
 

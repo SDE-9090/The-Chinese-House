@@ -194,6 +194,16 @@ router.get("/audit-logs", async (req, res) => {
   }
 });
 
+router.delete("/audit-logs", async (req, res) => {
+  try {
+    await pool.query("DELETE FROM audit_logs");
+    res.json({ success: true, message: "All audit logs cleared successfully" });
+  } catch (err) {
+    console.error("Error clearing audit logs:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // ======================================================
 // GET ALL BUSINESSES
 // ======================================================

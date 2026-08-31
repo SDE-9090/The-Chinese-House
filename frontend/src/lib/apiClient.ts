@@ -2363,6 +2363,18 @@ export async function apiSuperAdminGetAuditLogs(page = 1, limit = 50, businessId
   return data;
 }
 
+export async function apiSuperAdminClearAuditLogs(): Promise<void> {
+  const token = localStorage.getItem("super_token");
+  const res = await fetch(`${API_URL}/super/audit-logs`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Failed to clear audit logs");
+  }
+}
+
 export async function apiSuperAdminUploadUpdate(file: File, version: string, releaseNotes: string): Promise<any> {
   const formData = new FormData();
   formData.append("file", file);
