@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-import { apiSuperAdminUploadUpdate, apiSuperAdminAnalytics, apiSuperAdminImpersonate, apiSuperAdminUpdateTier, apiSuperAdminSendAnnouncement } from "@/lib/apiClient";
+import { apiSuperAdminUploadUpdate, apiSuperAdminAnalytics, apiSuperAdminImpersonate, apiSuperAdminUpdateTier, apiSuperAdminSendAnnouncement, apiSuperAdminGetAuditLogs } from "@/lib/apiClient";
 import { useNavigate } from "react-router-dom";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -25,7 +25,7 @@ export default function SuperAdmin() {
 
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [fetching, setFetching] = useState(false);
-  const [activeTab, setActiveTab] = useState<"analytics" | "businesses" | "ota" | "announcements" | "plans" | "enquiries" | "settings" | "branch-requests">("analytics");
+  const [activeTab, setActiveTab] = useState<"analytics" | "businesses" | "ota" | "announcements" | "plans" | "enquiries" | "settings" | "branch-requests" | "audit-logs">("analytics");
 
   // Plans State
   const [tiers, setTiers] = useState<any[]>([]);
@@ -43,6 +43,13 @@ export default function SuperAdmin() {
   // Analytics State
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [fetchingAnalytics, setFetchingAnalytics] = useState(false);
+
+  // Audit Logs State
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [auditTotal, setAuditTotal] = useState(0);
+  const [auditPage, setAuditPage] = useState(1);
+  const [fetchingAuditLogs, setFetchingAuditLogs] = useState(false);
+  const [auditBusinessFilter, setAuditBusinessFilter] = useState("");
 
   // Announcement State
   const [annTitle, setAnnTitle] = useState("");
@@ -219,6 +226,26 @@ export default function SuperAdmin() {
       fetchSuperAdminProfile();
     }
   }, [token]);
+
+  const fetchAuditLogs = async () => {
+    if (!token) return;
+    setFetchingAuditLogs(true);
+    try {
+      const data = await apiSuperAdminGetAuditLogs(auditPage, 50, auditBusinessFilter);
+      setAuditLogs(data.logs);
+      setAuditTotal(data.total);
+    } catch (err: any) {
+      toast({ title: "Failed to load audit logs", description: err.message, variant: "destructive" });
+    } finally {
+      setFetchingAuditLogs(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token && activeTab === 'audit-logs') {
+      fetchAuditLogs();
+    }
+  }, [token, activeTab, auditPage, auditBusinessFilter]);
 
   const fetchEnquiries = async () => {
     try {
@@ -563,6 +590,13 @@ export default function SuperAdmin() {
           </button>
 
           <button
+            onClick={() => setActiveTab("audit-logs")}
+            className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === "audit-logs" ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none scale-[1.02]" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-slate-200"}`}
+          >
+            <ShieldAlert className={`w-5 h-5 ${activeTab === 'audit-logs' ? 'text-indigo-600 dark:text-indigo-400' : ''}`} /> Security Logs
+          </button>
+
+          <button
             onClick={() => setActiveTab("businesses")}
             className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === "businesses" ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 shadow-sm shadow-indigo-100 dark:shadow-none scale-[1.02]" : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-slate-200"}`}
           >
@@ -742,6 +776,108 @@ export default function SuperAdmin() {
                     </div>
                   </div>
                 </>
+              )}
+            </div>
+          )}
+
+          {activeTab === "audit-logs" && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 mt-4">
+              <div className="flex justify-between items-center bg-white dark:bg-zinc-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800">
+                <div className="relative w-96">
+                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input 
+                    placeholder="Filter by Tenant ID (UUID)..." 
+                    value={auditBusinessFilter}
+                    onChange={(e) => setAuditBusinessFilter(e.target.value)}
+                    className="pl-9 h-11 bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800"
+                  />
+                </div>
+                <div className="text-sm font-medium text-slate-500">
+                  Total Logs: {auditTotal}
+                </div>
+              </div>
+
+              {fetchingAuditLogs ? (
+                <div className="flex justify-center p-20"><Loader2 className="w-10 h-10 animate-spin text-indigo-500" /></div>
+              ) : (
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                      <thead className="bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-200 dark:border-zinc-800 text-slate-500 font-bold uppercase tracking-wider text-xs">
+                        <tr>
+                          <th className="p-4">Timestamp</th>
+                          <th className="p-4">Tenant</th>
+                          <th className="p-4">Actor</th>
+                          <th className="p-4">Action</th>
+                          <th className="p-4">Details</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 dark:divide-zinc-800">
+                        {auditLogs.map((log) => (
+                          <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                            <td className="p-4 font-medium text-slate-900 dark:text-slate-100">
+                              {new Date(log.created_at).toLocaleString()}
+                            </td>
+                            <td className="p-4">
+                              {log.business_name ? (
+                                <span className="font-bold text-indigo-600 dark:text-indigo-400">{log.business_name}</span>
+                              ) : (
+                                <span className="text-slate-400 italic">Global System</span>
+                              )}
+                            </td>
+                            <td className="p-4">
+                              {log.staff_name ? (
+                                <span>{log.staff_name} <span className="text-xs text-slate-400">({log.staff_role})</span></span>
+                              ) : log.details?.admin_actor ? (
+                                <span className="text-violet-600 dark:text-violet-400 font-medium">Admin: {log.details.admin_actor.email || 'Owner'}</span>
+                              ) : (
+                                <span className="text-slate-400 italic">Unknown/System</span>
+                              )}
+                            </td>
+                            <td className="p-4">
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                                log.action.includes('DELETE') || log.action.includes('REMOVE') ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' :
+                                log.action.includes('UPDATE') || log.action.includes('TOGGLE') ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400' :
+                                'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400'
+                              }`}>
+                                {log.action}
+                              </span>
+                            </td>
+                            <td className="p-4 max-w-xs truncate text-slate-500">
+                              {JSON.stringify(log.details)}
+                            </td>
+                          </tr>
+                        ))}
+                        {auditLogs.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="p-8 text-center text-slate-500">No security logs found.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  {/* Pagination */}
+                  <div className="p-4 border-t border-slate-200 dark:border-zinc-800 flex justify-between items-center bg-slate-50/50 dark:bg-zinc-900/50">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setAuditPage(p => Math.max(1, p - 1))}
+                      disabled={auditPage === 1}
+                      className="border-slate-200 dark:border-zinc-800"
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm font-medium text-slate-500">Page {auditPage}</span>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setAuditPage(p => p + 1)}
+                      disabled={auditLogs.length < 50}
+                      className="border-slate-200 dark:border-zinc-800"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           )}

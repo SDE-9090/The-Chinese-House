@@ -2349,6 +2349,20 @@ export async function apiCheckForUpdates(): Promise<{ updateAvailable: boolean; 
   return data;
 }
 
+export async function apiSuperAdminGetAuditLogs(page = 1, limit = 50, businessId?: string): Promise<{ logs: any[]; total: number; page: number; limit: number }> {
+  const token = localStorage.getItem("super_token");
+  const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+  if (businessId) {
+    params.append("businessId", businessId);
+  }
+  const res = await fetch(`${API_URL}/super/audit-logs?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch global audit logs");
+  return data;
+}
+
 export async function apiSuperAdminUploadUpdate(file: File, version: string, releaseNotes: string): Promise<any> {
   const formData = new FormData();
   formData.append("file", file);

@@ -42,16 +42,21 @@ async function runMigration() {
     // 3. RLS Policies
     await client.query(`ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;`);
     
-    // Policy to allow access to the tenant's own audit logs
+    // Policy to allow access to the tenant's own audit logs or global access for super_admin
     await client.query(`
       DO $$
       BEGIN
-        IF NOT EXISTS (
+        IF EXISTS (
           SELECT 1 FROM pg_policies WHERE tablename = 'audit_logs' AND policyname = 'tenant_isolation_audit_logs'
         ) THEN
-          CREATE POLICY tenant_isolation_audit_logs ON audit_logs
-            USING (business_id = current_setting('app.current_tenant')::uuid);
+          DROP POLICY tenant_isolation_audit_logs ON audit_logs;
         END IF;
+
+        CREATE POLICY tenant_isolation_audit_logs ON audit_logs
+          USING (
+            current_setting('app.current_tenant', true) = 'super_admin'
+            OR business_id = current_setting('app.current_tenant', true)::uuid
+          );
       END
       $$;
     `);

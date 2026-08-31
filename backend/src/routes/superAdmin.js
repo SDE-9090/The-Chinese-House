@@ -6,6 +6,7 @@ const pool = require("../db/pool");
 const { adminAuth, authorizeRole, JWT_SECRET } = require("../middleware/adminAuth");
 const { tenantContext } = require("../middleware/tenantContext");
 const { tenantCache } = require("../middleware/tenantEnforcer");
+const { logAuditAction } = require("../utils/auditLogger");
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("../../config/cloudinary");
@@ -147,6 +148,53 @@ router.put("/profile", async (req, res) => {
 });
 
 // ======================================================
+// GET GLOBAL AUDIT LOGS
+// ======================================================
+router.get("/audit-logs", async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 50;
+  const offset = (page - 1) * limit;
+  const businessId = req.query.businessId;
+
+  try {
+    let queryStr = `
+      SELECT al.*, b.name as business_name, s.name as staff_name, s.role as staff_role 
+      FROM audit_logs al
+      LEFT JOIN businesses b ON al.business_id = b.id
+      LEFT JOIN staff s ON al.actor_id = s.id
+    `;
+    let countQueryStr = `SELECT COUNT(*) FROM audit_logs al`;
+    let queryParams = [];
+    let countParams = [];
+
+    if (businessId) {
+      queryStr += ` WHERE al.business_id = $1`;
+      countQueryStr += ` WHERE al.business_id = $1`;
+      queryParams.push(businessId);
+      countParams.push(businessId);
+    }
+
+    queryStr += ` ORDER BY al.created_at DESC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+    queryParams.push(limit, offset);
+
+    const [logsResult, countResult] = await Promise.all([
+      pool.query(queryStr, queryParams),
+      pool.query(countQueryStr, countParams)
+    ]);
+
+    res.json({
+      logs: logsResult.rows,
+      total: parseInt(countResult.rows[0].count),
+      page,
+      limit
+    });
+  } catch (err) {
+    console.error("Error fetching global audit logs:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ======================================================
 // GET ALL BUSINESSES
 // ======================================================
 router.get("/businesses", async (req, res) => {
@@ -267,6 +315,8 @@ router.patch("/businesses/:id/tier", async (req, res) => {
       return res.status(404).json({ error: "Business not found" });
     }
 
+    await logAuditAction(req, "UPDATE_TENANT_TIER", "businesses", id, { tier: tier }, id);
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error("Error updating business tier:", err);
@@ -322,6 +372,9 @@ router.post("/businesses", async (req, res) => {
     );
 
     await client.query("COMMIT");
+
+    await logAuditAction(req, "CREATE_TENANT", "businesses", businessId, { name, slug }, businessId);
+
     res.status(201).json({ message: "Business created successfully", business_id: businessId });
   } catch (err) {
     await client.query("ROLLBACK");
@@ -384,6 +437,8 @@ router.put("/businesses/:id", async (req, res) => {
 
     await client.query("COMMIT");
     
+    await logAuditAction(req, "UPDATE_TENANT", "businesses", id, { name, slug, phone }, id);
+
     // Clear tenant cache
     tenantCache.delete(slug);
 
@@ -425,6 +480,8 @@ router.patch("/businesses/:id/status", async (req, res) => {
     if (!result.rows.length) {
       return res.status(404).json({ error: "Business not found" });
     }
+
+    await logAuditAction(req, "TOGGLE_TENANT_STATUS", "businesses", id, { status: newStatus }, id);
 
     // Clear tenant cache so tenantEnforcer fetches fresh status
     const slugRes = await pool.query("SELECT slug FROM businesses WHERE id = $1", [id]);

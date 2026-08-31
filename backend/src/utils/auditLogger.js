@@ -10,18 +10,37 @@ const { tenantContext } = require("../middleware/tenantContext");
  * @param {string} entityId - The ID of the entity modified (optional)
  * @param {Object} details - Additional metadata or before/after state (optional)
  */
-async function logAuditAction(req, action, entityType, entityId = null, details = null) {
+async function logAuditAction(req, action, entityType, entityId = null, details = null, overrideBusinessId = null) {
   try {
-    const businessId = tenantContext.getStore() || req.business_id;
-    if (!businessId) {
+    let businessId = overrideBusinessId || tenantContext.getStore() || req.business_id;
+
+    if (businessId === 'super_admin') {
+      businessId = null;
+    }
+
+    if (!businessId && tenantContext.getStore() !== 'super_admin') {
       console.warn("Audit log skipped: No businessId found in context or req.business_id");
       return;
     }
 
-    const actorId = req.user && req.user.id ? req.user.id : null;
+    let actorId = null;
+    let finalDetails = details ? { ...details } : {};
+
+    // Determine who performed the action
+    if (req.user && req.user.id) {
+      // It's a staff member (exists in staff table)
+      actorId = req.user.id;
+    } else if (req.admin) {
+      // It's an admin or super admin (not in staff table, so actor_id must be null to avoid FK violation)
+      finalDetails.admin_actor = {
+        id: req.admin.id,
+        role: req.admin.role,
+        email: req.admin.email || null
+      };
+    }
+
     const ipAddress = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || null;
 
-    // Use a direct parameterized query (pool.query will enforce RLS implicitly)
     await pool.query(
       `INSERT INTO audit_logs (business_id, actor_id, action, entity_type, entity_id, details, ip_address)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -31,7 +50,7 @@ async function logAuditAction(req, action, entityType, entityId = null, details 
         action,
         entityType,
         entityId ? String(entityId) : null,
-        details ? JSON.stringify(details) : null,
+        Object.keys(finalDetails).length > 0 ? JSON.stringify(finalDetails) : null,
         ipAddress
       ]
     );

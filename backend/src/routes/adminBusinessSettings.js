@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db/pool");
 const { adminAuth, authorizeRole } = require("../middleware/adminAuth");
+const { logAuditAction } = require("../utils/auditLogger");
 const {
   GSTIN_REGEX,
   ensureBusinessSettings,
@@ -219,6 +220,8 @@ router.put("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res)
     if (io) {
       io.to(`tenant:${req.business_id}`).emit("business-settings-updated");
     }
+    
+    await logAuditAction(req, "UPDATE_BUSINESS_SETTINGS", "business_settings");
 
     res.json(updated);
   } catch (err) {
@@ -269,6 +272,7 @@ router.post("/factory-reset", adminAuth, authorizeRole(['admin']), async (req, r
     await client.query("UPDATE token_counter SET last_token = 0 WHERE business_id = $1", [businessId]);
 
     await client.query("COMMIT");
+    await logAuditAction(req, "FACTORY_RESET", "business_settings");
 
     // Notify frontend via socket to force reload for any active sessions
     const io = req.app.get("io");
