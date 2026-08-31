@@ -3,7 +3,7 @@ import { API_URL } from "@/lib/apiClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Power, ShieldAlert, Settings2, DownloadCloud, UploadCloud, MessageSquareWarning, PieChart, Building2, LogOut, Pencil, TrendingUp, ShoppingBag, CreditCard, MessageSquare, Settings } from "lucide-react";
+import { Loader2, Plus, Power, ShieldAlert, Settings2, DownloadCloud, UploadCloud, MessageSquareWarning, PieChart, Building2, LogOut, Pencil, TrendingUp, ShoppingBag, CreditCard, MessageSquare, Settings, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -300,6 +300,21 @@ export default function SuperAdmin() {
     } catch (err) {
       console.error("Failed to update status:", err);
       toast({ title: "Failed to update status", variant: "destructive" });
+    }
+  };
+
+  const deleteEnquiry = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this enquiry?")) return;
+    try {
+      await fetch(`${API_URL}/super/enquiries/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchEnquiries();
+      toast({ title: "Enquiry deleted successfully" });
+    } catch (err) {
+      console.error("Failed to delete enquiry:", err);
+      toast({ title: "Failed to delete enquiry", variant: "destructive" });
     }
   };
 
@@ -1513,15 +1528,24 @@ export default function SuperAdmin() {
                              </span>
                           </td>
                           <td className="py-4">
-                             <select 
-                               className="bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white cursor-pointer hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
-                               value={enq.status}
-                               onChange={(e) => updateEnquiryStatus(enq.id, e.target.value)}
-                             >
-                               <option value="New">New</option>
-                               <option value="Contacted">Contacted</option>
-                               <option value="Resolved">Resolved</option>
-                             </select>
+                             <div className="flex items-center gap-2">
+                               <select 
+                                 className="bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white cursor-pointer hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
+                                 value={enq.status}
+                                 onChange={(e) => updateEnquiryStatus(enq.id, e.target.value)}
+                               >
+                                 <option value="New">New</option>
+                                 <option value="Contacted">Contacted</option>
+                                 <option value="Resolved">Resolved</option>
+                               </select>
+                               <button 
+                                 onClick={() => deleteEnquiry(enq.id)}
+                                 className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                                 title="Delete Enquiry"
+                               >
+                                 <Trash2 className="w-4 h-4" />
+                               </button>
+                             </div>
                           </td>
                         </tr>
                       ));

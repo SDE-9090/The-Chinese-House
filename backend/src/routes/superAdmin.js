@@ -833,6 +833,17 @@ router.put("/enquiries/:id/status", async (req, res) => {
   }
 });
 
+router.delete("/enquiries/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query(`DELETE FROM saas_enquiries WHERE id = $1`, [id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error deleting enquiry:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/settings", async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM saas_settings LIMIT 1`);
