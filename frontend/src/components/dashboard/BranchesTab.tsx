@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { API_URL } from "@/lib/apiClient";
 import { Network, Plus, CheckCircle2, Clock, XCircle, ArrowRight, MoreVertical, Power, Edit2, LogIn, Activity, DollarSign, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 
 interface Branch {
   id: string;
@@ -55,6 +57,7 @@ export function BranchesTab() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [editBranch, setEditBranch] = useState<Branch | null>(null);
   const [editFormData, setEditFormData] = useState({ slug: "", tier: "" });
+  const [statusToggleBranch, setStatusToggleBranch] = useState<{id: string, is_active: boolean} | null>(null);
 
   const fetchData = async () => {
     try {
@@ -131,13 +134,12 @@ export function BranchesTab() {
       window.open(branchUrl, '_blank');
     } catch (err) {
       console.error(err);
-      alert("Error impersonating branch");
+      toast({ title: "Error impersonating branch", variant: "destructive" });
     }
     setActiveDropdown(null);
   };
 
   const handleToggleStatus = async (branchId: string, currentStatus: boolean) => {
-    if (!window.confirm(`Are you sure you want to ${currentStatus ? 'suspend' : 'activate'} this branch?`)) return;
     try {
       const token = localStorage.getItem("admin_auth_token") || document.cookie.split("; ").find(r => r.startsWith("admin_auth_token="))?.split("=")[1];
       const res = await fetch(`${API_URL}/admin/branches/${branchId}/toggle-status`, {
@@ -150,7 +152,7 @@ export function BranchesTab() {
     } catch (err) {
       console.error(err);
     }
-    setActiveDropdown(null);
+    setStatusToggleBranch(null);
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -257,7 +259,7 @@ export function BranchesTab() {
                            <Edit2 size={16} /> Edit Settings
                          </button>
                          <div className="h-px bg-border my-1" />
-                         <button onClick={() => handleToggleStatus(b.id, b.is_active)} className={`w-full text-left px-4 py-2.5 text-sm font-bold transition flex items-center gap-2 ${b.is_active ? 'text-red-500 hover:bg-red-500/10' : 'text-green-500 hover:bg-green-500/10'}`}>
+                         <button onClick={() => { setStatusToggleBranch({id: b.id, is_active: b.is_active}); setActiveDropdown(null); }} className={`w-full text-left px-4 py-2.5 text-sm font-bold transition flex items-center gap-2 ${b.is_active ? 'text-red-500 hover:bg-red-500/10' : 'text-green-500 hover:bg-green-500/10'}`}>
                            <Power size={16} /> {b.is_active ? 'Suspend Branch' : 'Activate Branch'}
                          </button>
                       </motion.div>
@@ -476,6 +478,27 @@ export function BranchesTab() {
            </motion.div>
          </div>
       )}
+
+      {/* Toggle Branch Status Alert Dialog */}
+      <AlertDialog open={!!statusToggleBranch} onOpenChange={(open) => !open && setStatusToggleBranch(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{statusToggleBranch?.is_active ? 'Suspend Branch' : 'Activate Branch'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to {statusToggleBranch?.is_active ? 'suspend' : 'activate'} this branch?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => statusToggleBranch && handleToggleStatus(statusToggleBranch.id, statusToggleBranch.is_active)}
+              className={statusToggleBranch?.is_active ? "bg-red-600 hover:bg-red-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"}
+            >
+              {statusToggleBranch?.is_active ? 'Suspend' : 'Activate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

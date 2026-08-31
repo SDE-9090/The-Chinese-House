@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Power, ShieldAlert, Settings2, DownloadCloud, UploadCloud, MessageSquareWarning, PieChart, Building2, LogOut, Pencil, TrendingUp, ShoppingBag, CreditCard, MessageSquare, Settings, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -304,7 +305,6 @@ export default function SuperAdmin() {
   };
 
   const deleteEnquiry = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this enquiry?")) return;
     try {
       await fetch(`${API_URL}/super/enquiries/${id}`, {
         method: "DELETE",
@@ -1538,13 +1538,30 @@ export default function SuperAdmin() {
                                  <option value="Contacted">Contacted</option>
                                  <option value="Resolved">Resolved</option>
                                </select>
-                               <button 
-                                 onClick={() => deleteEnquiry(enq.id)}
-                                 className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                                 title="Delete Enquiry"
-                               >
-                                 <Trash2 className="w-4 h-4" />
-                               </button>
+                               <AlertDialog>
+                                 <AlertDialogTrigger asChild>
+                                   <button 
+                                     className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                                     title="Delete Enquiry"
+                                   >
+                                     <Trash2 className="w-4 h-4" />
+                                   </button>
+                                 </AlertDialogTrigger>
+                                 <AlertDialogContent>
+                                   <AlertDialogHeader>
+                                     <AlertDialogTitle>Delete Enquiry</AlertDialogTitle>
+                                     <AlertDialogDescription>
+                                       Are you sure you want to delete this enquiry? This action cannot be undone.
+                                     </AlertDialogDescription>
+                                   </AlertDialogHeader>
+                                   <AlertDialogFooter>
+                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                     <AlertDialogAction onClick={() => deleteEnquiry(enq.id)} className="bg-red-600 hover:bg-red-700 text-white">
+                                       Delete
+                                     </AlertDialogAction>
+                                   </AlertDialogFooter>
+                                 </AlertDialogContent>
+                               </AlertDialog>
                              </div>
                           </td>
                         </tr>

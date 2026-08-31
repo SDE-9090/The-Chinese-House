@@ -4,6 +4,7 @@ import { Printer, QrCode, Loader2, Plus, X, Trash2, Edit3 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Capacitor } from "@capacitor/core";
 import { printQRCodeNative } from "@/lib/thermalPrinter";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function TableQRCodes() {
   const [tables, setTables] = useState<Table[]>([]);
@@ -51,7 +52,6 @@ export default function TableQRCodes() {
   };
 
   const handleDeleteTable = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this table?")) return;
     setDeletingTableId(id);
     try {
       await apiDeleteTable(id);
@@ -210,14 +210,31 @@ export default function TableQRCodes() {
               >
                 <Edit3 size={14} />
               </button>
-              <button
-                onClick={() => handleDeleteTable(table.id)}
-                disabled={deletingTableId === table.id}
-                className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition disabled:opacity-50"
-                title="Delete Table"
-              >
-                {deletingTableId === table.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    disabled={deletingTableId === table.id}
+                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition disabled:opacity-50"
+                    title="Delete Table"
+                  >
+                    {deletingTableId === table.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Table</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this table? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDeleteTable(table.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
             <h3 className="font-bold text-lg mb-4 mt-2">{table.tableNumber}</h3>
             <div className="bg-muted p-2 rounded-xl inline-block mb-4">
