@@ -6,6 +6,7 @@ export interface BillItem {
   quantity: number;
   price: number;
   totalPrice?: number;
+  note?: string;
 }
 
 export interface BillOrder {
@@ -20,6 +21,7 @@ export interface BillData {
   tableNumber?: string | null;
   customerName?: string;
   customerPhone?: string;
+  specialInstructions?: string;
   orders: BillOrder[];
   itemized: BillItem[];
   totalAmount: number;
@@ -164,11 +166,12 @@ export function downloadBillPrint(bill: BillData, business?: BusinessInfo) {
   const itemRows = bill.itemized
     .map(item => `
       <tr>
-        <td style="padding:4px 0;border-bottom:1px dashed #ddd;">${item.name}</td>
-        <td style="text-align:center;padding:4px;border-bottom:1px dashed #ddd;">${item.quantity}</td>
-        <td style="text-align:right;padding:4px 0;border-bottom:1px dashed #ddd;">₹${(item.price).toFixed(2)}</td>
-        <td style="text-align:right;padding:4px 0;border-bottom:1px dashed #ddd;">₹${(item.totalPrice ?? item.price * item.quantity).toFixed(2)}</td>
-      </tr>`)
+        <td style="padding:4px 0;border-bottom:${item.note ? 'none' : '1px dashed #ddd'};">${item.name}</td>
+        <td style="text-align:center;padding:4px;border-bottom:${item.note ? 'none' : '1px dashed #ddd'};">${item.quantity}</td>
+        <td style="text-align:right;padding:4px 0;border-bottom:${item.note ? 'none' : '1px dashed #ddd'};">₹${(item.price).toFixed(2)}</td>
+        <td style="text-align:right;padding:4px 0;border-bottom:${item.note ? 'none' : '1px dashed #ddd'};">₹${(item.totalPrice ?? item.price * item.quantity).toFixed(2)}</td>
+      </tr>
+      ${item.note ? `<tr><td colspan="4" style="padding:0 0 4px 0;border-bottom:1px dashed #ddd;font-size:11px;font-style:italic;color:#555;">* Note: ${item.note}</td></tr>` : ""}`)
     .join("");
 
   printWindow.document.write(`<!DOCTYPE html>
@@ -209,6 +212,7 @@ export function downloadBillPrint(bill: BillData, business?: BusinessInfo) {
     ${bill.customerPhone ? `<div><b>Phone:</b> ${bill.customerPhone}</div>` : ""}
     <div><b>Date:</b> ${date}</div>
     ${bill.sessionId ? `<div><b>Ref:</b> ${bill.sessionId.slice(0, 8).toUpperCase()}</div>` : ""}
+    ${bill.specialInstructions ? `<div style="margin-top:6px;padding:6px;border:1px dashed #555;font-style:italic;"><b>Note:</b> ${bill.specialInstructions}</div>` : ""}
   </div>
 
   <table>
@@ -273,6 +277,11 @@ export default function BillDocument({ bill, business, showDownloadButton = true
         {bill.customerName && <div><span className="font-semibold text-foreground">Customer:</span> {bill.customerName}</div>}
         <div><span className="font-semibold text-foreground">Date:</span> {date}</div>
         {bill.sessionId && <div><span className="font-semibold text-foreground">Ref:</span> {bill.sessionId.slice(0, 8).toUpperCase()}</div>}
+        {bill.specialInstructions && (
+          <div className="mt-2 p-1.5 bg-muted rounded border border-dashed border-border italic text-foreground">
+            <span className="font-semibold">Note:</span> {bill.specialInstructions}
+          </div>
+        )}
       </div>
 
       {/* Items */}
@@ -284,10 +293,15 @@ export default function BillDocument({ bill, business, showDownloadButton = true
         </div>
         <div className="space-y-1 mt-2">
           {bill.itemized.map((item, i) => (
-            <div key={i} className="grid grid-cols-4 text-sm">
-              <span className="col-span-2 truncate">{item.name}</span>
-              <span className="text-center text-muted-foreground">{item.quantity}</span>
-              <span className="text-right font-medium">₹{(item.totalPrice ?? item.price * item.quantity).toFixed(2)}</span>
+            <div key={i} className="flex flex-col border-b border-dashed border-border pb-1 mb-1">
+              <div className="grid grid-cols-4 text-sm">
+                <span className="col-span-2 truncate">{item.name}</span>
+                <span className="text-center text-muted-foreground">{item.quantity}</span>
+                <span className="text-right font-medium">₹{(item.totalPrice ?? item.price * item.quantity).toFixed(2)}</span>
+              </div>
+              {item.note && (
+                <span className="text-[11px] text-muted-foreground italic leading-tight">* Note: {item.note}</span>
+              )}
             </div>
           ))}
         </div>

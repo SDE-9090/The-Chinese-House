@@ -2063,8 +2063,9 @@ export interface SessionBill {
   tableNumber?: string | null;
   customerName?: string;
   customerPhone?: string;
+  specialInstructions?: string;
   orders: (Order & { items: { id: string; name: string; price: number; quantity: number; status: string; note: string }[] })[];
-  itemized: { menuItemId?: number | string; name: string; price: number; quantity: number; totalPrice: number }[];
+  itemized: { menuItemId?: number | string; name: string; price: number; quantity: number; totalPrice: number; note?: string }[];
   totalAmount: number;
   totalPaid: number;
   totalDue: number;

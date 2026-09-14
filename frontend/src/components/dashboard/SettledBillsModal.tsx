@@ -102,7 +102,7 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
         price: i.price,
         quantity: i.quantity,
         priceLabel: `₹${i.price}`,
-        note: ""
+        note: i.note || ""
       })) || [],
       total: detailBill.totalAmount,
       paymentMethod: "counter" as const,
@@ -110,6 +110,7 @@ export default function SettledBillsModal({ isOpen, onClose }: SettledBillsModal
       orderType: "dine-in" as const,
       paymentStatus: "paid" as const,
       tableSessionId: selectedSession.session_id,
+      specialInstructions: detailBill.specialInstructions || "",
       subtotal: detailBill.sessionDetails?.subtotal || 0,
       discount: detailBill.sessionDetails?.discount || 0,
       cgst: detailBill.sessionDetails?.cgst || 0,

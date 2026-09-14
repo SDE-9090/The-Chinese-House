@@ -500,7 +500,7 @@ router.get("/sessions/:sessionId/bill", async (req, res) => {
 
     // Get all non-cancelled orders for this session with their items via JOIN
     const { rows } = await pool.query(
-      `SELECT o.id, o.token, o.total, o.paid_amount, o.payment_status, o.status, o.created_at,
+      `SELECT o.id, o.token, o.total, o.paid_amount, o.payment_status, o.status, o.created_at, o.special_instructions,
               oi.id as item_id, oi.name as item_name, oi.price as item_price, oi.quantity as item_quantity, oi.menu_item_id as item_menu_item_id, oi.status as item_status, oi.note as item_note
        FROM orders o
        LEFT JOIN order_items oi ON oi.order_id = o.id
@@ -512,12 +512,17 @@ router.get("/sessions/:sessionId/bill", async (req, res) => {
     // Group rows by order id
     const ordersMap = new Map();
     const aggregatedItems = new Map();
+    const allSpecialInstructions = new Set();
 
     let subtotal = 0;
     let totalPaid = 0;
     let totalDue = 0;
 
     for (const row of rows) {
+      if (row.special_instructions && row.special_instructions.trim() !== '') {
+        allSpecialInstructions.add(row.special_instructions.trim());
+      }
+
       if (!ordersMap.has(row.id)) {
         const orderTotal = parseFloat(row.total) || 0;
         const paid = parseFloat(row.paid_amount) || 0;
@@ -549,7 +554,7 @@ router.get("/sessions/:sessionId/bill", async (req, res) => {
           note: row.item_note || ''
         });
 
-        const key = row.item_name;
+        const key = row.item_name + (row.item_note ? '|' + row.item_note : '');
         if (aggregatedItems.has(key)) {
           const existing = aggregatedItems.get(key);
           existing.quantity += itemQty;
@@ -560,7 +565,8 @@ router.get("/sessions/:sessionId/bill", async (req, res) => {
             name: row.item_name,
             price: itemPrice,
             quantity: itemQty,
-            totalPrice: (itemPrice * itemQty)
+            totalPrice: (itemPrice * itemQty),
+            note: row.item_note || ''
           });
         }
       }
@@ -606,6 +612,7 @@ router.get("/sessions/:sessionId/bill", async (req, res) => {
     res.json({
       sessionId,
       tableNumber,
+      specialInstructions: Array.from(allSpecialInstructions).join(' | '),
       orders: ordersList,
       itemized,
       totalAmount: finalTotalAmount,
