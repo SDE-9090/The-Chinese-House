@@ -126,7 +126,10 @@ export async function printReceiptNative(
 
     receipt += thickSeparator;
     if (order.specialInstructions) {
-      receipt += `Notes: ${order.specialInstructions}\n`;
+      const instrLines = wrapText(`Notes: ${order.specialInstructions}`, lineLength);
+      for (const line of instrLines) {
+        receipt += line + "\n";
+      }
     }
   } else {
     // BILL
@@ -180,6 +183,14 @@ export async function printReceiptNative(
           receipt += nameLines[i] + "\n";
         }
       }
+
+      if (item.note) {
+        const notePrefix = "  * Note: ";
+        const noteLines = wrapText(notePrefix + item.note, lineLength);
+        for (const nl of noteLines) {
+          receipt += nl + "\n";
+        }
+      }
     });
 
     receipt += separator;
@@ -199,6 +210,15 @@ export async function printReceiptNative(
     receipt += BOLD_OFF;
     receipt += thickSeparator;
     
+    if (order.specialInstructions) {
+      receipt += ALIGN_LEFT;
+      const instrLines = wrapText(`Notes: ${order.specialInstructions}`, lineLength);
+      for (const line of instrLines) {
+        receipt += line + "\n";
+      }
+      receipt += thickSeparator;
+    }
+
     receipt += ALIGN_CENTER;
     receipt += "Thank you for dining with us!\n";
     receipt += "Please visit again\n";
