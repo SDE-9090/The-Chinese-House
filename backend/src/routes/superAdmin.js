@@ -503,6 +503,34 @@ router.patch("/businesses/:id/status", async (req, res) => {
   } catch (err) {
     console.error("Error toggling business status:", err);
     res.status(500).json({ error: "Internal server error" });
+}
+});
+
+// ======================================================
+// DELETE BUSINESS (TENANT)
+// ======================================================
+router.delete("/businesses/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const slugRes = await pool.query("SELECT name, slug FROM businesses WHERE id = $1", [id]);
+    if (!slugRes.rows.length) {
+      return res.status(404).json({ error: "Business not found" });
+    }
+
+    const { name, slug } = slugRes.rows[0];
+
+    // ON DELETE CASCADE takes care of child rows (orders, items, sub-branches, etc.)
+    await pool.query("DELETE FROM businesses WHERE id = $1", [id]);
+
+    await logAuditAction(req, "DELETE_TENANT", "businesses", id, { name, slug });
+
+    tenantCache.delete(slug);
+
+    res.json({ success: true, message: "Business deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting business:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

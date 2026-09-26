@@ -6,7 +6,7 @@ const { invalidateDashboardCache, invalidateActiveOrdersHistoryCache } = require
 const { adminAuth } = require("../middleware/adminAuth");
 const { logAuditAction } = require("../utils/auditLogger");
 const { ensureBusinessSettings } = require("../utils/businessSettings");
-const { calculateOrderTotals } = require("../utils/gst");
+const { calculateOrderTotals, roundCurrency } = require("../utils/gst");
 const { syncCustomerCRM } = require("../utils/crmSync");
 
 // Auth middleware: supports Bearer token (primary), cookie, or header password (fallback)
@@ -356,9 +356,10 @@ router.patch("/orders/:id/items", auth, async (req, res) => {
       sgstRate: businessSettings.sgstRate,
     });
 
-    const newPaidAmount = totals.total;
-    const due = 0;
-    const newPaymentStatus = "paid";
+    const currentPaidAmount = parseFloat(orderCheck.rows[0].paid_amount || 0);
+    const due = roundCurrency(totals.total - currentPaidAmount);
+    const newPaymentStatus = due <= 0 ? "paid" : "pending";
+    const newPaidAmount = due <= 0 ? totals.total : currentPaidAmount;
 
     await client.query(
       `UPDATE orders

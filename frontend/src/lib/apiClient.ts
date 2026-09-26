@@ -2432,6 +2432,19 @@ export async function apiSuperAdminUpdateTier(businessId: string, tier: string):
   return data;
 }
 
+export async function apiSuperAdminDeleteBusiness(businessId: string): Promise<any> {
+  const res = await fetch(`${API_URL}/super/businesses/${businessId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem("super_token")}`,
+    },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to delete business");
+  return data;
+}
+
 export async function apiSuperAdminSendAnnouncement(title: string, message: string, type: string): Promise<any> {
   const res = await fetch(`${API_URL}/super/announcements`, {
     method: "POST",

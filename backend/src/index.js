@@ -71,8 +71,6 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
-
-app.use(tenantEnforcer);
 // Serve static updates files
 app.use("/public/updates", express.static(path.join(__dirname, "../public/updates")));
 
@@ -108,6 +106,8 @@ app.use("/api/public", publicRoutes);
 app.use("/api/super", superAdminRoutes);
 
 // ---- Single-Tenant Enforcer ----
+app.use(tenantEnforcer);
+
 // ---- Create HTTP Server ----
 const server = http.createServer(app);
 

@@ -9,7 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-import { apiSuperAdminUploadUpdate, apiSuperAdminAnalytics, apiSuperAdminImpersonate, apiSuperAdminUpdateTier, apiSuperAdminSendAnnouncement, apiSuperAdminGetAuditLogs, apiSuperAdminClearAuditLogs } from "@/lib/apiClient";
+import { apiSuperAdminUploadUpdate, apiSuperAdminAnalytics, apiSuperAdminImpersonate, apiSuperAdminUpdateTier, apiSuperAdminSendAnnouncement, apiSuperAdminGetAuditLogs, apiSuperAdminClearAuditLogs, apiSuperAdminDeleteBusiness } from "@/lib/apiClient";
 import { useNavigate } from "react-router-dom";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -111,6 +111,24 @@ export default function SuperAdmin() {
       toast({ title: "Failed to load analytics", description: err.message, variant: "destructive" });
     } finally {
       setTenantAnalyticsLoading(false);
+    }
+  };
+
+  const [businessToDelete, setBusinessToDelete] = useState<any>(null);
+  const [deletingBusiness, setDeletingBusiness] = useState(false);
+
+  const confirmDeleteBusiness = async () => {
+    if (!businessToDelete) return;
+    setDeletingBusiness(true);
+    try {
+      await apiSuperAdminDeleteBusiness(businessToDelete.id);
+      toast({ title: "Business Deleted", description: `${businessToDelete.name} and its sub-branches have been permanently removed.` });
+      setBusinessToDelete(null);
+      fetchBusinesses();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDeletingBusiness(false);
     }
   };
 
@@ -1162,6 +1180,15 @@ export default function SuperAdmin() {
                                 <Settings2 className="w-4 h-4" />
                               </Button>
                               <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setBusinessToDelete(b)}
+                                title="Delete Tenant"
+                                className="text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 h-8 w-8"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <Button
                                 size="sm"
                                 onClick={() => handleImpersonate(b.id)}
                                 className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 dark:shadow-none h-8"
@@ -1248,6 +1275,15 @@ export default function SuperAdmin() {
                                       className="text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 h-8 w-8"
                                     >
                                       <Settings2 className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => setBusinessToDelete(branch)}
+                                      title="Delete Tenant"
+                                      className="text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 h-8 w-8"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
                                     </Button>
                                     <Button
                                       size="sm"
@@ -1815,6 +1851,30 @@ export default function SuperAdmin() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!businessToDelete} onOpenChange={(open) => !open && setBusinessToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete <b>{businessToDelete?.name}</b> and all of its associated data (orders, staff, menus, analytics). 
+              <br/><br/>
+              <b>Warning:</b> If this is a parent branch, all of its sub-branches will also be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteBusiness}
+              disabled={deletingBusiness}
+              className="bg-red-600 hover:bg-red-700 text-white focus:ring-red-600"
+            >
+              {deletingBusiness ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

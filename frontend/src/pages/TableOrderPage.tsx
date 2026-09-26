@@ -307,56 +307,18 @@ export default function TableOrderPage() {
           isTableMode={true}
           tableNumber={table.tableNumber}
           isTableLocked={true}
+          tableId={table.id}
         />
       );
     }
+    // Option B Implementation: Directly render the Order Page so they can see the menu immediately.
+    // The session will be created automatically upon checkout.
     return (
-      <div className="min-h-screen p-6 flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20">
-        <div className="w-full max-w-sm bg-card p-6 rounded-2xl shadow-xl border border-border">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-14 h-14 bg-primary/10 rounded-full mb-3">
-              <QrCode className="w-7 h-7 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold">Table {table.tableNumber}</h1>
-            <p className="text-sm text-muted-foreground mt-1">Enter your details to start ordering.</p>
-          </div>
-          <form onSubmit={handleReserve} className="space-y-4">
-            <div>
-              <Label>Name (Optional)  </Label>
-              <Input
-                value={name}
-                onChange={e => {
-                  setName(e.target.value);
-                  if (nameError) setNameError("");
-                }}
-                onBlur={e => setNameError(validateName(e.target.value, false) || "")}
-                placeholder="Your Name"
-                className={nameError ? "border-red-500" : ""}
-              />
-              {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
-            </div>
-            <div>
-              <Label>Phone Number (Optional)</Label>
-              <Input
-                type="tel"
-                value={phone}
-                onChange={e => {
-                  setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
-                  if (phoneError) setPhoneError("");
-                }}
-                onBlur={e => setPhoneError(validateMobile(e.target.value, false) || "")}
-                placeholder="10-digit number"
-                className={phoneError ? "border-red-500" : ""}
-              />
-              {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
-            </div>
-            <Button type="submit" disabled={reserving} className="w-full">
-              {reserving ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-              Start
-            </Button>
-          </form>
-        </div>
-      </div>
+      <OrderPage
+        isTableMode={true}
+        tableNumber={table.tableNumber}
+        tableId={table.id}
+      />
     );
   }
 

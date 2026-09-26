@@ -53,6 +53,7 @@ import {
   apiEditingStart,
   apiEditingEnd,
   apiGetOrderHistory,
+  apiReserveTable,
 
   type Order,
   type CouponValidation,
@@ -90,6 +91,7 @@ export interface OrderPageProps {
   onCancelSession?: () => void;
   cancellingSession?: boolean;
   isTableLocked?: boolean;
+  tableId?: string;
 }
 
 function OrderPageContent({
@@ -102,7 +104,8 @@ function OrderPageContent({
   markingDone,
   onCancelSession,
   cancellingSession,
-  isTableLocked = false
+  isTableLocked = false,
+  tableId
 }: OrderPageProps) {
 
 
@@ -629,6 +632,15 @@ function OrderPageContent({
     if (!validate()) return;
     setIsPlacing(true);
     try {
+      let currentSessionId = tableSessionId;
+
+      // Option B: Auto-create session if it doesn't exist yet!
+      if (isTableMode && !currentSessionId && tableId) {
+        const newSession = await apiReserveTable(tableId, customerName, customerPhone);
+        currentSessionId = newSession.id;
+        localStorage.setItem("tableSessionId", currentSessionId);
+      }
+
       const order = await apiPlaceOrder(
         customerName,
         customerPhone,
@@ -638,7 +650,7 @@ function OrderPageContent({
         orderType,
         specialInstructions.trim(),
         isTableMode ? "table" : "counter",
-        tableSessionId || null,
+        currentSessionId || null,
         0,
         0,
         undefined,
@@ -1171,45 +1183,41 @@ function OrderPageContent({
             className="space-y-5"
           >
             {/* NAME */}
-            {!isTableMode && (
-              <div>
-                <label className="text-sm font-semibold mb-1.5 block">
-                  Your Name
-                </label>
-                <input
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  maxLength={100}
-                  placeholder="Enter your name"
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:ring-2 focus:ring-ring focus:outline-none transition-shadow"
-                />
-                {errors.name && (
-                  <p className="text-destructive text-xs mt-1">{errors.name}</p>
-                )}
-              </div>
-            )}
+            <div>
+              <label className="text-sm font-semibold mb-1.5 block">
+                Your Name
+              </label>
+              <input
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                maxLength={100}
+                placeholder="Enter your name"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:ring-2 focus:ring-ring focus:outline-none transition-shadow"
+              />
+              {errors.name && (
+                <p className="text-destructive text-xs mt-1">{errors.name}</p>
+              )}
+            </div>
 
             {/* PHONE */}
-            {!isTableMode && (
-              <div>
-                <label className="text-sm font-semibold mb-1.5 block">
-                  Phone Number (Optional)
-                </label>
-                <input
-                  value={customerPhone}
-                  onChange={(e) =>
-                    setCustomerPhone(
-                      e.target.value.replace(/\D/g, "").slice(0, 10),
-                    )
-                  }
-                  placeholder="10-digit mobile number"
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:ring-2 focus:ring-ring focus:outline-none transition-shadow"
-                />
-                {errors.phone && (
-                  <p className="text-destructive text-xs mt-1">{errors.phone}</p>
-                )}
-              </div>
-            )}
+            <div>
+              <label className="text-sm font-semibold mb-1.5 block">
+                Phone Number (Optional)
+              </label>
+              <input
+                value={customerPhone}
+                onChange={(e) =>
+                  setCustomerPhone(
+                    e.target.value.replace(/\D/g, "").slice(0, 10),
+                  )
+                }
+                placeholder="10-digit mobile number"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-card focus:ring-2 focus:ring-ring focus:outline-none transition-shadow"
+              />
+              {errors.phone && (
+                <p className="text-destructive text-xs mt-1">{errors.phone}</p>
+              )}
+            </div>
 
             {/* LOYALTY BANNER */}
             {loyaltyPoints > 0 && loyaltySettings?.enabled && !isTableMode && (
@@ -1760,7 +1768,11 @@ function OrderPageContent({
                 onClick={() => {
                   if (isTableLocked) return;
                   if (restaurantStatus.open) {
-                    isTableMode ? handlePlaceOrder() : setStep("checkout");
+                    if (isTableMode && tableSessionId) {
+                      handlePlaceOrder();
+                    } else {
+                      setStep("checkout");
+                    }
                   }
                 }}
                 disabled={!restaurantStatus.open || isPlacing || isTableLocked}
@@ -1770,7 +1782,7 @@ function OrderPageContent({
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 size={20} className="animate-spin" /> Placing Order...
                   </span>
-                ) : !restaurantStatus.open ? "Ordering Unavailable" : isTableLocked ? "Table is Locked" : isTableMode ? "Place Order" : "Proceed to Checkout"}
+                ) : !restaurantStatus.open ? "Ordering Unavailable" : isTableLocked ? "Table is Locked" : (isTableMode && tableSessionId) ? "Place Order" : "Proceed to Checkout"}
               </motion.button>
             </div>
           )}

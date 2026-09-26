@@ -231,6 +231,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
         }
       }
       setShowPaymentModal(null);
+      setSelectedTable(null);
       await fetchTables();
     } catch (err) {
       console.error(err);
@@ -245,6 +246,7 @@ export default function TableManager({ orders, user, onRefresh, onAdvanceStatus,
       apiSessionClose(sessionId, 'none', 0, 0, undefined, 0, undefined, 0).then(() => {
         fetchTables();
         onRefresh();
+        setSelectedTable(null);
       }).finally(() => setClosingId(null));
     } else {
       setShowPaymentModal(sessionId);
