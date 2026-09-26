@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { apiAdminGetTables, apiAdminCreateTable, apiDeleteTable, apiAdminUpdateTable, type Table } from "@/lib/apiClient";
+import { apiAdminGetTables, apiAdminCreateTable, apiAdminCreateBulkTables, apiDeleteTable, apiAdminUpdateTable, type Table } from "@/lib/apiClient";
 import { Printer, QrCode, Loader2, Plus, X, Trash2, Edit3 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Capacitor } from "@capacitor/core";
@@ -12,6 +12,9 @@ export default function TableQRCodes() {
   
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [newTableNumber, setNewTableNumber] = useState("");
+  const [isBulkCreate, setIsBulkCreate] = useState(false);
+  const [bulkCount, setBulkCount] = useState(10);
+  const [bulkPrefix, setBulkPrefix] = useState("Table");
   const [addingTable, setAddingTable] = useState(false);
   const [deletingTableId, setDeletingTableId] = useState<string | null>(null);
 
@@ -36,16 +39,26 @@ export default function TableQRCodes() {
   };
 
   const handleAddTable = async () => {
-    if (!newTableNumber.trim()) return;
+    if (isBulkCreate) {
+      if (bulkCount < 1 || bulkCount > 100) return toast({ title: "Count must be between 1 and 100", variant: "destructive" });
+    } else {
+      if (!newTableNumber.trim()) return;
+    }
+    
     setAddingTable(true);
     try {
-      await apiAdminCreateTable(newTableNumber.trim());
+      if (isBulkCreate) {
+        await apiAdminCreateBulkTables(bulkCount, bulkPrefix);
+        toast({ title: `${bulkCount} tables successfully created!` });
+      } else {
+        await apiAdminCreateTable(newTableNumber.trim());
+        toast({ title: "Table successfully created" });
+      }
       await fetchTables();
       setShowAddTableModal(false);
       setNewTableNumber("");
-      toast({ title: "Table successfully created" });
     } catch (err: any) {
-      toast({ title: "Failed to create table", description: err.message, variant: "destructive" });
+      toast({ title: "Failed to create table(s)", description: err.message, variant: "destructive" });
     } finally {
       setAddingTable(false);
     }
@@ -268,25 +281,67 @@ export default function TableQRCodes() {
             <button onClick={() => setShowAddTableModal(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
               <X size={20} />
             </button>
-            <h3 className="text-xl font-bold mb-4">Add New Table</h3>
+            <h3 className="text-xl font-bold mb-4">{isBulkCreate ? "Bulk Create Tables" : "Add New Table"}</h3>
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-semibold mb-1.5 block">Table Number / Label</label>
-                <input
-                  value={newTableNumber}
-                  onChange={(e) => setNewTableNumber(e.target.value)}
-                  placeholder="e.g. 5, Balcony 1"
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
-                  autoFocus
+              <div className="flex items-center gap-2 mb-2">
+                <input 
+                  type="checkbox" 
+                  id="bulk-create" 
+                  checked={isBulkCreate} 
+                  onChange={(e) => setIsBulkCreate(e.target.checked)} 
+                  className="w-4 h-4 text-primary rounded border-border"
                 />
+                <label htmlFor="bulk-create" className="text-sm font-semibold cursor-pointer">Create multiple tables at once</label>
               </div>
+
+              {isBulkCreate ? (
+                <>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <label className="text-sm font-semibold mb-1.5 block">Prefix (Optional)</label>
+                      <input
+                        value={bulkPrefix}
+                        onChange={(e) => setBulkPrefix(e.target.value)}
+                        placeholder="e.g. Table"
+                        className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
+                      />
+                    </div>
+                    <div className="w-24">
+                      <label className="text-sm font-semibold mb-1.5 block">Count</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={bulkCount}
+                        onChange={(e) => setBulkCount(parseInt(e.target.value) || 1)}
+                        className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none text-center"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground bg-muted p-2 rounded-lg">
+                    This will automatically create {bulkCount} new tables starting from the next available number.
+                  </p>
+                </>
+              ) : (
+                <div>
+                  <label className="text-sm font-semibold mb-1.5 block">Table Number / Label</label>
+                  <input
+                    value={newTableNumber}
+                    onChange={(e) => setNewTableNumber(e.target.value)}
+                    placeholder="e.g. 5, Balcony 1"
+                    className="w-full px-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
+                    autoFocus
+                  />
+                </div>
+              )}
+
               <button
                 onClick={handleAddTable}
-                disabled={addingTable || !newTableNumber.trim()}
-                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={addingTable || (!isBulkCreate && !newTableNumber.trim())}
+                className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-4"
               >
                 {addingTable ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                Create Table
+                {isBulkCreate ? "Create Tables" : "Create Table"}
               </button>
             </div>
           </div>

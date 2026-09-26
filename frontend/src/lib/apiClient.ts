@@ -2101,6 +2101,19 @@ export async function apiAdminCreateTable(tableNumber: string, qrCode?: string):
   return res.json();
 }
 
+export async function apiAdminCreateBulkTables(count: number, prefix: string): Promise<Table[]> {
+  const res = await authFetch(`${API_URL}/tables/bulk`, {
+    method: "POST",
+    headers: dashHeaders(dashboardPassword),
+    body: JSON.stringify({ count, prefix }),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Failed to create tables");
+  }
+  return res.json();
+}
+
 export async function apiAdminUpdateTable(id: string, tableNumber: string): Promise<Table> {
   const res = await authFetch(`${API_URL}/tables/${id}`, {
     method: "PUT",

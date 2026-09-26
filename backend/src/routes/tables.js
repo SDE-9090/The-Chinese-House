@@ -26,6 +26,7 @@ router.get("/", adminAuth, async (req, res) => {
           WHEN t.table_number ILIKE 'Parcel%' THEN 2 
           ELSE 3 
         END ASC, 
+        NULLIF(regexp_replace(t.table_number, '\\D', '', 'g'), '')::int ASC NULLS LAST,
         t.table_number ASC
     `, [req.business_id]);
     
@@ -159,6 +160,55 @@ router.post("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res
   } catch (err) {
     console.error("Create table error:", err);
     res.status(500).json({ error: "Failed to create table. It may already exist." });
+  }
+});
+
+// POST /api/tables/bulk (Admin)
+// Create multiple tables at once
+router.post("/bulk", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
+  const { count, prefix = "Table " } = req.body;
+  const numCount = parseInt(count, 10);
+  
+  if (!numCount || numCount <= 0 || numCount > 100) {
+    return res.status(400).json({ error: "Valid count (1-100) is required" });
+  }
+
+  try {
+    const { rows: existingRows } = await pool.query(
+      "SELECT table_number FROM tables WHERE business_id = $1",
+      [req.business_id]
+    );
+
+    let startIdx = 1;
+    const prefixRegex = new RegExp(`^${prefix.trim()}\\s*`, 'i');
+    existingRows.forEach(row => {
+      const numPart = row.table_number.replace(prefixRegex, '').trim();
+      const num = parseInt(numPart, 10);
+      if (!isNaN(num) && num >= startIdx) {
+        startIdx = num + 1;
+      }
+    });
+
+    const values = [];
+    const params = [];
+    let paramIdx = 1;
+
+    for (let i = 0; i < numCount; i++) {
+      const tableNum = `${prefix.trim()} ${startIdx + i}`.trim();
+      const generatedQrCode = `table-${tableNum.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.random().toString(36).substr(2, 5)}`;
+      values.push(`($${paramIdx++}, $${paramIdx++}, $${paramIdx++})`);
+      params.push(tableNum, generatedQrCode, req.business_id);
+    }
+
+    if (values.length === 0) return res.status(400).json({ error: "No tables to create" });
+
+    const query = `INSERT INTO tables (table_number, qr_code, business_id) VALUES ${values.join(", ")} RETURNING *`;
+    const { rows } = await pool.query(query, params);
+    
+    res.status(201).json(rows);
+  } catch (err) {
+    console.error("Bulk create tables error:", err);
+    res.status(500).json({ error: "Failed to create tables." });
   }
 });
 

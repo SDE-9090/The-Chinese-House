@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChefHat, Smartphone, MonitorPlay, BarChart3, ChevronRight, ShieldCheck, CheckCircle2, LayoutDashboard, MonitorSmartphone, Receipt, Users, ArrowRight, TrendingUp, ChevronDown, Sparkles, Plus, Search, Tag, X } from 'lucide-react';
+import { ChefHat, Smartphone, MonitorPlay, BarChart3, ChevronRight, ShieldCheck, CheckCircle2, Check, LayoutDashboard, MonitorSmartphone, Receipt, Users, ArrowRight, TrendingUp, ChevronDown, Sparkles, Plus, Search, Tag, X, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import ThemeToggle from "@/components/ThemeToggle";
@@ -9,24 +9,40 @@ import { Loader2 } from 'lucide-react';
 
 const FEATURES = [
   {
-    icon: MonitorSmartphone,
-    title: "Lightning Fast POS",
-    description: "Built for speed during rush hours. Processes orders in seconds with zero lag."
+    icon: Receipt,
+    title: "Fast POS & Billing",
+    description: "Process orders, manage tables, apply discounts, and generate bills quickly—even during rush hours.",
+    flow: ["Orders", "Tables", "Bill", "Payment"]
   },
   {
     icon: Smartphone,
-    title: "QR Digital Ordering",
-    description: "Customers order & pay directly from their phones. Waitstaff focus on hospitality, not order taking."
+    title: "QR Ordering",
+    description: "Let customers browse your menu and place orders directly from their phones.",
+    flow: ["Scan", "Menu", "Order", "Pay"]
   },
   {
     icon: MonitorPlay,
-    title: "Smart Kitchen Display",
-    description: "Real-time ticket routing. No more lost paper tickets or missed modifications."
+    title: "Kitchen Display System",
+    description: "Send orders directly to the kitchen and keep your team in sync throughout service.",
+    flow: ["New", "Preparing", "Ready"]
+  },
+  {
+    icon: Package,
+    title: "Inventory Management",
+    description: "Track stock, ingredients, consumption, and inventory levels in one place.",
+    flow: ["Stock", "Usage", "Low Stock"]
   },
   {
     icon: BarChart3,
-    title: "God-Mode Analytics",
-    description: "Track revenue, staff performance, and top-selling items from anywhere in the world."
+    title: "Real-Time Analytics",
+    description: "Track sales, orders, top-selling items, peak hours, and restaurant performance.",
+    flow: ["Sales", "Orders", "Trends"]
+  },
+  {
+    icon: Users,
+    title: "Customer Management",
+    description: "Track customer profiles, order history, and repeat visits in one place.",
+    flow: ["Profile", "History", "Repeat"]
   }
 ];
 
@@ -122,31 +138,34 @@ export default function SaasLanding() {
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <Button onClick={scrollToContact} className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold rounded-full px-6">
-              Start Free Trial
+              Book a Free Demo
             </Button>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-40 pb-20 px-6 relative z-10 max-w-7xl mx-auto">
+      <section className="pt-28 pb-20 px-6 relative z-10 max-w-7xl mx-auto">
         <div className="flex flex-col items-center text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-sm font-semibold mb-8"
           >
-            <ShieldCheck className="w-4 h-4" /> Built for modern restaurants
+            <ShieldCheck className="w-4 h-4" /> Built for modern restaurants 
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl md:text-7xl font-black tracking-tight mb-8 max-w-4xl leading-[1.1] text-slate-900 dark:text-white"
+            className="text-5xl md:text-6xl font-black tracking-tight mb-8 max-w-4xl leading-[1.1] text-slate-900 dark:text-white"
           >
-            Ditch the paper tickets. <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 dark:from-indigo-400 dark:via-violet-400 dark:to-indigo-400">Digitize your dine-in.</span>
+            Run your entire restaurant <br className="hidden md:block" />
+            from one POS.
+            <span className="block mt-4 text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 dark:from-indigo-400 dark:via-violet-400 dark:to-indigo-400">
+              Billing. Orders. Kitchen. Analytics.
+            </span>
           </motion.h1>
 
           <motion.p
@@ -155,18 +174,30 @@ export default function SaasLanding() {
             transition={{ delay: 0.2 }}
             className="text-lg md:text-xl text-slate-600 dark:text-zinc-400 max-w-2xl mb-12"
           >
-            Everything you need to run your restaurant—POS, QR Ordering, Kitchen Displays, and Analytics—in one seamlessly connected platform.
+            Everything you need to run your restaurant - POS, QR Ordering, Kitchen Display, Inventory, and Analytics - in one connected platform.
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center gap-4"
+            className="flex flex-col items-center gap-4"
           >
             <Button onClick={scrollToContact} size="lg" className="h-14 px-8 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 font-bold text-lg w-full sm:w-auto">
-              Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
+              Book a Free Demo <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
+            
+            <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-sm font-medium text-slate-500 dark:text-zinc-400 mt-2">
+              <span className="flex items-center gap-1.5">
+                <Check className="w-4 h-4 text-emerald-500" /> Easy setup
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="w-4 h-4 text-emerald-500" /> Free demo
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="w-4 h-4 text-emerald-500" /> No complicated hardware
+              </span>
+            </div>
           </motion.div>
         </div>
 
@@ -528,33 +559,21 @@ export default function SaasLanding() {
         </motion.div>
       </section>
 
-      {/* Trusted By Marquee */}
-      <section className="py-12 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-black overflow-hidden relative z-10">
-        <div className="max-w-7xl mx-auto px-6 text-center mb-8">
-          <p className="text-sm font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">Powering over 10,000+ orders daily across India</p>
-        </div>
-
-        {/* Marquee Container */}
-        <div className="relative w-full flex overflow-x-hidden">
-          {/* Gradient Masks for smooth fade on edges */}
-          <div className="absolute inset-y-0 left-0 w-24 sm:w-48 bg-gradient-to-r from-white dark:from-black to-transparent z-10" />
-          <div className="absolute inset-y-0 right-0 w-24 sm:w-48 bg-gradient-to-l from-white dark:from-black to-transparent z-10" />
-
-          <motion.div
-            animate={{ x: ["0%", "-50%"] }}
-            transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
-            className="flex flex-nowrap items-center gap-12 sm:gap-24 px-12 shrink-0 w-max"
-          >
-            {[
-              "The Chinese House", "Spicy Dragon", "Mumbai Spice", "Noodle Bowl", "Dim Sum Delight", "Wok & Roll", "Golden Dragon",
-              // Duplicate for seamless loop
-              "The Chinese House", "Spicy Dragon", "Mumbai Spice", "Noodle Bowl", "Dim Sum Delight", "Wok & Roll", "Golden Dragon"
-            ].map((name, i) => (
-              <div key={i} className="text-xl sm:text-2xl font-black text-slate-300 dark:text-zinc-800 shrink-0 uppercase tracking-wider">
-                {name}
-              </div>
-            ))}
-          </motion.div>
+      {/* Ecosystem Breadcrumbs */}
+      <section className="py-12 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-black relative z-10">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-sm font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest mb-4">One platform. Every part of your restaurant.</p>
+          <div className="flex flex-wrap justify-center items-center gap-x-4 sm:gap-x-6 gap-y-3 text-xs sm:text-sm font-bold text-slate-400 dark:text-zinc-600 uppercase tracking-wider">
+            <span>POS</span>
+            <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700" />
+            <span>QR Ordering</span>
+            <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700" />
+            <span>Kitchen Display</span>
+            <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700" />
+            <span>Inventory</span>
+            <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700" />
+            <span>Analytics</span>
+          </div>
         </div>
       </section>
 
@@ -562,15 +581,16 @@ export default function SaasLanding() {
       <section id="how-it-works" className="py-24 px-6 bg-slate-50 dark:bg-zinc-950 relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">How ClassicOS transforms your restaurant.</h2>
-            <p className="text-slate-600 dark:text-zinc-400 text-lg max-w-2xl mx-auto">A seamless flow from the customer's phone to the kitchen, and straight into your pocket.</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">Everything connected. From order to insight.</h2>
+            <p className="text-slate-600 dark:text-zinc-400 text-lg max-w-2xl mx-auto">ClassicOS connects every part of your restaurant into one seamless workflow.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
             {[
-              { step: "1", title: "Customer Orders", desc: "Guests scan a QR code at their table to view the beautiful digital menu and order instantly without waiting for a waiter.", icon: <Smartphone className="w-8 h-8 text-indigo-500 dark:text-indigo-400" />, bg: "bg-indigo-50 dark:bg-indigo-500/10" },
-              { step: "2", title: "Kitchen Cooks", desc: "The order routes immediately to the Kitchen Display System. Chefs see what to cook and how long it's been waiting.", icon: <MonitorPlay className="w-8 h-8 text-rose-500 dark:text-rose-400" />, bg: "bg-rose-50 dark:bg-rose-500/10" },
-              { step: "3", title: "You Grow", desc: "Every transaction, inventory update, and table turnover is synced to your admin dashboard in real-time.", icon: <TrendingUp className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />, bg: "bg-emerald-50 dark:bg-emerald-500/10" }
+              { step: "1", title: "Customers Order", desc: "Guests can order through your QR menu, or staff can enter orders directly through the POS.", icon: <Smartphone className="w-8 h-8 text-indigo-500 dark:text-indigo-400" />, bg: "bg-indigo-50 dark:bg-indigo-500/10" },
+              { step: "2", title: "POS Handles It", desc: "Orders, tables, billing and payments stay organized in one place.", icon: <MonitorSmartphone className="w-8 h-8 text-sky-500 dark:text-sky-400" />, bg: "bg-sky-50 dark:bg-sky-500/10" },
+              { step: "3", title: "Kitchen Gets It", desc: "Orders reach the Kitchen Display System instantly, keeping your team in sync.", icon: <MonitorPlay className="w-8 h-8 text-rose-500 dark:text-rose-400" />, bg: "bg-rose-50 dark:bg-rose-500/10" },
+              { step: "4", title: "You Stay in Control", desc: "Track sales, inventory, customers and performance from your dashboard.", icon: <BarChart3 className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />, bg: "bg-emerald-50 dark:bg-emerald-500/10" }
             ].map((workflow, i) => (
               <motion.div
                 key={i}
@@ -596,11 +616,11 @@ export default function SaasLanding() {
       <section id="features" className="py-24 px-6 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-zinc-950/50 relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">The complete ecosystem.</h2>
-            <p className="text-slate-600 dark:text-zinc-400 text-lg max-w-2xl mx-auto">Stop duct-taping different software together. ClassicOS provides everything natively.</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">Everything your restaurant needs.</h2>
+            <p className="text-slate-600 dark:text-zinc-400 text-lg max-w-2xl mx-auto">One connected platform for billing, ordering, kitchen operations, inventory, and analytics.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURES.map((feat, idx) => (
               <motion.div
                 key={idx}
@@ -608,13 +628,27 @@ export default function SaasLanding() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
-                className="group p-8 rounded-3xl bg-white dark:bg-zinc-900/50 border border-slate-200 dark:border-white/5 hover:border-indigo-500/30 transition-all duration-300 hover:bg-slate-50 dark:hover:bg-zinc-900/80"
+                className="group p-8 rounded-3xl bg-white dark:bg-zinc-900/50 border border-slate-200 dark:border-white/5 hover:border-indigo-500/30 transition-all duration-300 hover:bg-slate-50 dark:hover:bg-zinc-900/80 flex flex-col h-full"
               >
                 <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <feat.icon className="w-7 h-7 text-indigo-500 dark:text-indigo-400" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-slate-900 dark:text-white">{feat.title}</h3>
-                <p className="text-slate-600 dark:text-zinc-400 leading-relaxed">{feat.description}</p>
+                <p className="text-slate-600 dark:text-zinc-400 leading-relaxed mb-8">{feat.description}</p>
+                
+                {/* Mini Flow Indicator */}
+                <div className="mt-auto flex items-center flex-wrap gap-2 pt-2">
+                  {feat.flow.map((step, stepIdx) => (
+                    <React.Fragment key={stepIdx}>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400">
+                        {step}
+                      </span>
+                      {stepIdx < feat.flow.length - 1 && (
+                        <ChevronRight className="w-3 h-3 text-slate-300 dark:text-zinc-600 shrink-0" />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
               </motion.div>
             ))}
           </div>
@@ -625,18 +659,21 @@ export default function SaasLanding() {
       <section className="py-24 px-6 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-black relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-24">
           <div className="flex-1 text-center lg:text-left">
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-6 text-slate-900 dark:text-white">Use the hardware you already own.</h2>
-            <p className="text-slate-600 dark:text-zinc-400 text-lg mb-8">No need to buy expensive, proprietary POS terminals. ClassicOS runs perfectly on any iPad, Android tablet, Windows laptop, or even your smartphone. Zero upfront hardware costs.</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-6 text-slate-900 dark:text-white">Start with the hardware you already have.</h2>
+            <p className="text-slate-600 dark:text-zinc-400 text-lg mb-8">No expensive proprietary POS terminals. Use supported tablets, laptops, or mobile devices and avoid unnecessary upfront hardware costs.</p>
             <div className="flex flex-wrap justify-center lg:justify-start gap-4">
               <div className="flex items-center gap-2 bg-slate-100 dark:bg-zinc-900 px-4 py-2 rounded-lg font-bold text-slate-700 dark:text-zinc-300">
-                <MonitorSmartphone className="w-5 h-5 text-indigo-500" /> Tablets
+                <MonitorSmartphone className="w-5 h-5 text-indigo-500" /> Tablet
               </div>
               <div className="flex items-center gap-2 bg-slate-100 dark:bg-zinc-900 px-4 py-2 rounded-lg font-bold text-slate-700 dark:text-zinc-300">
-                <Smartphone className="w-5 h-5 text-rose-500" /> Phones
+                <MonitorPlay className="w-5 h-5 text-emerald-500" /> Laptop
               </div>
               <div className="flex items-center gap-2 bg-slate-100 dark:bg-zinc-900 px-4 py-2 rounded-lg font-bold text-slate-700 dark:text-zinc-300">
-                <MonitorPlay className="w-5 h-5 text-emerald-500" /> Laptops
+                <Smartphone className="w-5 h-5 text-rose-500" /> Mobile
               </div>
+            </div>
+            <div className="mt-8 inline-block px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold rounded-lg text-sm border border-emerald-200 dark:border-emerald-500/20">
+              No proprietary hardware required.
             </div>
           </div>
           <div className="flex-1 w-full relative">
@@ -654,21 +691,31 @@ export default function SaasLanding() {
                     </div>
                   </div>
                 </div>
-                <div className="text-center mt-3 text-slate-400 font-bold text-xs uppercase tracking-widest">iPad / Android</div>
+                <div className="text-center mt-3">
+                  <div className="text-slate-200 font-black text-xs uppercase tracking-widest">Tablet</div>
+                  <div className="text-indigo-400 font-bold text-[10px] uppercase tracking-wider mt-0.5">POS & Billing</div>
+                </div>
               </div>
               <div className="grid grid-rows-2 gap-4">
+                <div className="bg-white dark:bg-zinc-800 rounded-2xl p-4 border border-slate-200 dark:border-white/5 shadow-xl flex items-center justify-center flex-col gap-1 text-center">
+                  <MonitorPlay className="w-8 h-8 text-emerald-500 mb-1" />
+                  <span className="font-black text-slate-800 dark:text-white text-xs uppercase tracking-widest">Desktop</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[9px] uppercase tracking-wider">Dashboard & Management</span>
+                </div>
                 <div className="bg-slate-900 rounded-3xl p-3 border-4 border-slate-800 flex flex-col shadow-xl">
                   <div className="flex-1 bg-[#0A0A0B] rounded-lg flex items-center justify-center">
-                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center"><CheckCircle2 className="w-5 h-5 text-emerald-500" /></div>
+                    <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center"><BarChart3 className="w-5 h-5 text-rose-500" /></div>
                   </div>
-                  <div className="text-center mt-2 text-slate-400 font-bold text-[10px] uppercase tracking-widest">Mobile</div>
-                </div>
-                <div className="bg-white dark:bg-zinc-800 rounded-2xl p-4 border border-slate-200 dark:border-white/5 shadow-xl flex items-center justify-center flex-col gap-2">
-                  <MonitorPlay className="w-8 h-8 text-indigo-500" />
-                  <span className="font-bold text-slate-800 dark:text-white text-sm">Desktop</span>
+                  <div className="text-center mt-2">
+                    <div className="text-slate-200 font-black text-[10px] uppercase tracking-widest">Mobile</div>
+                    <div className="text-rose-400 font-bold text-[9px] uppercase tracking-wider mt-0.5">Reports & Monitoring</div>
+                  </div>
                 </div>
               </div>
             </div>
+            <p className="text-center mt-8 text-sm font-bold text-slate-500 dark:text-zinc-500">
+              Start with what you have. Upgrade when you need to.
+            </p>
           </div>
         </div>
       </section>
@@ -677,33 +724,43 @@ export default function SaasLanding() {
       <section id="compare" className="py-24 px-6 bg-slate-50 dark:bg-zinc-950 relative z-10 border-t border-slate-200 dark:border-white/5">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">Why switch to ClassicOS?</h2>
-            <p className="text-slate-600 dark:text-zinc-400 text-lg max-w-2xl mx-auto">See how we stack up against traditional, legacy systems.</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">Built for modern restaurant operations.</h2>
+            <p className="text-slate-600 dark:text-zinc-400 text-lg max-w-2xl mx-auto">See how ClassicOS simplifies the way you run your restaurant.</p>
           </div>
 
           <div className="bg-white dark:bg-zinc-900/80 rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden">
             <div className="grid grid-cols-3 bg-slate-100 dark:bg-black/40 border-b border-slate-200 dark:border-white/10 p-6">
-              <div className="font-bold text-slate-500 dark:text-zinc-400">Feature</div>
-              <div className="font-black text-slate-800 dark:text-white text-center">Traditional POS</div>
-              <div className="font-black text-indigo-600 dark:text-indigo-400 text-center">ClassicOS</div>
+              <div className="font-bold text-slate-500 dark:text-zinc-400 text-sm sm:text-base">Feature</div>
+              <div className="font-black text-slate-700 dark:text-zinc-300 text-center text-sm sm:text-base">Traditional POS Setup</div>
+              <div className="font-black text-indigo-600 dark:text-indigo-400 text-center text-sm sm:text-base">ClassicOS</div>
             </div>
             {[
-              { f: "Upfront Hardware Cost", o: "₹50,000+", c: "₹0 (Use your own devices)" },
-              { f: "3rd Party Commissions", o: "Up to 30%", c: "0% Flat" },
-              { f: "System Updates", o: "Paid, requires technician", c: "Free, automatic cloud updates" },
-              { f: "Kitchen Display System", o: "Extra ₹15,000 setup", c: "Included in every plan" },
-              { f: "Remote Access", o: "Store only", c: "Access anywhere via mobile" }
+              { f: "Hardware", o: "Dedicated hardware may be required", c: "Use supported devices you already own" },
+              { f: "Updates", o: "Provider-dependent", c: "Automatic cloud updates" },
+              { f: "Kitchen Display", o: "May require separate setup", c: "Integrated with ClassicOS" },
+              { f: "Remote Access", o: "Depends on the system", c: "Monitor your restaurant from anywhere" },
+              { f: "Setup", o: "Hardware and configuration dependent", c: "Software-first setup" },
+              { f: "Platform", o: "Multiple tools may be needed", c: "One connected platform" }
             ].map((row, i) => (
-              <div key={i} className={`grid grid-cols-3 p-6 items-center ${i !== 4 ? 'border-b border-slate-100 dark:border-white/5' : ''}`}>
-                <div className="font-semibold text-slate-800 dark:text-zinc-200 text-sm sm:text-base">{row.f}</div>
-                <div className="text-center flex items-center justify-center gap-2 text-rose-500 dark:text-rose-400 font-medium text-sm sm:text-base">
-                  <X className="w-4 h-4 hidden sm:block" /> {row.o}
+              <div key={i} className={`grid grid-cols-3 p-6 items-center ${i !== 5 ? 'border-b border-slate-100 dark:border-white/5' : ''}`}>
+                <div className="font-semibold text-slate-800 dark:text-zinc-200 text-sm sm:text-base pr-2">{row.f}</div>
+                <div className="text-center flex items-center justify-center text-slate-600 dark:text-zinc-400 font-medium text-xs sm:text-sm px-2">
+                  {row.o}
                 </div>
-                <div className="text-center flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm sm:text-base">
-                  <CheckCircle2 className="w-5 h-5 hidden sm:block" /> {row.c}
+                <div className="text-center flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs sm:text-sm px-2">
+                  <CheckCircle2 className="w-4 h-4 hidden sm:block shrink-0" /> {row.c}
                 </div>
               </div>
             ))}
+          </div>
+          
+          <div className="mt-16 text-center flex flex-col items-center">
+            <p className="text-xl md:text-2xl font-bold text-slate-700 dark:text-zinc-300 mb-8">
+              Less hardware. Fewer disconnected tools. One connected restaurant platform.
+            </p>
+            <Button onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })} className="h-14 px-8 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg transition-all flex items-center group">
+              Book a Free Demo <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
+            </Button>
           </div>
         </div>
       </section>
@@ -712,16 +769,17 @@ export default function SaasLanding() {
       <section id="faq" className="py-24 px-6 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-black relative z-10">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">Got questions?</h2>
-            <p className="text-slate-600 dark:text-zinc-400 text-lg">Everything you need to know about the product.</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">Questions? We've got answers.</h2>
+            <p className="text-slate-600 dark:text-zinc-400 text-lg max-w-2xl mx-auto">Everything you need to know before getting started with ClassicOS.</p>
           </div>
 
           <div className="flex flex-col gap-4">
             {[
-              { q: "Do I need to buy special hardware?", a: "No! ClassicOS runs in the browser or as a PWA, meaning you can use any iPad, Android tablet, smartphone, or Windows PC you already own." },
-              { q: "How long does it take to set up?", a: "You can be fully set up in under 15 minutes. Just upload your menu, connect your Stripe account, and start taking orders instantly." },
-              { q: "What happens if my internet goes down?", a: "ClassicOS has a robust offline mode for the POS. It will continue taking orders and sync them to the cloud automatically once your connection is restored." },
-              { q: "Am I locked into a contract?", a: "Never. We believe in earning your business every month. You can cancel your subscription at any time with zero penalty." }
+              { q: "Do I need to buy special hardware?", a: "No dedicated ClassicOS hardware is required. You can use supported tablets, laptops, or mobile devices. Hardware requirements may vary depending on printers, payment devices, or other restaurant equipment." },
+              { q: "Can I use my existing printer and hardware?", a: "ClassicOS supports compatible restaurant hardware, so you can continue using supported printers and devices instead of replacing everything." },
+              { q: "Can you help me set up ClassicOS?", a: "Yes. We help you set up your menu, tables, staff, taxes, and devices so your team can start using ClassicOS with minimal disruption." },
+              { q: "What happens if my internet goes down?", a: "ClassicOS continues to support essential POS operations during temporary internet outages, and data syncs when the connection is restored." },
+              { q: "Can I manage my restaurant remotely?", a: "Yes. Monitor sales, orders, inventory, and restaurant performance from your dashboard remotely." }
             ].map((faq, i) => (
               <div
                 key={i}
@@ -759,8 +817,8 @@ export default function SaasLanding() {
         <div className="max-w-4xl mx-auto bg-white dark:bg-zinc-900/80 rounded-3xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden flex flex-col md:flex-row">
           <div className="w-full md:w-2/5 bg-indigo-600 dark:bg-indigo-900 p-8 sm:p-12 text-white flex flex-col justify-between">
             <div>
-              <h3 className="text-2xl font-black mb-4">Let's talk.</h3>
-              <p className="text-indigo-100 mb-8 opacity-90">Ready to digitize your restaurant? Fill out the form and our team will get back to you within 24 hours.</p>
+              <h3 className="text-3xl font-black mb-4 leading-tight">Ready to run your restaurant smarter?</h3>
+              <p className="text-indigo-100 mb-8 opacity-90 text-lg">See how ClassicOS can simplify billing, orders, kitchen operations and analytics.</p>
               <div className="space-y-4">
                 {contactInfo.contact_email && (
                   <div className="flex items-center gap-3">
@@ -795,21 +853,21 @@ export default function SaasLanding() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Name</label>
-                    <input required type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white" placeholder="John Doe" />
+                    <input required type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white" placeholder="Your name" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Restaurant Name</label>
-                    <input required type="text" value={formData.restaurant_name} onChange={e => setFormData({ ...formData, restaurant_name: e.target.value })} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white" placeholder="Golden Dragon" />
+                    <input required type="text" value={formData.restaurant_name} onChange={e => setFormData({ ...formData, restaurant_name: e.target.value })} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white" placeholder="Enter your restaurant name" />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Email</label>
-                    <input required type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white" placeholder="john@example.com" />
+                    <input required type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white" placeholder="Your email address" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Phone</label>
-                    <input required type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white" placeholder="+91 99999 99999" />
+                    <input required type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white" placeholder="Your phone number" />
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -819,9 +877,12 @@ export default function SaasLanding() {
                 {formStatus === "error" && (
                   <p className="text-red-500 text-sm font-medium">Failed to submit. Please try again.</p>
                 )}
-                <Button type="submit" disabled={formStatus === "submitting"} className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base mt-4 transition-all">
-                  {formStatus === "submitting" ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Sending...</> : "Submit Enquiry"}
-                </Button>
+                <div>
+                  <Button type="submit" disabled={formStatus === "submitting"} className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-base mt-4 transition-all flex items-center justify-center group">
+                    {formStatus === "submitting" ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Sending...</> : <>Book a Free Demo <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" /></>}
+                  </Button>
+                  <p className="text-center text-xs font-medium text-slate-500 dark:text-zinc-500 mt-3">No commitment. Free product walkthrough.</p>
+                </div>
               </form>
             )}
           </div>
