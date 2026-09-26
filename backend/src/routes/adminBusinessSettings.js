@@ -293,4 +293,28 @@ router.post("/factory-reset", adminAuth, authorizeRole(['admin']), async (req, r
   }
 });
 
+router.put("/theme", adminAuth, authorizeRole(['admin', 'manager']), async (req, res) => {
+  try {
+    const { theme } = req.body;
+    if (!theme) return res.status(400).json({ error: "Theme is required" });
+    
+    // Ensure the theme is allowed for this business
+    const checkRes = await pool.query("SELECT available_themes FROM businesses WHERE id = $1", [req.business_id]);
+    const available = checkRes.rows[0]?.available_themes || ["classic"];
+    if (!available.includes(theme)) {
+      return res.status(403).json({ error: "This theme is not unlocked for your account." });
+    }
+
+    await pool.query(
+      "UPDATE businesses SET active_dashboard_theme = $1 WHERE id = $2",
+      [theme, req.business_id]
+    );
+
+    res.json({ message: "Dashboard theme updated successfully." });
+  } catch (err) {
+    console.error("Error updating theme:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 module.exports = router;

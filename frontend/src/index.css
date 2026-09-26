@@ -91,6 +91,77 @@
     --sidebar-border: 20 10% 20%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+  [data-dashboard-theme="saas-dark"] {
+    --primary: 243 75% 59%;
+    --ring: 243 75% 59%;
+  }
+
+  [data-dashboard-theme="saas-dark"].dark {
+    --background: 240 10% 4%;
+    --card: 240 5% 10%;
+    --border: 240 10% 20%;
+    --muted: 240 10% 15%;
+    --foreground: 0 0% 98%;
+    --card-foreground: 0 0% 98%;
+  }
+
+  [data-dashboard-theme="saas-dark"]:not(.dark) {
+    --background: 240 20% 98%;
+    --card: 0 0% 100%;
+    --border: 240 10% 90%;
+    --muted: 240 10% 95%;
+    --foreground: 240 10% 10%;
+    --card-foreground: 240 10% 10%;
+  }
+
+  /* Aqua Glass Theme */
+  [data-dashboard-theme="aqua"] {
+    --primary: 185 80% 45%;
+    --ring: 185 80% 45%;
+  }
+
+  [data-dashboard-theme="aqua"].dark {
+    --background: 195 50% 4%;
+    --card: 195 40% 8%;
+    --border: 195 30% 15%;
+    --muted: 195 30% 12%;
+    --foreground: 185 20% 98%;
+    --card-foreground: 185 20% 98%;
+  }
+
+  [data-dashboard-theme="aqua"]:not(.dark) {
+    --background: 185 20% 98%;
+    --card: 0 0% 100%;
+    --border: 185 20% 90%;
+    --muted: 185 20% 95%;
+    --foreground: 195 50% 10%;
+    --card-foreground: 195 50% 10%;
+  }
+
+  /* Sunset Glow Theme */
+  [data-dashboard-theme="sunset"] {
+    --primary: 15 90% 60%;
+    --ring: 15 90% 60%;
+  }
+
+  [data-dashboard-theme="sunset"].dark {
+    --background: 10 30% 5%;
+    --card: 10 25% 9%;
+    --border: 10 20% 16%;
+    --muted: 10 20% 12%;
+    --foreground: 20 20% 98%;
+    --card-foreground: 20 20% 98%;
+  }
+
+  [data-dashboard-theme="sunset"]:not(.dark) {
+    --background: 20 30% 98%;
+    --card: 0 0% 100%;
+    --border: 20 20% 90%;
+    --muted: 20 20% 95%;
+    --foreground: 10 30% 10%;
+    --card-foreground: 10 30% 10%;
+  }
 }
 
 @layer base {

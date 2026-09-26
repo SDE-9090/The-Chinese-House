@@ -277,11 +277,13 @@ router.post("/login", loginLimiter, async (req, res) => {
 router.get("/me", adminAuth, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT features, parent_business_id FROM businesses WHERE id = $1",
+      "SELECT features, parent_business_id, available_themes, active_dashboard_theme FROM businesses WHERE id = $1",
       [req.admin.business_id]
     );
     const features = result.rows.length ? result.rows[0].features : {};
     const parent_business_id = result.rows.length ? result.rows[0].parent_business_id : null;
+    const available_themes = result.rows.length ? result.rows[0].available_themes : ["classic"];
+    const active_dashboard_theme = result.rows.length ? result.rows[0].active_dashboard_theme : "classic";
 
     let user = req.admin;
     if (req.admin.isStaff) {
@@ -299,7 +301,7 @@ router.get("/me", adminAuth, async (req, res) => {
     
     res.json({ 
       authenticated: true, 
-      user: { ...user, parent_business_id },
+      user: { ...user, parent_business_id, available_themes, active_dashboard_theme },
       features
     });
   } catch (err) {

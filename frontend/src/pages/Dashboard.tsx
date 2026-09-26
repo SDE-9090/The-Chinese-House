@@ -49,6 +49,7 @@ import {
   RefreshCw,
   DownloadCloud,
   Network,
+  Palette,
 } from "lucide-react";
 
 import { Loader2 } from "lucide-react";
@@ -80,6 +81,7 @@ const PromotionManager = lazy(() => import("@/components/dashboard/PromotionMana
 const LocationManager = lazy(() => import("@/components/dashboard/LocationManager"));
 const CounterOrder = lazy(() => import("@/components/dashboard/CounterOrder"));
 const BusinessSettingsManager = lazy(() => import("@/components/dashboard/BusinessSettingsManager"));
+const AppearanceSettings = lazy(() => import("@/components/dashboard/AppearanceSettings"));
 const TableManager = lazy(() => import("@/components/dashboard/TableManager"));
 const StaffManager = lazy(() => import("@/components/dashboard/StaffManager"));
 const CustomerManagement = lazy(() => import("@/components/dashboard/CustomerManagement"));
@@ -637,6 +639,7 @@ const Dashboard = () => {
 };
 
 const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => void }) => {
+  const token = localStorage.getItem("admin_auth_token") || "";
   const { orders, refreshOrders, optimisticUpdateStatus, unlockOrder, isLoading } = useOrders(true);
 
   useAutoPrint(orders, isLoading);
@@ -646,10 +649,10 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
   const [tab, setTab] = useState<
     "orders" | "tables" | "sales" | "analytics" | "content" | "management" | "system" | "staff" | "branches"
   >("orders");
-  const [contentSubTab, setContentSubTab] = useState<"menu" | "hero" | "gallery" | "page" | "address" | "promotions">("menu");
-  const [managementSubTab, setManagementSubTab] = useState<"coupons" | "reviews" | "qr-codes" | "customers">("qr-codes");
+  const [contentSubTab, setContentSubTab] = useState<"hero" | "gallery" | "page" | "address" | "promotions">("hero");
+  const [managementSubTab, setManagementSubTab] = useState<"menu" | "coupons" | "reviews" | "qr-codes" | "customers">("menu");
   const [analyticsSubTab, setAnalyticsSubTab] = useState<"menu" | "table">("menu");
-  const [settingsSubTab, setSettingsSubTab] = useState<"security" | "account" | "business" | "updates" | "audit_logs">("business");
+  const [settingsSubTab, setSettingsSubTab] = useState<"appearance" | "security" | "account" | "business" | "updates" | "audit_logs">("business");
   const [orderSubTab, setOrderSubTab] = useState<"active" | "history" | "counter-order">("active");
   const [statusFilter, setStatusFilter] = useState<Order["status"] | "all">(
     "all",
@@ -673,6 +676,28 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
       apiAdminGetBusinessSettings().then(s => setOrderWorkflow(s.orderWorkflow || "quick-complete")).catch(() => { });
     });
   }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const theme = (user as any).active_dashboard_theme || "classic";
+    root.setAttribute("data-dashboard-theme", theme);
+
+    // Apply dark class according to localStorage
+    const isLocalDark = localStorage.getItem("theme") === "dark";
+    if (isLocalDark) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+
+    // Clean up any old inline variables that might be present
+    root.style.removeProperty("--primary");
+    root.style.removeProperty("--ring");
+    root.style.removeProperty("--background");
+    root.style.removeProperty("--card");
+    root.style.removeProperty("--border");
+    root.style.removeProperty("--muted");
+  }, [user]);
 
   const prevStatusesRef = useRef<Record<string, string>>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -1140,7 +1165,6 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
           <div className="container mx-auto px-4 pb-8 py-4">
             <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
               {[
-                { key: "menu" as const, label: "Menu", icon: UtensilsCrossed },
                 { key: "hero" as const, label: "Hero", icon: ImageIcon, check: () => user.features?.website_cms },
                 { key: "gallery" as const, label: "Gallery", icon: ImageIcon, check: () => user.features?.website_cms },
                 { key: "page" as const, label: "Page Content", icon: FileText, check: () => user.features?.website_cms },
@@ -1160,9 +1184,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               ))}
             </div>
 
-            {contentSubTab === "menu" ? (
-              <MenuManager />
-            ) : contentSubTab === "hero" ? (
+            {contentSubTab === "hero" ? (
               <HeroManager />
             ) : contentSubTab === "gallery" ? (
               <GalleryManager />
@@ -1204,6 +1226,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
           <div className="container mx-auto px-4 pb-8 py-4">
             <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
               {[
+                { key: "menu" as const, label: "Menu", icon: UtensilsCrossed },
                 { key: "qr-codes" as const, label: "QR Codes", icon: QrCode, check: () => user.features?.qr_digital_ordering !== false },
                 { key: "customers" as const, label: "Customers", icon: Users },
                 { key: "coupons" as const, label: "Coupons", icon: Ticket, check: () => user.features?.coupon_engine },
@@ -1222,7 +1245,9 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
               ))}
             </div>
 
-            {managementSubTab === "qr-codes" ? (
+            {managementSubTab === "menu" ? (
+              <MenuManager />
+            ) : managementSubTab === "qr-codes" ? (
               <TableQRCodes />
             ) : managementSubTab === "customers" ? (
               <CustomerManagement />
@@ -1237,6 +1262,7 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
             <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: "none" }}>
               {[
                 { key: "business" as const, label: "Business & GST", icon: Settings },
+                { key: "appearance" as const, label: "Appearance", icon: Palette },
                 { key: "account" as const, label: "Security", icon: ShieldCheck },
                 { key: "security" as const, label: "Login Logs", icon: Shield },
                 { key: "audit_logs" as const, label: "Audit Logs", icon: History },
@@ -1259,6 +1285,8 @@ const DashboardContent = ({ user, onLogout }: { user: AuthUser, onLogout: () => 
 
             {settingsSubTab === "business" ? (
               <BusinessSettingsManager user={user} />
+            ) : settingsSubTab === "appearance" ? (
+              <AppearanceSettings user={user} token={token} />
             ) : settingsSubTab === "account" ? (
               <AccountSecurity />
             ) : settingsSubTab === "security" ? (

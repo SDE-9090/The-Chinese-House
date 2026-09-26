@@ -210,7 +210,7 @@ router.delete("/audit-logs", async (req, res) => {
 router.get("/businesses", async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT b.id, b.name, b.slug, b.status, b.is_active, b.created_at, b.features, b.subscription_tier, b.parent_business_id,
+      SELECT b.id, b.name, b.slug, b.status, b.is_active, b.created_at, b.features, b.subscription_tier, b.parent_business_id, b.available_themes,
              a.mobile_number as owner_phone, t.monthly_order_limit,
              pb.name as parent_name, pb.slug as parent_slug,
              (SELECT COUNT(*) FROM orders o WHERE o.business_id = b.id AND date_trunc('month', o.created_at) = date_trunc('month', CURRENT_DATE)) as current_month_orders,
@@ -406,7 +406,7 @@ router.post("/businesses", async (req, res) => {
 // ======================================================
 router.put("/businesses/:id", async (req, res) => {
   const { id } = req.params;
-  const { name, slug, phone, password } = req.body;
+  const { name, slug, phone, password, available_themes } = req.body;
 
   if (!name || !slug || !phone) {
     return res.status(400).json({ error: "Name, slug, and phone are required" });
@@ -424,11 +424,18 @@ router.put("/businesses/:id", async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    // 1. Update Business (name, slug)
-    await client.query(
-      "UPDATE businesses SET name = $1, slug = $2 WHERE id = $3",
-      [name, slug, id]
-    );
+    // 1. Update Business (name, slug, available_themes)
+    if (available_themes && Array.isArray(available_themes)) {
+      await client.query(
+        "UPDATE businesses SET name = $1, slug = $2, available_themes = $3 WHERE id = $4",
+        [name, slug, available_themes, id]
+      );
+    } else {
+      await client.query(
+        "UPDATE businesses SET name = $1, slug = $2 WHERE id = $3",
+        [name, slug, id]
+      );
+    }
 
     // 2. Update Admin Account phone
     await client.query(

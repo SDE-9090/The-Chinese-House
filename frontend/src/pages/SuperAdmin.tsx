@@ -90,6 +90,7 @@ export default function SuperAdmin() {
   const [editSlug, setEditSlug] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editPassword, setEditPassword] = useState("");
+  const [editAvailableThemes, setEditAvailableThemes] = useState<string[]>(["classic"]);
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [tenantAnalyticsModal, setTenantAnalyticsModal] = useState<{ isOpen: boolean, business: any }>({ isOpen: false, business: null });
@@ -508,6 +509,7 @@ export default function SuperAdmin() {
     setEditSlug(business.slug);
     setEditPhone(business.owner_phone);
     setEditPassword("");
+    setEditAvailableThemes(business.available_themes || ["classic"]);
     setEditModal({ isOpen: true, business });
   };
 
@@ -522,7 +524,7 @@ export default function SuperAdmin() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ name: editName, slug: editSlug, phone: editPhone, password: editPassword }),
+        body: JSON.stringify({ name: editName, slug: editSlug, phone: editPhone, password: editPassword, available_themes: editAvailableThemes }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -1779,6 +1781,39 @@ export default function SuperAdmin() {
             <div>
               <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">New Password (Optional)</label>
               <Input type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Leave blank to keep unchanged" className="bg-slate-50 dark:bg-zinc-950" />
+            </div>
+            <div>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 block mb-2">Allowed Dashboard Themes</label>
+              <div className="flex gap-4 flex-wrap">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" checked={editAvailableThemes.includes("classic")} onChange={(e) => {
+                    if (e.target.checked) setEditAvailableThemes(prev => [...prev, "classic"]);
+                    else setEditAvailableThemes(prev => prev.filter(t => t !== "classic"));
+                  }} />
+                  <span className="text-sm font-medium">Classic</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" checked={editAvailableThemes.includes("saas-dark")} onChange={(e) => {
+                    if (e.target.checked) setEditAvailableThemes(prev => [...prev, "saas-dark"]);
+                    else setEditAvailableThemes(prev => prev.filter(t => t !== "saas-dark"));
+                  }} />
+                  <span className="text-sm font-medium">SaaS Premium</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" checked={editAvailableThemes.includes("aqua")} onChange={(e) => {
+                    if (e.target.checked) setEditAvailableThemes(prev => [...prev, "aqua"]);
+                    else setEditAvailableThemes(prev => prev.filter(t => t !== "aqua"));
+                  }} />
+                  <span className="text-sm font-medium">Aqua Glass</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" checked={editAvailableThemes.includes("sunset")} onChange={(e) => {
+                    if (e.target.checked) setEditAvailableThemes(prev => [...prev, "sunset"]);
+                    else setEditAvailableThemes(prev => prev.filter(t => t !== "sunset"));
+                  }} />
+                  <span className="text-sm font-medium">Sunset Glow</span>
+                </label>
+              </div>
             </div>
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => setEditModal({ isOpen: false, business: null })}>Cancel</Button>

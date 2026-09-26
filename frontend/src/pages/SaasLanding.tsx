@@ -32,7 +32,6 @@ const FEATURES = [
 
 export default function SaasLanding() {
   const navigate = useNavigate();
-  const [tiers, setTiers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'pos'>('overview');
   const [posCart, setPosCart] = useState<any[]>([]);
   const [isSending, setIsSending] = useState(false);
@@ -59,15 +58,6 @@ export default function SaasLanding() {
   };
 
   useEffect(() => {
-    // We could fetch real tiers here from the public API if we had one.
-    // For the landing page, hardcoding visually is fine for maximum speed, 
-    // or we can mock it here to match the database exactly.
-    setTiers([
-      { name: "free", price: 0, limit: "1k", features: ["POS System", "Kitchen Display", "Manual Orders"] },
-      { name: "pro", price: 2999, limit: "5k", features: ["Everything in Free", "QR Digital Ordering", "Advanced Analytics", "Customer Reviews"] },
-      { name: "enterprise", price: 8999, limit: "Unlimited", features: ["Everything in Pro", "Website CMS", "Coupon Engine", "Priority Support"] }
-    ]);
-
     // Fetch SAAS Contact Info
     const fetchContactInfo = async () => {
       try {
@@ -125,7 +115,6 @@ export default function SaasLanding() {
             <a href="#how-it-works" className="hover:text-slate-900 dark:hover:text-white transition-colors">How it works</a>
             <a href="#features" className="hover:text-slate-900 dark:hover:text-white transition-colors">Features</a>
             <a href="#compare" className="hover:text-slate-900 dark:hover:text-white transition-colors">Compare</a>
-            <a href="#pricing" className="hover:text-slate-900 dark:hover:text-white transition-colors">Pricing</a>
             <a href="#faq" className="hover:text-slate-900 dark:hover:text-white transition-colors">FAQ</a>
             <a href="#contact" className="hover:text-slate-900 dark:hover:text-white transition-colors">Contact</a>
           </div>
@@ -760,62 +749,6 @@ export default function SaasLanding() {
                   )}
                 </AnimatePresence>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-6 relative z-10">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">Simple, transparent pricing.</h2>
-            <p className="text-slate-600 dark:text-zinc-400 text-lg max-w-2xl mx-auto">Pay as you grow. No hidden fees or surprise charges.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {tiers.map((tier, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className={`p-8 rounded-3xl border ${tier.name === 'pro' ? 'bg-indigo-50 dark:bg-indigo-600/10 border-indigo-500/50 relative overflow-hidden' : 'bg-white dark:bg-zinc-900/50 border-slate-200 dark:border-white/10'} flex flex-col`}
-              >
-                {tier.name === 'pro' && (
-                  <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500 to-violet-500" />
-                )}
-                <h3 className="text-2xl font-bold capitalize mb-2 text-slate-900 dark:text-white flex items-center justify-between">
-                  {tier.name}
-                  {tier.name === 'pro' && <span className="text-xs font-black uppercase tracking-wider bg-indigo-500 text-white px-3 py-1 rounded-full">Most Popular</span>}
-                </h3>
-                <div className="mb-6">
-                  <span className="text-4xl font-black text-slate-900 dark:text-white">₹{tier.price}</span>
-                  <span className="text-slate-500 dark:text-zinc-500">/mo</span>
-                </div>
-
-                <div className="bg-slate-50 dark:bg-black/20 rounded-xl p-4 mb-8 border border-slate-200 dark:border-white/5">
-                  <div className="text-sm font-semibold text-slate-600 dark:text-zinc-300 mb-1">Monthly Order Limit</div>
-                  <div className="text-xl font-black text-slate-900 dark:text-white">{tier.limit} Orders</div>
-                </div>
-
-                <div className="flex-1 space-y-4 mb-8">
-                  {tier.features.map((f: string, i: number) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <CheckCircle2 className={`w-5 h-5 shrink-0 ${tier.name === 'pro' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`} />
-                      <span className="text-slate-600 dark:text-zinc-300">{f}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button
-                  onClick={scrollToContact}
-                  className={`w-full h-12 rounded-xl font-bold text-base ${tier.name === 'pro' ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200'}`}
-                >
-                  Get Started
-                </Button>
-              </motion.div>
             ))}
           </div>
         </div>
