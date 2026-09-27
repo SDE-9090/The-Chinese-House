@@ -41,7 +41,7 @@ function normalizeBusinessSettings(row = {}) {
     cgstRate: row.cgst_rate != null ? Number(row.cgst_rate) : DEFAULT_CGST_RATE,
     sgstRate: row.sgst_rate != null ? Number(row.sgst_rate) : DEFAULT_SGST_RATE,
     kitchenPin: row.kitchen_pin || "1234",
-    theme: row.theme || "gourmet-royal",
+    theme: row.theme || "classic",
     orderWorkflow: row.order_workflow || "quick-complete",
     printerWidth: row.printer_width || "58mm",
     loyaltyEnabled: row.loyalty_enabled !== false, // Default to true if null, or maybe false? The DB has default true. Let's say row.loyalty_enabled ?? false. Wait, existing DB might have it null? Actually schema has default true.

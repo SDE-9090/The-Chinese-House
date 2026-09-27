@@ -340,3 +340,46 @@ html {
 ::view-transition-new(root) {
   z-index: 2;
 }
+  [data-storefront-theme="modern-italian"] {
+    --background: 40 40% 97%; /* Warm cream */
+    --foreground: 20 20% 15%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 20 20% 15%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 20% 15%;
+    
+    --primary: 15 45% 45%; /* Terracotta */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 65 20% 40%; /* Olive Green */
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 40 20% 90%;
+    --muted-foreground: 20 10% 40%;
+    
+    --accent: 15 45% 45%;
+    --accent-foreground: 0 0% 100%;
+    
+    --border: 30 20% 85%;
+    --input: 30 20% 85%;
+    --ring: 15 45% 45%;
+    
+    --radius: 0.25rem; /* Slightly sharper, elegant corners */
+  }
+
+  [data-storefront-theme="modern-italian"].dark {
+    --background: 20 10% 10%; /* Dark Espresso */
+    --foreground: 40 40% 97%;
+    
+    --card: 20 10% 14%;
+    --card-foreground: 40 40% 97%;
+    
+    --primary: 15 55% 55%; /* Lighter Terracotta for dark mode */
+    --primary-foreground: 20 20% 15%;
+    
+    --border: 20 10% 20%;
+    --input: 20 10% 20%;
+    --ring: 15 55% 55%;
+  }

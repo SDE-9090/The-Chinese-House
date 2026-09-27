@@ -46,6 +46,7 @@ router.put("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res)
     printerWidth,
     winbackDiscountType,
     winbackDiscountValue,
+    theme,
   } = req.body;
 
   if (restaurantName !== undefined) {
@@ -113,6 +114,12 @@ router.put("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res)
   if (loyaltyDiscountPerPoint !== undefined) {
     if (typeof loyaltyDiscountPerPoint !== "number" || loyaltyDiscountPerPoint < 0) {
       return res.status(400).json({ error: "Discount per point must be a non-negative number" });
+    }
+  }
+
+  if (theme !== undefined) {
+    if (typeof theme !== "string" || !["classic", "modern-italian"].includes(theme)) {
+      return res.status(400).json({ error: "Invalid theme selected" });
     }
   }
 
@@ -213,6 +220,18 @@ router.put("/", adminAuth, authorizeRole(['admin', 'manager']), async (req, res)
     } else {
       const featureRes = await pool.query("SELECT features FROM businesses WHERE id = $1", [req.business_id]);
       updated.features = featureRes.rows[0]?.features || {};
+    }
+    
+    // Update theme if provided
+    if (theme !== undefined) {
+      await pool.query(
+        "UPDATE businesses SET theme = $1 WHERE id = $2",
+        [theme, req.business_id]
+      );
+      updated.theme = theme;
+    } else {
+      const themeRes = await pool.query("SELECT theme FROM businesses WHERE id = $1", [req.business_id]);
+      updated.theme = themeRes.rows[0]?.theme || "classic";
     }
     
     // Notify frontend via socket

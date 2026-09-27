@@ -14,7 +14,7 @@ export const useBusinessSettings = () => {
     cgstRate: 2.5,
     sgstRate: 2.5,
     kitchenPin: "1234",
-    theme: "gourmet-royal",
+    theme: "classic",
     landingPageContent: {
       about_title: "A Taste of <span class='text-primary'>Chinese</span> Tradition",
       about_description: "The Chinese House brings authentic Chinese dining culture to you. From classic dim sums to sizzling hot main courses, we serve happiness in every bite.",

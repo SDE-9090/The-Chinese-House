@@ -13,6 +13,7 @@ import ReceiptLookup from "@/components/ReceiptLookup";
 import Footer from "@/components/Footer";
 import MobileOrderButton from "@/components/MobileOrderButton";
 import NotFound from "./NotFound";
+import ItalianLandingPage from "@/themes/italian/ItalianLandingPage";
 import { apiGetBusinessSettings, type BusinessSettings } from "@/lib/apiClient";
 import { Ban } from "lucide-react";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
@@ -47,6 +48,12 @@ const Index = () => {
     );
   }
 
+  // Conditionally render the Italian Theme
+  if (businessSettings?.theme === "modern-italian") {
+    return <ItalianLandingPage />;
+  }
+
+  // Default Classic Theme
   return (
     <main className="overflow-x-hidden">
       <Navbar />

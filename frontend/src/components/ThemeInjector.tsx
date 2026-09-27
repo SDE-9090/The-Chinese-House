@@ -3,18 +3,8 @@ import { apiGetPublicBusinessInfo, type PublicBusinessInfo } from "@/lib/apiClie
 import { socket } from "@/lib/socket";
 
 const ALL_THEME_CLASSES = [
-  "theme-hennys-classic",
   "theme-gourmet-royal",
-  "theme-midnight-bistro",
-  "theme-summer-cafe",
-  "theme-chalkboard",
-  "theme-neon-pulse",
-  "theme-rose-garden",
-  "theme-ocean-breeze",
-  "theme-ember-grill",
-  "theme-matcha-zen",
-  "theme-lavender-dusk",
-  "theme-truffle-noir",
+  "theme-modern-italian",
 ];
 
 const ThemeInjector = () => {
@@ -99,8 +89,7 @@ const ThemeInjector = () => {
     // Clear all previous theme classes
     ALL_THEME_CLASSES.forEach((t) => root.classList.remove(t));
 
-    // Determine theme: from API or fallback
-    const themeName = settings?.theme || "hennys-classic";
+    const themeName = settings?.theme || "classic";
     const themeClass = `theme-${themeName}`;
     root.classList.add(themeClass);
 

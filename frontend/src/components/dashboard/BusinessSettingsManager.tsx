@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, AlertTriangle, Printer, Bluetooth, Settings, Utensils } from "lucide-react";
+import { Loader2, AlertTriangle, Printer, Bluetooth, Settings, Utensils, Palette } from "lucide-react";
 import { apiAdminFactoryReset } from "@/lib/apiClient";
 import { Capacitor } from "@capacitor/core";
 import { BluetoothPrinter } from "@candraadiw/capacitor-bluetooth-printer";
@@ -122,6 +122,7 @@ const BusinessSettingsManager = ({ user }: Props) => {
         printerWidth: data.printerWidth,
         orderWorkflow: data.orderWorkflow,
         kitchenPin: data.kitchenPin,
+        theme: data.theme,
       });
       setData(updated);
       toast({ title: "Saved", description: "Business settings updated." });
@@ -433,6 +434,49 @@ const BusinessSettingsManager = ({ user }: Props) => {
               </div>
             </div>
           </div>
+
+      {/* Customer Facing Theme Settings */}
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+            <Palette className="w-5 h-5 text-purple-500" />
+          </div>
+          <div>
+            <h2 className="font-heading text-lg font-bold">Storefront Theme</h2>
+            <p className="text-sm text-muted-foreground">
+              Select the appearance of your customer-facing digital menu and QR ordering pages.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div 
+            onClick={() => setData(prev => ({ ...prev, theme: "classic" }))}
+            className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+              (!data.theme || data.theme === "classic") ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+            }`}
+          >
+            <div className="font-bold text-lg mb-1 flex items-center justify-between">
+              Classic Red
+              {(!data.theme || data.theme === "classic") && <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">Active</span>}
+            </div>
+            <p className="text-sm text-muted-foreground">The standard premium aesthetic with deep red and gold accents.</p>
+          </div>
+
+          <div 
+            onClick={() => setData(prev => ({ ...prev, theme: "modern-italian" }))}
+            className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+              data.theme === "modern-italian" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+            }`}
+          >
+            <div className="font-bold text-lg mb-1 flex items-center justify-between">
+              Modern Italian Cafe
+              {data.theme === "modern-italian" && <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">Active</span>}
+            </div>
+            <p className="text-sm text-muted-foreground">A warm, artisanal vibe with elegant serif fonts, masonry layouts, and terracotta accents.</p>
+          </div>
+        </div>
+      </div>
 
       {/* Loyalty Program Settings */}
       <div className="bg-card border border-border rounded-2xl p-6 space-y-5">

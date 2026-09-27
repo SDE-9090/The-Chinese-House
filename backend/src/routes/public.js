@@ -36,7 +36,7 @@ router.get("/business-info", async (req, res) => {
     const publicInfo = {
       name: business.name,
       logo_url: business.logo_url || "/favicon.png",
-      theme: business.theme || "hennys-classic",
+      theme: business.theme || "classic",
       layout_theme: business.layout_theme || "classic",
       status: business.status,
       features: business.features || {}
