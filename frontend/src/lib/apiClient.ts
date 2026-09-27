@@ -540,6 +540,15 @@ export interface LandingPageContent {
   menu_title?: string;
   menu_main_title?: string;
   menu_description?: string;
+  // Italian Theme Fields
+  italian_hero_badge_title?: string;
+  italian_hero_badge_subtitle?: string;
+  italian_history_title?: string;
+  italian_history_desc?: string;
+  italian_stats_years?: string;
+  italian_stats_dishes?: string;
+  italian_menu_title?: string;
+  italian_footer_desc?: string;
 }
 
 export interface BusinessSettings {

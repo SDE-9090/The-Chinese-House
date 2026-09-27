@@ -6,6 +6,7 @@ import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 
 const ItalianLandingPage = () => {
   const { settings } = useBusinessSettings();
+  const content = settings?.landingPageContent;
   const businessName = settings?.restaurantName || "Modern Italian Cafe";
 
   return (
@@ -82,8 +83,8 @@ const ItalianLandingPage = () => {
                 <Utensils size={24} />
               </div>
               <div>
-                <p className="font-theme-heading font-bold text-lg">100% Fresh</p>
-                <p className="text-sm text-muted-foreground">Made daily in-house</p>
+                <p className="font-theme-heading font-bold text-lg">{content?.italian_hero_badge_title || "100% Fresh"}</p>
+                <p className="text-sm text-muted-foreground">{content?.italian_hero_badge_subtitle || "Made daily in-house"}</p>
               </div>
             </div>
           </motion.div>
@@ -96,21 +97,18 @@ const ItalianLandingPage = () => {
           <div className="grid md:grid-cols-12 gap-8 md:gap-16 items-center">
             <div className="md:col-span-5 space-y-6">
               <h2 className="font-theme-heading text-4xl md:text-5xl font-bold">
-                La Nostra Storia
+                {content?.italian_history_title || "La Nostra Storia"}
               </h2>
               <p className="text-muted-foreground leading-relaxed text-lg">
-                Born from a passion for authentic Italian culinary traditions. 
-                We bring the vibrant flavors of the Mediterranean to your table.
-                Every dish is a testament to our dedication to quality, using only 
-                the finest imported olive oils, tomatoes, and locally sourced fresh ingredients.
+                {content?.italian_history_desc || "Born from a passion for authentic Italian culinary traditions. We bring the vibrant flavors of the Mediterranean to your table. Every dish is a testament to our dedication to quality, using only the finest imported olive oils, tomatoes, and locally sourced fresh ingredients."}
               </p>
               <div className="pt-4 grid grid-cols-2 gap-8">
                 <div>
-                  <h4 className="font-bold text-3xl text-primary font-theme-heading mb-1">10+</h4>
+                  <h4 className="font-bold text-3xl text-primary font-theme-heading mb-1">{content?.italian_stats_years || "10+"}</h4>
                   <p className="text-sm text-muted-foreground">Years of Heritage</p>
                 </div>
                 <div>
-                  <h4 className="font-bold text-3xl text-primary font-theme-heading mb-1">50+</h4>
+                  <h4 className="font-bold text-3xl text-primary font-theme-heading mb-1">{content?.italian_stats_dishes || "50+"}</h4>
                   <p className="text-sm text-muted-foreground">Artisanal Dishes</p>
                 </div>
               </div>
@@ -136,7 +134,7 @@ const ItalianLandingPage = () => {
       <section id="menu" className="py-24 px-6">
         <div className="max-w-7xl mx-auto text-center mb-16">
           <span className="text-primary font-semibold tracking-widest uppercase text-sm">Specials</span>
-          <h2 className="font-theme-heading text-4xl md:text-5xl font-bold mt-4">Chef's Recommendations</h2>
+          <h2 className="font-theme-heading text-4xl md:text-5xl font-bold mt-4">{content?.italian_menu_title || "Chef's Recommendations"}</h2>
         </div>
         
         <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-8">
@@ -174,7 +172,7 @@ const ItalianLandingPage = () => {
           <div className="space-y-6">
             <h3 className="font-theme-heading text-3xl font-bold text-white">{businessName}</h3>
             <p className="text-[#A3A19C] leading-relaxed max-w-sm">
-              Bringing the authentic taste and warmth of a true Italian trattoria straight to your neighborhood.
+              {content?.italian_footer_desc || "Bringing the authentic taste and warmth of a true Italian trattoria straight to your neighborhood."}
             </p>
             <div className="flex gap-4">
               <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary cursor-pointer transition-colors">

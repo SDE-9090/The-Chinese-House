@@ -18,6 +18,7 @@ const PageContentManager = () => {
   const [saving, setSaving] = useState(false);
   const [content, setContent] = useState<LandingPageContent | null>(null);
   const [features, setFeatures] = useState<Record<string, any>>({});
+  const [activeTheme, setActiveTheme] = useState("classic");
 
   useEffect(() => {
     fetchSettings();
@@ -31,6 +32,9 @@ const PageContentManager = () => {
       }
       if (settings.features) {
         setFeatures(settings.features);
+      }
+      if (settings.theme) {
+        setActiveTheme(settings.theme);
       }
     } catch (err) {
       toast.error("Failed to load page content");
@@ -111,8 +115,10 @@ const PageContentManager = () => {
           </button>
         </div>
 
-        {/* About Section */}
-        <div className="bg-card border border-border rounded-2xl p-6 space-y-6">
+        {activeTheme === "classic" && (
+          <>
+            {/* About Section */}
+            <div className="bg-card border border-border rounded-2xl p-6 space-y-6">
           <h3 className="text-lg font-bold flex items-center gap-2 border-b border-border pb-3">
             <span className="w-2 h-2 bg-primary rounded-full" />
             About Section (Our Story)
@@ -348,6 +354,123 @@ const PageContentManager = () => {
             </div>
           </div>
         </div>
+        </>
+      )}
+
+      {activeTheme === "modern-italian" && (
+        <>
+          {/* Hero Section */}
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-6">
+            <h3 className="text-lg font-bold flex items-center gap-2 border-b border-border pb-3">
+              <Sparkles className="text-primary" size={18} />
+              Hero Badge
+            </h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Badge Title (e.g., 100% Fresh)</label>
+                <input
+                  type="text"
+                  value={content.italian_hero_badge_title || ""}
+                  onChange={(e) => updateSection("italian_hero_badge_title", e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Badge Subtitle</label>
+                <input
+                  type="text"
+                  value={content.italian_hero_badge_subtitle || ""}
+                  onChange={(e) => updateSection("italian_hero_badge_subtitle", e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* History Section */}
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-6 mt-6">
+            <h3 className="text-lg font-bold flex items-center gap-2 border-b border-border pb-3">
+              <FileText className="text-primary" size={18} />
+              La Nostra Storia (Our Story)
+            </h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Section Title</label>
+                <input
+                  type="text"
+                  value={content.italian_history_title || ""}
+                  onChange={(e) => updateSection("italian_history_title", e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Story Description</label>
+                <textarea
+                  value={content.italian_history_desc || ""}
+                  onChange={(e) => updateSection("italian_history_desc", e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none resize-none"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Years of Heritage (e.g. 10+)</label>
+                  <input
+                    type="text"
+                    value={content.italian_stats_years || ""}
+                    onChange={(e) => updateSection("italian_stats_years", e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Artisanal Dishes (e.g. 50+)</label>
+                  <input
+                    type="text"
+                    value={content.italian_stats_dishes || ""}
+                    onChange={(e) => updateSection("italian_stats_dishes", e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Chef Recommendations Title */}
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-6 mt-6">
+            <h3 className="text-lg font-bold flex items-center gap-2 border-b border-border pb-3">
+              <Utensils className="text-primary" size={18} />
+              Chef Recommendations Menu
+            </h3>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Menu Title</label>
+              <input
+                type="text"
+                value={content.italian_menu_title || ""}
+                onChange={(e) => updateSection("italian_menu_title", e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
+              />
+            </div>
+          </div>
+          
+          {/* Footer Desc */}
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-6 mt-6">
+            <h3 className="text-lg font-bold flex items-center gap-2 border-b border-border pb-3">
+              <Layout className="text-primary" size={18} />
+              Footer Content
+            </h3>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Footer Description</label>
+              <textarea
+                value={content.italian_footer_desc || ""}
+                onChange={(e) => updateSection("italian_footer_desc", e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-ring focus:outline-none resize-none"
+              />
+            </div>
+          </div>
+        </>
+      )}
 
         <div className="flex justify-center pt-4">
           <button

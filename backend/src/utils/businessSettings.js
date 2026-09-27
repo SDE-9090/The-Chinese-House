@@ -27,7 +27,15 @@ function normalizeBusinessSettings(row = {}) {
     gift_voucher_description: `Surprise someone special with a ${row.restaurant_name || "The Chinese House"} gift voucher. Choose any amount starting from ₹100, customize the code, and share it instantly via WhatsApp!`,
     menu_title: "OUR MENU",
     menu_main_title: `Signature <span class='text-primary'>Dishes</span>`,
-    menu_description: "From classic starters to sizzling main courses, every dish is a masterpiece. Sorted by highest ratings."
+    menu_description: "From classic starters to sizzling main courses, every dish is a masterpiece. Sorted by highest ratings.",
+    italian_hero_badge_title: "100% Fresh",
+    italian_hero_badge_subtitle: "Made daily in-house",
+    italian_history_title: "La Nostra Storia",
+    italian_history_desc: "Born from a passion for authentic Italian culinary traditions. We bring the vibrant flavors of the Mediterranean to your table. Every dish is a testament to our dedication to quality, using only the finest imported olive oils, tomatoes, and locally sourced fresh ingredients.",
+    italian_stats_years: "10+",
+    italian_stats_dishes: "50+",
+    italian_menu_title: "Chef's Recommendations",
+    italian_footer_desc: "Bringing the authentic taste and warmth of a true Italian trattoria straight to your neighborhood."
   };
 
   return {
